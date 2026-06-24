@@ -22,7 +22,8 @@
   margin: 8rpx 0 24rpx;
   padding: 18rpx 16rpx;
   border-radius: 18rpx;
-  background: #fff5f7;
+  background: #f8f9fc;
+  border: 2rpx solid #edf0f5;
 }
 
 .anonymous-title {
@@ -42,7 +43,7 @@
   margin-bottom: 10rpx;
   padding: 22rpx;
   border-radius: 16rpx;
-  background: #f8fafc;
+  background: #f8f9fc;
 }
 
 .media-grid {

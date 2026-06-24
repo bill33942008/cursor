@@ -1,19 +1,20 @@
 <view class="page-wrap">
   <view class="hero-card">
-    <view class="hero-title">📝 发布路上动态</view>
-    <view class="hero-subtitle">像小红书一样记录旅程瞬间，给同路旅友一点参考</view>
+    <view class="hero-title">发布路上动态</view>
+    <view class="hero-subtitle">记录旅程瞬间，给同路旅友一些参考</view>
     <view class="hero-pill-row">
-      <text class="hero-pill">🎬 图文/视频</text>
-      <text class="hero-pill">🧭 行程状态</text>
-      <text class="hero-pill">🕶️ 可匿名</text>
+      <text class="hero-pill">图文/视频</text>
+      <text class="hero-pill">行程状态</text>
+      <text class="hero-pill">匿名可选</text>
     </view>
   </view>
 
   <view class="card form-card">
-    <view class="section-title">✍️ 分享内容</view>
+    <view class="section-title">分享内容</view>
     <textarea
       class="textarea-box content-box"
       placeholder="这一程发生了什么？有什么值得分享的交通信息？"
+      placeholder-style="color:#98a2b3;font-size:27rpx;"
       value="{{content}}"
       bindinput="onContentInput"
       maxlength="1000"
@@ -23,7 +24,7 @@
       <text class="muted">{{contentCount}}/1000</text>
     </view>
 
-    <view class="section-title">🚦 行程信息</view>
+    <view class="section-title">行程信息</view>
     <picker mode="selector" range="{{transportOptions}}" range-key="label" value="{{transportIndex}}" bindchange="onTransportChange">
       <view class="picker-box">交通工具：{{transportOptions[transportIndex].label}}</view>
     </picker>
@@ -31,21 +32,21 @@
       <view class="picker-box">当前阶段：{{phaseOptions[phaseIndex].label}}</view>
     </picker>
 
-    <input class="input-box" placeholder="🚄 车次/航班（可选）" value="{{routeCode}}" bindinput="onRouteCodeInput" />
-    <input class="input-box" placeholder="📍 出发地（必填）" value="{{origin}}" bindinput="onOriginInput" />
-    <input class="input-box" placeholder="🏁 目的地（必填）" value="{{destination}}" bindinput="onDestinationInput" />
-    <input class="input-box" placeholder="⏰ 出发时间窗口（可选，如 今天 14:00-16:00）" value="{{departureWindow}}" bindinput="onDepartureWindowInput" />
+    <input class="input-box" placeholder="车次/航班（可选）" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{routeCode}}" bindinput="onRouteCodeInput" />
+    <input class="input-box" placeholder="出发地（必填）" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{origin}}" bindinput="onOriginInput" />
+    <input class="input-box" placeholder="目的地（必填）" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{destination}}" bindinput="onDestinationInput" />
+    <input class="input-box" placeholder="出发时间窗口（可选，如 今天 14:00-16:00）" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{departureWindow}}" bindinput="onDepartureWindowInput" />
 
     <view class="row-between anonymous-row">
       <view>
-        <text class="section-title anonymous-title">👤 匿名发布</text>
+        <text class="section-title anonymous-title">匿名发布</text>
         <text class="subtitle">仅前台匿名，后台仍保存真实账号</text>
       </view>
       <switch color="#ff2442" checked="{{isAnonymous}}" bindchange="onAnonymousChange" />
     </view>
 
     <view class="media-header">
-      <text class="section-title media-title">🖼️ 媒体素材</text>
+      <text class="section-title media-title">媒体素材</text>
       <button class="icon-btn" size="mini" bindtap="chooseMedia" loading="{{uploading}}">
         {{uploading ? "上传中" : "添加媒体"}}
       </button>

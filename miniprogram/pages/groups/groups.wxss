@@ -63,3 +63,9 @@
   line-height: 62rpx;
   padding: 0 26rpx;
 }
+
+.state-card .state-icon {
+  font-size: 24rpx;
+  color: #98a2b3;
+  margin-bottom: 8rpx;
+}

@@ -1,31 +1,37 @@
-<view class="page-wrap">
-  <view class="hero-card">
-    <view class="hero-title">🙋 我的主页</view>
-    <view class="hero-subtitle">管理好友关系，连接同路伙伴</view>
-    <view class="hero-pill-row">
-      <text class="hero-pill">🤝 好友 {{friends.length}}</text>
-      <text class="hero-pill">📨 申请 {{incomingRequests.length}}</text>
-    </view>
-  </view>
-
-  <view class="card profile-card" wx:if="{{user}}">
+<view class="page-wrap profile-page">
+  <view class="profile-header" wx:if="{{user}}">
     <view class="profile-head">
-      <view class="avatar">旅</view>
-      <view>
+      <view class="avatar">U</view>
+      <view class="profile-main">
         <text class="name">{{user.nickname}}</text>
-        <text class="subtitle id-text">ID：{{user.id}}</text>
+        <text class="subtitle">同行账号</text>
+      </view>
+    </view>
+    <view class="profile-id">
+      <text class="muted">用户ID：{{user.id}}</text>
+    </view>
+    <view class="stats-row">
+      <view class="stat-item">
+        <text class="stat-value">{{friends.length}}</text>
+        <text class="stat-label">好友</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{incomingRequests.length}}</text>
+        <text class="stat-label">申请</text>
       </view>
     </view>
   </view>
 
-  <view class="card">
-    <view class="section-title">➕ 添加好友</view>
-    <input class="input-box" placeholder="输入对方用户ID" value="{{targetUserId}}" bindinput="onTargetUserInput" />
-    <button class="btn-primary apply-btn" size="mini" bindtap="sendFriendRequest">发送申请</button>
+  <view class="card add-card">
+    <view class="section-title">添加好友</view>
+    <view class="add-row">
+      <input class="input-box friend-input" placeholder="输入对方用户ID" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{targetUserId}}" bindinput="onTargetUserInput" />
+      <button class="btn-primary add-btn" size="mini" bindtap="sendFriendRequest">发送</button>
+    </view>
   </view>
 
   <view class="card">
-    <view class="section-title">📨 收到的申请</view>
+    <view class="section-title">收到的申请</view>
     <block wx:if="{{incomingRequests.length === 0}}">
       <view class="empty-state">
         <text class="subtitle">暂无申请</text>
@@ -33,20 +39,23 @@
     </block>
     <block wx:for="{{incomingRequests}}" wx:key="id">
       <view class="request-item">
-        <view>
-          <text class="request-name">{{item.fromNickname}}</text>
-          <text class="subtitle request-id">{{item.fromUserId}}</text>
+        <view class="request-left">
+          <view class="dot"></view>
+          <view>
+            <text class="request-name">{{item.fromNickname}}</text>
+            <text class="subtitle request-id">{{item.fromUserId}}</text>
+          </view>
         </view>
         <view class="request-actions">
-          <button class="icon-btn" size="mini" data-id="{{item.id}}" data-action="accept" bindtap="handleRequest">同意</button>
-          <button class="btn-ghost" size="mini" data-id="{{item.id}}" data-action="reject" bindtap="handleRequest">拒绝</button>
+          <button class="icon-btn action-btn" size="mini" data-id="{{item.id}}" data-action="accept" bindtap="handleRequest">同意</button>
+          <button class="btn-ghost action-btn" size="mini" data-id="{{item.id}}" data-action="reject" bindtap="handleRequest">拒绝</button>
         </view>
       </view>
     </block>
   </view>
 
   <view class="card">
-    <view class="section-title">🤝 我的好友（{{friends.length}}）</view>
+    <view class="section-title">我的好友（{{friends.length}}）</view>
     <block wx:if="{{friends.length === 0}}">
       <view class="empty-state">
         <text class="subtitle">还没有好友，去广场认识新朋友吧</text>
@@ -54,8 +63,8 @@
     </block>
     <block wx:for="{{friends}}" wx:key="id">
       <view class="friend-item">
-        <view class="friend-avatar">友</view>
-        <view>
+        <view class="friend-avatar"></view>
+        <view class="friend-main">
           <text class="friend-name">{{item.nickname}}</text>
           <text class="subtitle request-id">{{item.id}}</text>
         </view>
