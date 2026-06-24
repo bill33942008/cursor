@@ -10,19 +10,19 @@
 
 .tabbar-inner {
   pointer-events: auto;
-  width: 640rpx;
+  width: 560rpx;
   margin: 0 auto 18rpx;
-  padding: 12rpx 8rpx calc(12rpx + env(safe-area-inset-bottom));
+  padding: 12rpx 16rpx calc(12rpx + env(safe-area-inset-bottom));
   border-radius: 28rpx;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 10rpx 28rpx rgba(30, 41, 59, 0.14);
   display: flex;
   align-items: flex-end;
-  justify-content: space-around;
+  justify-content: space-between;
 }
 
 .tab-item {
-  flex: 1;
+  flex: 0 0 24%;
   text-align: center;
   padding: 10rpx 0 6rpx;
   border-radius: 20rpx;
