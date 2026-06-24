@@ -15,6 +15,7 @@ function canUseStorage() {
 
 Page({
   data: {
+    loading: true,
     user: null,
     friends: [],
     incomingRequests: [],
@@ -26,6 +27,7 @@ Page({
   },
 
   async loadProfileData() {
+    this.setData({ loading: true });
     try {
       const [meRes, friendRes] = await Promise.all([
         request({ url: "/api/auth/me", method: "GET" }),
@@ -42,6 +44,8 @@ Page({
       });
     } catch (err) {
       wx.showToast({ title: err.message || "加载失败", icon: "none" });
+    } finally {
+      this.setData({ loading: false });
     }
   },
 
@@ -84,5 +88,17 @@ Page({
     } catch (err) {
       wx.showToast({ title: err.message || "处理失败", icon: "none" });
     }
+  },
+
+  goSettings() {
+    wx.navigateTo({ url: "/pages/settings/index" });
+  },
+
+  goPrivacy() {
+    wx.navigateTo({ url: "/pages/settings/privacy" });
+  },
+
+  goSecurity() {
+    wx.navigateTo({ url: "/pages/settings/security" });
   },
 });

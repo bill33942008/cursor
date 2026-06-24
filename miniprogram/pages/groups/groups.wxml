@@ -13,8 +13,8 @@
     <view class="section-title">搜索群组</view>
     <input class="input-box" placeholder="输入目的地，如 北京 / 上海" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{destinationKeyword}}" bindinput="onDestinationKeywordInput" />
     <view class="actions-inline">
-      <button class="icon-btn" size="mini" bindtap="loadGroups">搜索</button>
-      <button class="btn-ghost create-toggle" size="mini" bindtap="toggleCreate">{{creating ? "收起建群" : "我要建群"}}</button>
+      <button class="icon-btn" size="mini" hover-class="pressable-hover" bindtap="loadGroups">搜索</button>
+      <button class="btn-ghost create-toggle" size="mini" hover-class="pressable-hover" bindtap="toggleCreate">{{creating ? "收起建群" : "我要建群"}}</button>
     </view>
   </view>
 
@@ -30,9 +30,14 @@
     <button class="btn-primary submit-btn" bindtap="createGroup">发布群组</button>
   </view>
 
-  <view wx:if="{{loading}}" class="card state-card">
-    <text class="state-icon">加载中</text>
-    <text class="section-title">正在加载群组...</text>
+  <view wx:if="{{loading}}" class="card group-skeleton-card">
+    <block wx:for="{{skeletonRows}}" wx:key="*this">
+      <view class="group-skeleton-item">
+        <view class="skeleton skeleton-row lg"></view>
+        <view class="skeleton skeleton-row"></view>
+        <view class="skeleton skeleton-row sm"></view>
+      </view>
+    </block>
   </view>
 
   <view wx:if="{{!loading && groups.length === 0}}" class="card state-card">
@@ -42,7 +47,7 @@
   </view>
 
   <block wx:for="{{groups}}" wx:key="id">
-    <view class="group-card">
+    <view class="group-card pressable list-appear" hover-class="pressable-hover">
       <view class="row-between">
         <text class="group-name">{{item.name}}</text>
         <text class="member-count">{{item.memberCount}} 人</text>
@@ -53,8 +58,8 @@
       </view>
       <text class="subtitle owner">群主：{{item.ownerNickname}}</text>
       <view class="group-actions">
-        <button class="icon-btn" size="mini" data-id="{{item.id}}" bindtap="joinGroup">加入</button>
-        <button class="btn-primary chat-btn" size="mini" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="enterChat">进入聊天</button>
+        <button class="icon-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="joinGroup">加入</button>
+        <button class="btn-primary chat-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="enterChat">进入聊天</button>
       </view>
     </view>
   </block>

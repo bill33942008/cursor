@@ -64,8 +64,29 @@
   padding: 0 26rpx;
 }
 
-.state-card .state-icon {
-  font-size: 24rpx;
-  color: #98a2b3;
+.group-skeleton-card {
+  padding: 10rpx 18rpx;
+}
+
+.group-skeleton-item {
+  padding: 14rpx 0;
+  border-bottom: 1rpx solid #f0f2f6;
+}
+
+.skeleton-row {
+  height: 20rpx;
+  border-radius: 10rpx;
   margin-bottom: 8rpx;
+}
+
+.skeleton-row.lg {
+  width: 80%;
+}
+
+.skeleton-row {
+  width: 96%;
+}
+
+.skeleton-row.sm {
+  width: 50%;
 }

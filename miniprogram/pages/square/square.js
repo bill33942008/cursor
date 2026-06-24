@@ -43,6 +43,35 @@ function resolveMediaItems(mediaList) {
   });
 }
 
+function estimatePostWeight(post) {
+  const textWeight = Math.min((post.content || "").length, 180) * 0.65;
+  const mediaWeight = (post.mediaItems || []).reduce((acc, media) => {
+    if (media.type === "video") return acc + 180;
+    return acc + 95;
+  }, 0);
+  const tagWeight = post.transportType ? 30 : 0;
+  return 220 + textWeight + mediaWeight + tagWeight;
+}
+
+function splitWaterfall(posts) {
+  const left = [];
+  const right = [];
+  let leftWeight = 0;
+  let rightWeight = 0;
+
+  posts.forEach((post) => {
+    const weight = estimatePostWeight(post);
+    if (leftWeight <= rightWeight) {
+      left.push(post);
+      leftWeight += weight;
+    } else {
+      right.push(post);
+      rightWeight += weight;
+    }
+  });
+  return { left, right };
+}
+
 function getMiniProgramAppId() {
   try {
     if (typeof wx.getAccountInfoSync !== "function") {
@@ -64,6 +93,9 @@ Page({
   data: {
     loading: false,
     posts: [],
+    leftPosts: [],
+    rightPosts: [],
+    skeletonRows: [1, 2, 3, 4],
     error: "",
   },
 
@@ -132,18 +164,18 @@ Page({
       url: "/api/posts/square?limit=20&offset=0",
       method: "GET",
     });
-    this.setData({
-      posts: (res.items || []).map((item) => {
-        const mediaItems = resolveMediaItems(item.media || []);
-        return {
-          ...item,
-          likeCount: Number(item.likeCount || 0),
-          commentCount: Number(item.commentCount || 0),
-          mediaItems,
-          imageUrls: mediaItems.filter((media) => media.type === "image").map((media) => media.url),
-        };
-      }),
+    const posts = (res.items || []).map((item) => {
+      const mediaItems = resolveMediaItems(item.media || []);
+      return {
+        ...item,
+        likeCount: Number(item.likeCount || 0),
+        commentCount: Number(item.commentCount || 0),
+        mediaItems,
+        imageUrls: mediaItems.filter((media) => media.type === "image").map((media) => media.url),
+      };
     });
+    const { left, right } = splitWaterfall(posts);
+    this.setData({ posts, leftPosts: left, rightPosts: right });
   },
 
   previewMedia(e) {

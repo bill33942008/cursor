@@ -47,7 +47,7 @@
 
     <view class="media-header">
       <text class="section-title media-title">媒体素材</text>
-      <button class="icon-btn" size="mini" bindtap="chooseMedia" loading="{{uploading}}">
+      <button class="icon-btn" size="mini" hover-class="pressable-hover" bindtap="chooseMedia" loading="{{uploading}}">
         {{uploading ? "上传中" : "添加媒体"}}
       </button>
     </view>
@@ -63,12 +63,12 @@
           <video wx:else class="media-thumb" src="{{item.displayUrl}}" controls />
           <view class="media-meta">
             <text class="media-status">审核：{{item.moderationStatus}}</text>
-            <button class="icon-btn remove-btn" size="mini" data-id="{{item.id}}" bindtap="removeMedia">移除</button>
+            <button class="icon-btn remove-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="removeMedia">移除</button>
           </view>
         </view>
       </block>
     </view>
 
-    <button class="btn-primary submit-btn" bindtap="submit">立即发布</button>
+    <button class="btn-primary submit-btn" hover-class="pressable-hover" bindtap="submit">立即发布</button>
   </view>
 </view>

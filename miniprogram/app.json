@@ -4,7 +4,10 @@
     "pages/publish/publish",
     "pages/groups/groups",
     "pages/profile/profile",
-    "pages/chat/chat"
+    "pages/chat/chat",
+    "pages/settings/index",
+    "pages/settings/privacy",
+    "pages/settings/security"
   ],
   "window": {
     "navigationBarTitleText": "同行/在路上",
@@ -14,6 +17,7 @@
     "backgroundColor": "#f5f7fb"
   },
   "tabBar": {
+    "custom": true,
     "color": "#8a94a6",
     "selectedColor": "#ff2442",
     "backgroundColor": "#ffffff",

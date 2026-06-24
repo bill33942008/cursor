@@ -23,7 +23,7 @@ button::after {
 }
 
 .page-wrap {
-  padding: 24rpx 24rpx 36rpx;
+  padding: 24rpx 24rpx calc(166rpx + env(safe-area-inset-bottom));
 }
 
 .hero-card {
@@ -169,4 +169,54 @@ button::after {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.pressable {
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.pressable-hover {
+  transform: scale(0.98);
+  opacity: 0.94;
+}
+
+.list-appear {
+  animation: listFadeInUp 0.36s ease both;
+}
+
+@keyframes listFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #eef1f6;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  left: -180rpx;
+  top: 0;
+  width: 180rpx;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0));
+  animation: skeletonShimmer 1.25s infinite;
+}
+
+@keyframes skeletonShimmer {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(900rpx);
+  }
 }

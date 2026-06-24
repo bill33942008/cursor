@@ -2,6 +2,25 @@
   padding-top: 12rpx;
 }
 
+.skeleton-header {
+  height: 80rpx;
+  border-radius: 16rpx;
+  margin-bottom: 12rpx;
+}
+
+.skeleton-line-wide {
+  height: 22rpx;
+  border-radius: 10rpx;
+  width: 100%;
+  margin-bottom: 8rpx;
+}
+
+.skeleton-line-mid {
+  height: 22rpx;
+  border-radius: 10rpx;
+  width: 68%;
+}
+
 .profile-header {
   border-radius: 28rpx;
   padding: 24rpx;
@@ -130,6 +149,29 @@
   display: flex;
   align-items: center;
   gap: 10rpx;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f0f2f5;
+}
+
+.menu-icon {
+  width: 40rpx;
+  margin-right: 10rpx;
+}
+
+.menu-text {
+  flex: 1;
+  font-size: 28rpx;
+  color: #1f2937;
+}
+
+.menu-arrow {
+  font-size: 28rpx;
+  color: #98a2b3;
 }
 
 .action-btn {

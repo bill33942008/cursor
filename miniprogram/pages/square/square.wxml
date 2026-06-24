@@ -9,10 +9,27 @@
     </view>
   </view>
 
-  <view wx:if="{{loading}}" class="card state-card">
-    <text class="state-icon">⏳</text>
-    <text class="section-title">正在加载广场内容...</text>
-    <text class="subtitle">马上就好，正在拉取最新动态</text>
+  <view wx:if="{{loading}}" class="waterfall">
+    <view class="wf-col">
+      <block wx:for="{{skeletonRows}}" wx:key="*this">
+        <view class="feed-card skeleton-card">
+          <view class="skeleton skeleton-line avatar-skeleton"></view>
+          <view class="skeleton skeleton-line title-skeleton"></view>
+          <view class="skeleton skeleton-line body-skeleton"></view>
+          <view class="skeleton skeleton-media"></view>
+        </view>
+      </block>
+    </view>
+    <view class="wf-col">
+      <block wx:for="{{skeletonRows}}" wx:key="*this">
+        <view class="feed-card skeleton-card">
+          <view class="skeleton skeleton-line avatar-skeleton"></view>
+          <view class="skeleton skeleton-line title-skeleton"></view>
+          <view class="skeleton skeleton-line body-skeleton short"></view>
+          <view class="skeleton skeleton-media tall"></view>
+        </view>
+      </block>
+    </view>
   </view>
 
   <view wx:if="{{error}}" class="card state-card error-card">
@@ -27,50 +44,102 @@
     <text class="subtitle">去发布页发第一条路上分享吧</text>
   </view>
 
-  <block wx:for="{{posts}}" wx:key="id">
-    <view class="feed-card">
-      <view class="feed-head">
-        <view class="feed-author">
-          <view class="avatar-dot"></view>
-          <view>
-            <text class="feed-user">{{item.displayName}}</text>
-            <text class="feed-time">{{item.createdAt}}</text>
+  <view wx:if="{{!loading && !error && posts.length > 0}}" class="waterfall">
+    <view class="wf-col">
+      <block wx:for="{{leftPosts}}" wx:key="id">
+        <view class="feed-card pressable list-appear" hover-class="pressable-hover">
+          <view class="feed-head">
+            <view class="feed-author">
+              <view class="avatar-dot"></view>
+              <view>
+                <text class="feed-user">{{item.displayName}}</text>
+                <text class="feed-time">{{item.createdAt}}</text>
+              </view>
+            </view>
+          </view>
+
+          <view class="feed-content">{{item.content}}</view>
+
+          <view class="media-grid" wx:if="{{item.mediaItems.length}}">
+            <block wx:for="{{item.mediaItems}}" wx:key="url" wx:for-item="mediaItem">
+              <video
+                wx:if="{{mediaItem.type === 'video'}}"
+                class="media-cell media-video {{item.mediaItems.length === 1 ? 'media-single' : ''}}"
+                src="{{mediaItem.url}}"
+                controls
+              />
+              <image
+                wx:else
+                class="media-cell {{item.mediaItems.length === 1 ? 'media-single' : ''}}"
+                src="{{mediaItem.url}}"
+                mode="aspectFill"
+                data-postid="{{item.id}}"
+                data-preview-index="{{mediaItem.previewIndex}}"
+                bindtap="previewMedia"
+              />
+            </block>
+          </view>
+
+          <view class="feed-tags" wx:if="{{item.transportType}}">
+            <text class="chip">{{item.transportType}}</text>
+            <text class="chip">{{item.origin}} → {{item.destination}}</text>
+          </view>
+
+          <view class="feed-actions">
+            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="likePost">❤️ {{item.likeCount}}</view>
+            <view class="action-item pressable" hover-class="pressable-hover" bindtap="onCommentTap">💬 {{item.commentCount}}</view>
+            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="onShareTap">🔁</view>
           </view>
         </view>
-      </view>
-
-      <view class="feed-content">{{item.content}}</view>
-
-      <view class="media-grid" wx:if="{{item.mediaItems.length}}">
-        <block wx:for="{{item.mediaItems}}" wx:key="url" wx:for-item="mediaItem">
-          <video
-            wx:if="{{mediaItem.type === 'video'}}"
-            class="media-cell media-video {{item.mediaItems.length === 1 ? 'media-single' : ''}}"
-            src="{{mediaItem.url}}"
-            controls
-          />
-          <image
-            wx:else
-            class="media-cell {{item.mediaItems.length === 1 ? 'media-single' : ''}}"
-            src="{{mediaItem.url}}"
-            mode="aspectFill"
-            data-postid="{{item.id}}"
-            data-preview-index="{{mediaItem.previewIndex}}"
-            bindtap="previewMedia"
-          />
-        </block>
-      </view>
-
-      <view class="feed-tags" wx:if="{{item.transportType}}">
-        <text class="chip">🚦 {{item.transportType}}</text>
-        <text class="chip">🧭 {{item.origin}} → {{item.destination}}</text>
-      </view>
-
-      <view class="feed-actions">
-        <view class="action-item" data-id="{{item.id}}" bindtap="likePost">❤️ {{item.likeCount}}</view>
-        <view class="action-item" bindtap="onCommentTap">💬 {{item.commentCount}}</view>
-        <view class="action-item" data-id="{{item.id}}" bindtap="onShareTap">🔁 分享</view>
-      </view>
+      </block>
     </view>
-  </block>
+    <view class="wf-col">
+      <block wx:for="{{rightPosts}}" wx:key="id">
+        <view class="feed-card pressable list-appear" hover-class="pressable-hover">
+          <view class="feed-head">
+            <view class="feed-author">
+              <view class="avatar-dot"></view>
+              <view>
+                <text class="feed-user">{{item.displayName}}</text>
+                <text class="feed-time">{{item.createdAt}}</text>
+              </view>
+            </view>
+          </view>
+
+          <view class="feed-content">{{item.content}}</view>
+
+          <view class="media-grid" wx:if="{{item.mediaItems.length}}">
+            <block wx:for="{{item.mediaItems}}" wx:key="url" wx:for-item="mediaItem">
+              <video
+                wx:if="{{mediaItem.type === 'video'}}"
+                class="media-cell media-video {{item.mediaItems.length === 1 ? 'media-single' : ''}}"
+                src="{{mediaItem.url}}"
+                controls
+              />
+              <image
+                wx:else
+                class="media-cell {{item.mediaItems.length === 1 ? 'media-single' : ''}}"
+                src="{{mediaItem.url}}"
+                mode="aspectFill"
+                data-postid="{{item.id}}"
+                data-preview-index="{{mediaItem.previewIndex}}"
+                bindtap="previewMedia"
+              />
+            </block>
+          </view>
+
+          <view class="feed-tags" wx:if="{{item.transportType}}">
+            <text class="chip">{{item.transportType}}</text>
+            <text class="chip">{{item.origin}} → {{item.destination}}</text>
+          </view>
+
+          <view class="feed-actions">
+            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="likePost">❤️ {{item.likeCount}}</view>
+            <view class="action-item pressable" hover-class="pressable-hover" bindtap="onCommentTap">💬 {{item.commentCount}}</view>
+            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="onShareTap">🔁</view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
 </view>

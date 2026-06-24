@@ -4,6 +4,7 @@ Page({
   data: {
     groups: [],
     loading: false,
+    skeletonRows: [1, 2, 3],
     destinationKeyword: "",
     creating: false,
     categoryOptions: [
