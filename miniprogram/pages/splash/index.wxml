@@ -1,5 +1,5 @@
 <view class="splash-page">
-  <image class="splash-bg" src="/assets/launch/splash-cover.svg" mode="aspectFill" />
+  <image class="splash-bg" src="/assets/launch/splash-cover.png" mode="aspectFill" />
   <view class="splash-mask"></view>
 
   <view class="bottom-panel">
