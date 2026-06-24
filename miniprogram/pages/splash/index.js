@@ -80,7 +80,7 @@ Page({
       wx.showModal({
         title: "微信授权",
         content: "为同步你的昵称和头像，请先完成微信授权",
-        confirmText: "授权并进入",
+        confirmText: "去授权",
         cancelText: "取消",
         success: async (res) => {
           if (!res.confirm) {
