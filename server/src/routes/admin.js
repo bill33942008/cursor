@@ -4,7 +4,14 @@ const { z } = require("zod");
 const { v4: uuidv4 } = require("uuid");
 const { db } = require("../db");
 const { adminAuthRequired } = require("../middleware/adminAuth");
-const { isStrongPassword, hashAdminPassword, verifyAdminPassword, signAdminToken } = require("../services/adminAuth");
+const {
+  hasAdminJwtSecret,
+  MIN_ADMIN_JWT_SECRET_LENGTH,
+  isStrongPassword,
+  hashAdminPassword,
+  verifyAdminPassword,
+  signAdminToken,
+} = require("../services/adminAuth");
 const { getActivityStats } = require("../services/activity");
 const { getRealtimePresenceStats } = require("../realtime/hub");
 const { parsePagination } = require("../utils");
@@ -64,6 +71,12 @@ router.post("/auth/login", loginLimiter, async (req, res) => {
   const matched = await verifyAdminPassword(parsed.data.password, admin.passwordHash);
   if (!matched) {
     return res.status(401).json({ message: "invalid username or password" });
+  }
+
+  if (!hasAdminJwtSecret()) {
+    return res.status(503).json({
+      message: `admin jwt not configured, please set ADMIN_JWT_SECRET (>=${MIN_ADMIN_JWT_SECRET_LENGTH} chars)`,
+    });
   }
 
   db.prepare(

@@ -1,5 +1,5 @@
 const { db } = require("../db");
-const { verifyAdminToken } = require("../services/adminAuth");
+const { hasAdminJwtSecret, verifyAdminToken } = require("../services/adminAuth");
 
 function parseAuthToken(req) {
   const header = req.headers.authorization || "";
@@ -25,6 +25,12 @@ function adminAuthRequired(req, res, next) {
       authMode: "legacy_token",
     };
     return next();
+  }
+
+  if (!hasAdminJwtSecret()) {
+    return res.status(503).json({
+      message: "admin jwt not configured, set ADMIN_JWT_SECRET (at least 16 chars)",
+    });
   }
 
   try {

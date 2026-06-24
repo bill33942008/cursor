@@ -87,6 +87,8 @@ npm run admin:create -- admin "StrongPass!123"
    - `ADMIN_INIT_USERNAME/ADMIN_INIT_PASSWORD`：首次启动自动创建管理员
    - `ADMIN_TOKEN`：兼容旧脚本的临时 token（可选，不建议生产使用）
 
+> 若看到 `ADMIN_JWT_SECRET must be configured and at least 16 chars`，说明 `.env` 未配置该项或长度不足；补齐后重启服务即可。
+
 ## 5. V2 新增能力说明
 
 1. 发帖改为使用 `mediaAssetIds`（先上传媒体，再发帖）

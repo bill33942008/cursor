@@ -7,7 +7,7 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const { initializeDatabase, initSchema } = require("./db");
 const { setupRealtime } = require("./realtime/hub");
-const { ensureBootstrapAdmin } = require("./services/adminAuth");
+const { ensureBootstrapAdmin, hasAdminJwtSecret } = require("./services/adminAuth");
 
 const authRoutes = require("./routes/auth");
 const journeyRoutes = require("./routes/journeys");
@@ -24,6 +24,11 @@ async function bootstrap() {
   await initializeDatabase();
   initSchema();
   await ensureBootstrapAdmin();
+  if (!hasAdminJwtSecret()) {
+    console.warn(
+      "[admin] ADMIN_JWT_SECRET is not configured (or too short). /api/admin/auth/login will return 503 until it is set."
+    );
+  }
 
   const adminWebRoot = path.join(process.cwd(), "admin-web");
 

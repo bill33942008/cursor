@@ -3,10 +3,19 @@ const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const { db } = require("../db");
 
+const MIN_ADMIN_JWT_SECRET_LENGTH = 16;
+
+function hasAdminJwtSecret() {
+  const secret = process.env.ADMIN_JWT_SECRET || "";
+  return secret.length >= MIN_ADMIN_JWT_SECRET_LENGTH;
+}
+
 function getJwtSecret() {
   const secret = process.env.ADMIN_JWT_SECRET || "";
-  if (!secret || secret.length < 16) {
-    throw new Error("ADMIN_JWT_SECRET must be configured and at least 16 chars");
+  if (!hasAdminJwtSecret()) {
+    throw new Error(
+      `ADMIN_JWT_SECRET must be configured and at least ${MIN_ADMIN_JWT_SECRET_LENGTH} chars`
+    );
   }
   return secret;
 }
@@ -83,6 +92,8 @@ async function ensureBootstrapAdmin() {
 }
 
 module.exports = {
+  MIN_ADMIN_JWT_SECRET_LENGTH,
+  hasAdminJwtSecret,
   isStrongPassword,
   hashAdminPassword,
   verifyAdminPassword,
