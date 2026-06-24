@@ -100,7 +100,15 @@ Page({
   },
 
   onShow() {
+    this.syncTabBar();
     this.bootstrap();
+  },
+
+  syncTabBar() {
+    if (typeof this.getTabBar !== "function") return;
+    const tabBar = this.getTabBar();
+    if (!tabBar || typeof tabBar.setData !== "function") return;
+    tabBar.setData({ selected: 0 });
   },
 
   async bootstrap() {
@@ -170,12 +178,129 @@ Page({
         ...item,
         likeCount: Number(item.likeCount || 0),
         commentCount: Number(item.commentCount || 0),
+        comments: [],
+        commentsVisible: false,
+        commentsLoading: false,
+        commentDraft: "",
         mediaItems,
         imageUrls: mediaItems.filter((media) => media.type === "image").map((media) => media.url),
       };
     });
+    this.applyPosts(posts);
+  },
+
+  applyPosts(posts) {
     const { left, right } = splitWaterfall(posts);
-    this.setData({ posts, leftPosts: left, rightPosts: right });
+    this.setData({
+      posts,
+      leftPosts: left,
+      rightPosts: right,
+    });
+  },
+
+  updatePost(postId, updater) {
+    const nextPosts = this.data.posts.map((post) => (post.id === postId ? updater(post) : post));
+    this.applyPosts(nextPosts);
+  },
+
+  openUserProfile(e) {
+    const userId = e.currentTarget.dataset.userid;
+    const postId = e.currentTarget.dataset.postid;
+    const post = this.data.posts.find((item) => item.id === postId);
+    if (post && post.isAnonymous) {
+      wx.showToast({ title: "匿名内容暂不支持查看主页", icon: "none" });
+      return;
+    }
+    if (!userId) return;
+    wx.navigateTo({
+      url: `/pages/user/public?userId=${userId}`,
+    });
+  },
+
+  async loadPostComments(postId) {
+    this.updatePost(postId, (post) => ({
+      ...post,
+      commentsLoading: true,
+    }));
+    try {
+      const res = await request({
+        url: `/api/posts/${postId}/comments?limit=20&offset=0`,
+        method: "GET",
+      });
+      this.updatePost(postId, (post) => ({
+        ...post,
+        commentsLoading: false,
+        comments: res.items || [],
+      }));
+    } catch (err) {
+      this.updatePost(postId, (post) => ({
+        ...post,
+        commentsLoading: false,
+      }));
+      wx.showToast({ title: err.message || "加载评论失败", icon: "none" });
+    }
+  },
+
+  async toggleComments(e) {
+    const postId = e.currentTarget.dataset.id;
+    if (!postId) return;
+    const target = this.data.posts.find((post) => post.id === postId);
+    if (!target) return;
+
+    if (!target.commentsVisible) {
+      this.updatePost(postId, (post) => ({
+        ...post,
+        commentsVisible: true,
+      }));
+      if (!target.comments || target.comments.length === 0) {
+        await this.loadPostComments(postId);
+      }
+      return;
+    }
+
+    this.updatePost(postId, (post) => ({
+      ...post,
+      commentsVisible: false,
+    }));
+  },
+
+  onCommentInput(e) {
+    const postId = e.currentTarget.dataset.id;
+    const value = e.detail.value;
+    this.updatePost(postId, (post) => ({
+      ...post,
+      commentDraft: value,
+    }));
+  },
+
+  async submitComment(e) {
+    const postId = e.currentTarget.dataset.id;
+    const target = this.data.posts.find((post) => post.id === postId);
+    if (!target) return;
+    const content = (target.commentDraft || "").trim();
+    if (!content) {
+      wx.showToast({ title: "请输入评论内容", icon: "none" });
+      return;
+    }
+    try {
+      const res = await request({
+        url: `/api/posts/${postId}/comments`,
+        method: "POST",
+        data: {
+          content,
+          isAnonymous: false,
+        },
+      });
+      this.updatePost(postId, (post) => ({
+        ...post,
+        commentDraft: "",
+        commentCount: post.commentCount + 1,
+        comments: [...(post.comments || []), res.comment],
+      }));
+      wx.showToast({ title: "评论成功", icon: "success" });
+    } catch (err) {
+      wx.showToast({ title: err.message || "评论失败", icon: "none" });
+    }
   },
 
   previewMedia(e) {
@@ -200,14 +325,13 @@ Page({
         method: "POST",
       });
       wx.showToast({ title: "已点赞", icon: "success" });
-      await this.loadSquare();
+      this.updatePost(postId, (post) => ({
+        ...post,
+        likeCount: post.likeCount + 1,
+      }));
     } catch (err) {
       wx.showToast({ title: err.message || "点赞失败", icon: "none" });
     }
-  },
-
-  onCommentTap() {
-    wx.showToast({ title: "评论功能即将上线", icon: "none" });
   },
 
   onShareTap(e) {

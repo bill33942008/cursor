@@ -5,6 +5,15 @@
   </view>
 
   <view class="card">
+    <view class="menu-item pressable" hover-class="pressable-hover" bindtap="goTimelineManage">
+      <text class="menu-icon">🗺️</text>
+      <view class="menu-main">
+        <text class="menu-title">我的时间线</text>
+        <text class="subtitle">记录并管理你的公开旅程故事</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+
     <view class="menu-item pressable" hover-class="pressable-hover" bindtap="goPrivacy">
       <text class="menu-icon">🔒</text>
       <view class="menu-main">

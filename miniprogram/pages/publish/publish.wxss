@@ -32,11 +32,15 @@
 }
 
 .media-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 10rpx;
 }
 
 .media-title {
   margin-bottom: 0;
+  line-height: 1;
 }
 
 .media-empty {

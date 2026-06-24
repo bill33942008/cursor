@@ -16,6 +16,11 @@ const postSchema = z.object({
   journeyId: z.string().uuid().optional(),
 });
 
+const commentSchema = z.object({
+  content: z.string().min(1).max(500),
+  isAnonymous: z.boolean().default(false),
+});
+
 function getUserOpenId(userId) {
   const user = db.prepare("SELECT wx_openid AS openid FROM users WHERE id = ?").get(userId);
   return user?.openid || "";
@@ -150,6 +155,109 @@ router.get("/square", authRequired, (req, res) => {
     }));
 
   res.json({ items, pagination: { limit, offset } });
+});
+
+router.get("/:id/comments", authRequired, (req, res) => {
+  const postId = req.params.id;
+  const { limit, offset } = parsePagination(req.query);
+  const post = db.prepare("SELECT id FROM posts WHERE id = ?").get(postId);
+  if (!post) {
+    return res.status(404).json({ message: "post not found" });
+  }
+
+  const items = db
+    .prepare(
+      `
+      SELECT
+        c.id,
+        c.post_id AS postId,
+        c.user_id AS userId,
+        c.content,
+        c.is_anonymous AS isAnonymous,
+        c.created_at AS createdAt,
+        u.nickname
+      FROM post_comments c
+      JOIN users u ON u.id = c.user_id
+      WHERE c.post_id = ?
+      ORDER BY c.created_at DESC
+      LIMIT ? OFFSET ?
+      `
+    )
+    .all(postId, limit, offset)
+    .map((item) => ({
+      ...item,
+      isAnonymous: Boolean(Number(item.isAnonymous || 0)),
+      displayName: Number(item.isAnonymous || 0) === 1 ? "匿名旅友" : item.nickname,
+      nickname: undefined,
+    }));
+
+  return res.json({ items: items.reverse(), pagination: { limit, offset } });
+});
+
+router.post("/:id/comments", authRequired, async (req, res, next) => {
+  const postId = req.params.id;
+  const parsed = commentSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: "invalid comment payload", errors: parsed.error.issues });
+  }
+
+  const post = db.prepare("SELECT id FROM posts WHERE id = ?").get(postId);
+  if (!post) {
+    return res.status(404).json({ message: "post not found" });
+  }
+
+  try {
+    const moderation = await moderateText({
+      content: parsed.data.content,
+      openid: getUserOpenId(req.user.id),
+    });
+    if (moderation.status === "rejected") {
+      return res.status(400).json({
+        message: "comment rejected by moderation",
+        moderation,
+      });
+    }
+
+    const commentId = uuidv4();
+    db.prepare(
+      `
+      INSERT INTO post_comments (id, post_id, user_id, content, is_anonymous)
+      VALUES (?, ?, ?, ?, ?)
+      `
+    ).run(commentId, postId, req.user.id, parsed.data.content, parsed.data.isAnonymous ? 1 : 0);
+    db.prepare("UPDATE posts SET comment_count = comment_count + 1, updated_at = datetime('now') WHERE id = ?").run(
+      postId
+    );
+
+    const created = db
+      .prepare(
+        `
+        SELECT
+          c.id,
+          c.post_id AS postId,
+          c.user_id AS userId,
+          c.content,
+          c.is_anonymous AS isAnonymous,
+          c.created_at AS createdAt,
+          u.nickname
+        FROM post_comments c
+        JOIN users u ON u.id = c.user_id
+        WHERE c.id = ?
+        `
+      )
+      .get(commentId);
+
+    return res.status(201).json({
+      comment: {
+        ...created,
+        isAnonymous: Boolean(Number(created.isAnonymous || 0)),
+        displayName: Number(created.isAnonymous || 0) === 1 ? "匿名旅友" : created.nickname,
+        nickname: undefined,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
 });
 
 router.post("/:id/like", authRequired, (req, res) => {

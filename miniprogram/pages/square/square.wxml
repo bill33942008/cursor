@@ -49,7 +49,7 @@
       <block wx:for="{{leftPosts}}" wx:key="id">
         <view class="feed-card pressable list-appear" hover-class="pressable-hover">
           <view class="feed-head">
-            <view class="feed-author">
+            <view class="feed-author pressable" hover-class="pressable-hover" data-userid="{{item.userId}}" data-postid="{{item.id}}" bindtap="openUserProfile">
               <view class="avatar-dot"></view>
               <view>
                 <text class="feed-user">{{item.displayName}}</text>
@@ -87,8 +87,30 @@
 
           <view class="feed-actions">
             <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="likePost">❤️ {{item.likeCount}}</view>
-            <view class="action-item pressable" hover-class="pressable-hover" bindtap="onCommentTap">💬 {{item.commentCount}}</view>
+            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="toggleComments">💬 {{item.commentCount}}</view>
             <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="onShareTap">🔁</view>
+          </view>
+
+          <view wx:if="{{item.commentsVisible}}" class="comments-box">
+            <view wx:if="{{item.commentsLoading}}" class="comments-loading">评论加载中...</view>
+            <view wx:if="{{!item.commentsLoading && item.comments.length === 0}}" class="comments-empty">暂无评论，来抢沙发</view>
+            <block wx:for="{{item.comments}}" wx:key="id" wx:for-item="comment">
+              <view class="comment-row">
+                <text class="comment-name">{{comment.displayName}}</text>
+                <text class="comment-content">{{comment.content}}</text>
+              </view>
+            </block>
+            <view class="comment-input-row">
+              <input
+                class="comment-input"
+                placeholder="写下你的评论..."
+                placeholder-style="color:#98a2b3;font-size:24rpx;"
+                value="{{item.commentDraft}}"
+                data-id="{{item.id}}"
+                bindinput="onCommentInput"
+              />
+              <button class="icon-btn comment-send" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="submitComment">发送</button>
+            </view>
           </view>
         </view>
       </block>
@@ -97,7 +119,7 @@
       <block wx:for="{{rightPosts}}" wx:key="id">
         <view class="feed-card pressable list-appear" hover-class="pressable-hover">
           <view class="feed-head">
-            <view class="feed-author">
+            <view class="feed-author pressable" hover-class="pressable-hover" data-userid="{{item.userId}}" data-postid="{{item.id}}" bindtap="openUserProfile">
               <view class="avatar-dot"></view>
               <view>
                 <text class="feed-user">{{item.displayName}}</text>
@@ -135,8 +157,30 @@
 
           <view class="feed-actions">
             <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="likePost">❤️ {{item.likeCount}}</view>
-            <view class="action-item pressable" hover-class="pressable-hover" bindtap="onCommentTap">💬 {{item.commentCount}}</view>
+            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="toggleComments">💬 {{item.commentCount}}</view>
             <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="onShareTap">🔁</view>
+          </view>
+
+          <view wx:if="{{item.commentsVisible}}" class="comments-box">
+            <view wx:if="{{item.commentsLoading}}" class="comments-loading">评论加载中...</view>
+            <view wx:if="{{!item.commentsLoading && item.comments.length === 0}}" class="comments-empty">暂无评论，来抢沙发</view>
+            <block wx:for="{{item.comments}}" wx:key="id" wx:for-item="comment">
+              <view class="comment-row">
+                <text class="comment-name">{{comment.displayName}}</text>
+                <text class="comment-content">{{comment.content}}</text>
+              </view>
+            </block>
+            <view class="comment-input-row">
+              <input
+                class="comment-input"
+                placeholder="写下你的评论..."
+                placeholder-style="color:#98a2b3;font-size:24rpx;"
+                value="{{item.commentDraft}}"
+                data-id="{{item.id}}"
+                bindinput="onCommentInput"
+              />
+              <button class="icon-btn comment-send" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="submitComment">发送</button>
+            </view>
           </view>
         </view>
       </block>

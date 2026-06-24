@@ -23,7 +23,15 @@ Page({
   },
 
   onShow() {
+    this.syncTabBar();
     this.loadProfileData();
+  },
+
+  syncTabBar() {
+    if (typeof this.getTabBar !== "function") return;
+    const tabBar = this.getTabBar();
+    if (!tabBar || typeof tabBar.setData !== "function") return;
+    tabBar.setData({ selected: 3 });
   },
 
   async loadProfileData() {
@@ -90,8 +98,18 @@ Page({
     }
   },
 
+  openUserProfile(e) {
+    const userId = e.currentTarget.dataset.id;
+    if (!userId) return;
+    wx.navigateTo({ url: `/pages/user/public?userId=${userId}` });
+  },
+
   goSettings() {
     wx.navigateTo({ url: "/pages/settings/index" });
+  },
+
+  goTimelineManage() {
+    wx.navigateTo({ url: "/pages/timeline/manage" });
   },
 
   goPrivacy() {

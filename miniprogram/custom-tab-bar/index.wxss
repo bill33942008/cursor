@@ -10,7 +10,8 @@
 
 .tabbar-inner {
   pointer-events: auto;
-  margin: 0 20rpx 18rpx;
+  width: 640rpx;
+  margin: 0 auto 18rpx;
   padding: 12rpx 8rpx calc(12rpx + env(safe-area-inset-bottom));
   border-radius: 28rpx;
   background: rgba(255, 255, 255, 0.96);

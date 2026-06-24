@@ -32,6 +32,13 @@ Component({
   },
 
   methods: {
+    syncFromCurrentPage() {
+      const pages = getCurrentPages();
+      const current = pages[pages.length - 1];
+      if (!current || !current.route) return;
+      this.updateSelectedByRoute(`/${current.route}`);
+    },
+
     updateSelectedByRoute(route) {
       const selected = TABS.findIndex((tab) => tab.pagePath === route);
       if (selected >= 0 && selected !== this.data.selected) {
@@ -51,10 +58,13 @@ Component({
 
   pageLifetimes: {
     show() {
-      const pages = getCurrentPages();
-      const current = pages[pages.length - 1];
-      if (!current || !current.route) return;
-      this.updateSelectedByRoute(`/${current.route}`);
+      this.syncFromCurrentPage();
+    },
+  },
+
+  lifetimes: {
+    attached() {
+      this.syncFromCurrentPage();
     },
   },
 });

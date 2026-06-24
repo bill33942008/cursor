@@ -48,6 +48,17 @@ Page({
     uploading: false,
   },
 
+  onShow() {
+    this.syncTabBar();
+  },
+
+  syncTabBar() {
+    if (typeof this.getTabBar !== "function") return;
+    const tabBar = this.getTabBar();
+    if (!tabBar || typeof tabBar.setData !== "function") return;
+    tabBar.setData({ selected: 1 });
+  },
+
   onContentInput(e) {
     const value = e.detail.value;
     this.setData({ content: value, contentCount: value.length });

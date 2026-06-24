@@ -129,6 +129,19 @@ Base URL: `http://localhost:3000`
 
 举报动态。
 
+### GET `/api/posts/:id/comments?limit=20&offset=0`
+
+获取动态评论列表。
+
+### POST `/api/posts/:id/comments`
+
+```json
+{
+  "content": "同路！我也在这趟车上",
+  "isAnonymous": false
+}
+```
+
 ---
 
 ## 5) 好友系统
@@ -331,3 +344,49 @@ Base URL: `http://localhost:3000`
 ### GET `/health`
 
 返回服务可用状态。
+
+---
+
+## 10) 用户主页与时间线
+
+### GET `/api/users/:id/public-profile`
+
+返回用户公开资料、好友关系状态、时间线可见性。
+
+### GET `/api/users/:id/timeline?limit=20&offset=0`
+
+返回目标用户的公开时间线（若该用户未公开则 `allowed=false`）。
+
+### GET `/api/users/me/timeline/visibility`
+
+返回我的时间线对外可见开关。
+
+### POST `/api/users/me/timeline/visibility`
+
+```json
+{ "timelineIsPublic": true }
+```
+
+### GET `/api/users/me/timeline?limit=20&offset=0`
+
+获取我的时间线记录。
+
+### POST `/api/users/me/timeline`
+
+```json
+{
+  "title": "抵达杭州东",
+  "location": "杭州东站",
+  "note": "准备换乘地铁",
+  "occurredAt": "2026-06-24T09:00:00.000Z",
+  "isPublic": true
+}
+```
+
+### PUT `/api/users/me/timeline/:eventId`
+
+更新我的时间线记录。
+
+### DELETE `/api/users/me/timeline/:eventId`
+
+删除我的时间线记录。

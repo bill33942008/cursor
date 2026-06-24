@@ -25,7 +25,15 @@ Page({
   },
 
   onShow() {
+    this.syncTabBar();
     this.loadGroups();
+  },
+
+  syncTabBar() {
+    if (typeof this.getTabBar !== "function") return;
+    const tabBar = this.getTabBar();
+    if (!tabBar || typeof tabBar.setData !== "function") return;
+    tabBar.setData({ selected: 2 });
   },
 
   onDestinationKeywordInput(e) {

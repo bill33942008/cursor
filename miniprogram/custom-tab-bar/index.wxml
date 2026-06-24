@@ -2,7 +2,7 @@
   <view class="tabbar-inner">
     <block wx:for="{{tabs}}" wx:key="pagePath">
       <view
-        class="tab-item {{selected === index ? 'active' : ''}}"
+        class="tab-item {{selected == index ? 'active' : ''}}"
         data-path="{{item.pagePath}}"
         data-index="{{index}}"
         hover-class="tab-item-hover"

@@ -39,6 +39,11 @@
 
   <view class="card">
     <view class="section-title">设置与安全</view>
+    <view class="menu-item pressable" hover-class="pressable-hover" bindtap="goTimelineManage">
+      <text class="menu-icon">🗺️</text>
+      <text class="menu-text">我的时间线</text>
+      <text class="menu-arrow">›</text>
+    </view>
     <view class="menu-item pressable" hover-class="pressable-hover" bindtap="goSettings">
       <text class="menu-icon">⚙️</text>
       <text class="menu-text">设置中心</text>
@@ -64,7 +69,7 @@
       </view>
     </block>
     <block wx:for="{{incomingRequests}}" wx:key="id">
-      <view class="request-item">
+      <view class="request-item pressable" hover-class="pressable-hover" data-id="{{item.fromUserId}}" bindtap="openUserProfile">
         <view class="request-left">
           <view class="dot"></view>
           <view>
@@ -73,8 +78,8 @@
           </view>
         </view>
         <view class="request-actions">
-          <button class="icon-btn action-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" data-action="accept" bindtap="handleRequest">同意</button>
-          <button class="btn-ghost action-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" data-action="reject" bindtap="handleRequest">拒绝</button>
+          <button class="icon-btn action-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" data-action="accept" catchtap="handleRequest">同意</button>
+          <button class="btn-ghost action-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" data-action="reject" catchtap="handleRequest">拒绝</button>
         </view>
       </view>
     </block>
@@ -88,7 +93,7 @@
       </view>
     </block>
     <block wx:for="{{friends}}" wx:key="id">
-      <view class="friend-item">
+      <view class="friend-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="openUserProfile">
         <view class="friend-avatar"></view>
         <view class="friend-main">
           <text class="friend-name">{{item.nickname}}</text>

@@ -133,6 +133,7 @@ function initSchema() {
       bio TEXT,
       is_banned INTEGER NOT NULL DEFAULT 0,
       last_active_at TEXT,
+      timeline_is_public INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -310,6 +311,30 @@ function initSchema() {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS post_comments (
+      id TEXT PRIMARY KEY,
+      post_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      content TEXT NOT NULL,
+      is_anonymous INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS user_timeline_events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      location TEXT NOT NULL,
+      note TEXT,
+      occurred_at TEXT NOT NULL,
+      is_public INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
   `);
 
   addColumnIfMissing("posts", "moderation_status", "moderation_status TEXT NOT NULL DEFAULT 'approved'");
@@ -322,6 +347,7 @@ function initSchema() {
   addColumnIfMissing("reports", "handled_by_admin", "handled_by_admin TEXT");
   addColumnIfMissing("reports", "handled_at", "handled_at TEXT");
   addColumnIfMissing("users", "last_active_at", "last_active_at TEXT");
+  addColumnIfMissing("users", "timeline_is_public", "timeline_is_public INTEGER NOT NULL DEFAULT 0");
 
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts (created_at DESC);
@@ -337,8 +363,12 @@ function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_media_assets_mod_status ON media_assets (moderation_status, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_users_last_active_at ON users (last_active_at DESC);
     CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_users_timeline_public ON users (timeline_is_public);
     CREATE INDEX IF NOT EXISTS idx_daily_active_users_date ON daily_active_users (activity_date DESC);
     CREATE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users (username);
+    CREATE INDEX IF NOT EXISTS idx_post_comments_post_id ON post_comments (post_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_user_timeline_events_user_id ON user_timeline_events (user_id, occurred_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_user_timeline_events_public ON user_timeline_events (is_public, occurred_at DESC);
   `);
 }
 

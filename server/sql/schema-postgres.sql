@@ -11,10 +11,12 @@ CREATE TABLE IF NOT EXISTS users (
   bio VARCHAR(240),
   is_banned BOOLEAN NOT NULL DEFAULT FALSE,
   last_active_at TIMESTAMPTZ,
+  timeline_is_public BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_users_last_active_at ON users(last_active_at DESC);
+CREATE INDEX IF NOT EXISTS idx_users_timeline_public ON users(timeline_is_public);
 
 CREATE TABLE IF NOT EXISTS user_sessions (
   token UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -65,6 +67,16 @@ CREATE TABLE IF NOT EXISTS post_likes (
   PRIMARY KEY (post_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS post_comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  is_anonymous BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_post_comments_post_created_at ON post_comments(post_id, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS friend_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   from_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -82,6 +94,22 @@ CREATE TABLE IF NOT EXISTS friendships (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (user_id, friend_user_id)
 );
+
+CREATE TABLE IF NOT EXISTS user_timeline_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(80) NOT NULL,
+  location VARCHAR(80) NOT NULL,
+  note VARCHAR(500),
+  occurred_at TIMESTAMPTZ NOT NULL,
+  is_public BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_user_timeline_events_user_occurred_at
+  ON user_timeline_events(user_id, occurred_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_timeline_events_public_occurred_at
+  ON user_timeline_events(is_public, occurred_at DESC);
 
 CREATE TABLE IF NOT EXISTS groups_table (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

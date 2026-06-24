@@ -109,6 +109,60 @@
   border-radius: 999rpx;
 }
 
+.comments-box {
+  margin-top: 10rpx;
+  padding-top: 10rpx;
+  border-top: 1rpx dashed #eceff4;
+}
+
+.comments-loading,
+.comments-empty {
+  font-size: 22rpx;
+  color: #98a2b3;
+  margin-bottom: 8rpx;
+}
+
+.comment-row {
+  margin-bottom: 6rpx;
+  font-size: 23rpx;
+  line-height: 1.5;
+}
+
+.comment-name {
+  color: #344054;
+  font-weight: 600;
+  margin-right: 8rpx;
+}
+
+.comment-content {
+  color: #475467;
+}
+
+.comment-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 8rpx;
+}
+
+.comment-input {
+  flex: 1;
+  height: 58rpx;
+  line-height: 58rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid #e4e7ec;
+  background: #f8f9fc;
+  font-size: 24rpx;
+  padding: 0 16rpx;
+}
+
+.comment-send {
+  height: 58rpx;
+  line-height: 58rpx;
+  padding: 0 14rpx;
+  font-size: 22rpx;
+}
+
 .skeleton-card {
   padding: 16rpx;
 }

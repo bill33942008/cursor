@@ -1,0 +1,68 @@
+<view class="page-wrap">
+  <view class="card">
+    <view class="section-title">我的时间线</view>
+    <text class="subtitle">记录你在哪个时间去过哪些地方，形成公开旅程故事</text>
+  </view>
+
+  <view class="card">
+    <view class="row-between">
+      <view>
+        <text class="section-title tiny-title">允许他人查看我的时间线</text>
+        <text class="subtitle">关闭后，其他人只能看到你的基本信息</text>
+      </view>
+      <switch
+        color="#ff2442"
+        checked="{{timelineIsPublic}}"
+        disabled="{{savingVisibility}}"
+        bindchange="onTimelinePublicChange"
+      />
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">新增旅程记录</view>
+    <input class="input-box" placeholder="标题，例如：出发去北京" data-key="title" bindinput="onFormInput" value="{{form.title}}" />
+    <input class="input-box" placeholder="地点，例如：北京朝阳站" data-key="location" bindinput="onFormInput" value="{{form.location}}" />
+    <picker mode="date" value="{{form.occurredDate}}" bindchange="onDateChange">
+      <view class="picker-box">{{form.occurredDate ? ("发生日期：" + form.occurredDate) : "选择发生日期"}}</view>
+    </picker>
+    <textarea class="textarea-box" placeholder="补充描述（可选）" data-key="note" bindinput="onFormInput" value="{{form.note}}" />
+    <view class="row-between event-public">
+      <text class="subtitle">该条记录对外可见</text>
+      <switch color="#ff2442" checked="{{form.isPublic}}" bindchange="onEventPublicChange" />
+    </view>
+    <button class="btn-primary save-btn" hover-class="pressable-hover" bindtap="createEvent">保存记录</button>
+  </view>
+
+  <view wx:if="{{loading}}" class="card">
+    <view class="skeleton skeleton-line lg"></view>
+    <view class="skeleton skeleton-line"></view>
+    <view class="skeleton skeleton-line sm"></view>
+  </view>
+
+  <view wx:if="{{!loading && events.length === 0}}" class="card state-card">
+    <text class="state-icon">🧭</text>
+    <text class="section-title">还没有时间线记录</text>
+    <text class="subtitle">添加第一条记录，开始你的旅程故事</text>
+  </view>
+
+  <view wx:if="{{!loading && events.length > 0}}" class="timeline-list">
+    <block wx:for="{{events}}" wx:key="id">
+      <view class="timeline-item list-appear">
+        <view class="timeline-dot"></view>
+        <view class="timeline-card">
+          <view class="row-between">
+            <text class="event-title">{{item.title}}</text>
+            <text class="chip">{{item.isPublic ? "公开" : "私密"}}</text>
+          </view>
+          <text class="subtitle">{{item.location}}</text>
+          <text class="muted">{{item.occurredAt}}</text>
+          <text wx:if="{{item.note}}" class="event-note">{{item.note}}</text>
+          <view class="event-actions">
+            <button class="btn-ghost mini-del" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="removeEvent">删除</button>
+          </view>
+        </view>
+      </view>
+    </block>
+  </view>
+</view>
