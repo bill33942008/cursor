@@ -11,9 +11,11 @@ Page({
     readyToEnter: false,
     entering: false,
     authHint: "",
+    authRequired: true,
   },
 
   onLoad() {
+    app.globalData.splashShownThisLaunch = true;
     this.launchAt = Date.now();
     this.bootstrap();
   },
@@ -21,15 +23,16 @@ Page({
   async bootstrap() {
     try {
       const hasSession = Boolean(app.globalData.token);
-      if (hasSession) {
+      const cachedProfile = app.globalData.wxUserProfile || (!app.globalData.isTouristMode ? wx.getStorageSync("wxUserProfile") : null);
+      const hasProfile = Boolean(cachedProfile?.nickname || cachedProfile?.avatarUrl);
+
+      if (hasSession && hasProfile) {
         await this.waitForMinimumStay();
         this.enterApp();
         return;
       }
 
-      // If a profile was already authorized before, restore silently.
-      const cachedProfile = app.globalData.isTouristMode ? null : wx.getStorageSync("wxUserProfile");
-      if (cachedProfile && (cachedProfile.nickname || cachedProfile.avatarUrl)) {
+      if (!hasSession && hasProfile) {
         await app.ensureAuthSession({ profile: cachedProfile });
         await this.waitForMinimumStay();
         this.enterApp();
@@ -37,11 +40,15 @@ Page({
       }
 
       await this.waitForMinimumStay();
-      this.setData({ readyToEnter: true });
+      this.setData({
+        readyToEnter: true,
+        authRequired: !app.globalData.isTouristMode,
+      });
     } catch (err) {
       await this.waitForMinimumStay();
       this.setData({
         readyToEnter: true,
+        authRequired: !app.globalData.isTouristMode,
         authHint: err.message || "初始化失败，请点击下方进入",
       });
     }
@@ -71,6 +78,10 @@ Page({
   },
 
   async quickEnter() {
+    if (this.data.authRequired) {
+      wx.showToast({ title: "请先授权微信资料", icon: "none" });
+      return;
+    }
     if (this.data.entering) return;
     this.setData({ entering: true, authHint: "" });
     try {

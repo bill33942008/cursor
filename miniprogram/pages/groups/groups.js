@@ -67,7 +67,7 @@ Page({
     this.setData({ loading: true });
     try {
       const kw = encodeURIComponent(this.data.destinationKeyword.trim());
-      const url = `/api/groups/discover?limit=20&offset=0${kw ? `&destination=${kw}` : ""}`;
+      const url = `/api/groups/discover?limit=20&offset=0${kw ? `&keyword=${kw}` : ""}`;
       const res = await request({ url, method: "GET" });
       this.setData({
         groups: (res.items || []).map((item) => ({

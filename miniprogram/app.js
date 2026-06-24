@@ -6,6 +6,7 @@ App({
     user: null,
     isTouristMode: true,
     wxUserProfile: null,
+    splashShownThisLaunch: false,
   },
 
   onLaunch() {
@@ -38,6 +39,29 @@ App({
 
     const wsBase = this.globalData.baseUrl.replace(/^http/, "ws").replace(/\/$/, "");
     this.globalData.wsUrl = `${wsBase}/ws`;
+  },
+
+  onShow() {
+    if (this.globalData.splashShownThisLaunch) {
+      return;
+    }
+    const redirectToSplashIfNeeded = () => {
+      if (this.globalData.splashShownThisLaunch) {
+        return;
+      }
+      const pages = getCurrentPages();
+      const current = pages[pages.length - 1];
+      const route = current?.route || "";
+      if (!route || route === "pages/splash/index") {
+        return;
+      }
+      this.globalData.splashShownThisLaunch = true;
+      wx.reLaunch({
+        url: "/pages/splash/index",
+      });
+    };
+    redirectToSplashIfNeeded();
+    setTimeout(redirectToSplashIfNeeded, 60);
   },
 
   requestUserProfile() {

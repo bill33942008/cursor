@@ -23,7 +23,7 @@ button::after {
 }
 
 .page-wrap {
-  padding: 24rpx 24rpx calc(124rpx + env(safe-area-inset-bottom));
+  padding: 24rpx 24rpx calc(92rpx + env(safe-area-inset-bottom));
 }
 
 .hero-card {

@@ -29,21 +29,6 @@
     </view>
   </view>
 
-  <view class="card add-card">
-    <view class="section-title">添加好友</view>
-    <view class="add-row">
-      <input class="input-box friend-input" placeholder="输入对方用户ID" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{targetUserId}}" bindinput="onTargetUserInput" />
-      <button class="btn-primary add-btn" size="mini" hover-class="pressable-hover" bindtap="sendFriendRequest">发送</button>
-    </view>
-    <input
-      class="input-box request-note-input"
-      placeholder="申请备注（可选）"
-      placeholder-style="color:#98a2b3;font-size:24rpx;"
-      value="{{requestMessage}}"
-      bindinput="onRequestMessageInput"
-    />
-  </view>
-
   <view class="card">
     <view class="section-title">设置与安全</view>
     <view class="menu-item pressable" hover-class="pressable-hover" bindtap="goTimelineManage">

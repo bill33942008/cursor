@@ -2,10 +2,15 @@
   margin-bottom: 16rpx;
 }
 
+.filter-card .input-box {
+  margin-bottom: 16rpx;
+}
+
 .actions-inline {
   display: flex;
   align-items: center;
   gap: 12rpx;
+  margin-top: 2rpx;
 }
 
 .create-toggle {

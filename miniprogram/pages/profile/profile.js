@@ -20,8 +20,6 @@ Page({
     friends: [],
     incomingRequests: [],
     outgoingRequests: [],
-    targetUserId: "",
-    requestMessage: "",
   },
 
   onShow() {
@@ -57,36 +55,6 @@ Page({
       wx.showToast({ title: err.message || "加载失败", icon: "none" });
     } finally {
       this.setData({ loading: false });
-    }
-  },
-
-  onTargetUserInput(e) {
-    this.setData({ targetUserId: e.detail.value });
-  },
-
-  onRequestMessageInput(e) {
-    this.setData({ requestMessage: e.detail.value || "" });
-  },
-
-  async sendFriendRequest() {
-    if (!this.data.targetUserId.trim()) {
-      wx.showToast({ title: "请输入用户ID", icon: "none" });
-      return;
-    }
-    try {
-      await request({
-        url: "/api/friends/request",
-        method: "POST",
-        data: {
-          toUserId: this.data.targetUserId.trim(),
-          message: (this.data.requestMessage || "").trim() || "你好，我也在路上",
-        },
-      });
-      wx.showToast({ title: "申请已发送", icon: "success" });
-      this.setData({ targetUserId: "", requestMessage: "" });
-      this.loadProfileData();
-    } catch (err) {
-      wx.showToast({ title: err.message || "发送失败", icon: "none" });
     }
   },
 

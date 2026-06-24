@@ -62,6 +62,13 @@
   margin-top: 12rpx;
 }
 
+.must-auth-text {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #475467;
+}
+
 .hint-text {
   display: block;
   margin-top: 10rpx;

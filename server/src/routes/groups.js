@@ -78,6 +78,7 @@ router.get("/discover", authRequired, (req, res) => {
   const { limit, offset } = parsePagination(req.query);
   const category = req.query.category;
   const destination = req.query.destination;
+  const keyword = String(req.query.keyword || "").trim();
 
   let query = `
     SELECT
@@ -111,6 +112,11 @@ router.get("/discover", authRequired, (req, res) => {
   if (destination) {
     query += " AND g.destination LIKE ?";
     params.push(`%${destination}%`);
+  }
+  if (keyword) {
+    query += " AND (g.name LIKE ? OR g.destination LIKE ? OR g.route_code LIKE ? OR g.description LIKE ?)";
+    const like = `%${keyword}%`;
+    params.push(like, like, like, like);
   }
 
   query += " ORDER BY g.created_at DESC LIMIT ? OFFSET ?";

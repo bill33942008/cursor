@@ -10,9 +10,10 @@
       <button class="btn-primary enter-btn" loading="{{entering}}" disabled="{{entering}}" hover-class="pressable-hover" bindtap="authorizeAndEnter">
         授权微信信息并进入
       </button>
-      <button class="btn-ghost enter-btn ghost-btn" loading="{{entering}}" disabled="{{entering}}" hover-class="pressable-hover" bindtap="quickEnter">
+      <button wx:if="{{!authRequired}}" class="btn-ghost enter-btn ghost-btn" loading="{{entering}}" disabled="{{entering}}" hover-class="pressable-hover" bindtap="quickEnter">
         稍后授权，先进入
       </button>
+      <text wx:if="{{authRequired}}" class="must-auth-text">需授权昵称与头像后才能进入</text>
       <text wx:if="{{authHint}}" class="hint-text">{{authHint}}</text>
     </view>
 

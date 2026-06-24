@@ -91,29 +91,6 @@
   color: #667085;
 }
 
-.add-row {
-  display: flex;
-  align-items: center;
-  gap: 10rpx;
-}
-
-.friend-input {
-  flex: 1;
-}
-
-.add-btn {
-  width: 138rpx;
-  height: 72rpx;
-  line-height: 72rpx;
-}
-
-.request-note-input {
-  margin-top: 10rpx;
-  min-height: 74rpx;
-  padding: 0 16rpx;
-  font-size: 24rpx;
-}
-
 .empty-state {
   padding: 12rpx 0;
 }
