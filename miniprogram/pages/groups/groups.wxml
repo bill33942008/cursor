@@ -1,0 +1,37 @@
+<view class="card">
+  <view class="title">同行群组</view>
+  <view class="subtitle">按目的地、航班、车次寻找同行旅友</view>
+</view>
+
+<view class="card">
+  <input
+    placeholder="按目的地筛选，如 北京"
+    value="{{destinationKeyword}}"
+    bindinput="onDestinationKeywordInput"
+  />
+  <button class="mini-btn" size="mini" bindtap="loadGroups">搜索</button>
+  <button class="mini-btn" size="mini" bindtap="toggleCreate">
+    {{creating ? "收起建群" : "创建群组"}}
+  </button>
+</view>
+
+<view class="card" wx:if="{{creating}}">
+  <input placeholder="群名称（必填）" data-key="name" value="{{createForm.name}}" bindinput="onCreateFieldInput" />
+  <input placeholder="群分类（destination/flight/rail/road_trip/custom）" data-key="category" value="{{createForm.category}}" bindinput="onCreateFieldInput" />
+  <input placeholder="目的地（可选）" data-key="destination" value="{{createForm.destination}}" bindinput="onCreateFieldInput" />
+  <input placeholder="航班/车次（可选）" data-key="routeCode" value="{{createForm.routeCode}}" bindinput="onCreateFieldInput" />
+  <input placeholder="群描述（可选）" data-key="description" value="{{createForm.description}}" bindinput="onCreateFieldInput" />
+  <button class="btn-primary" bindtap="createGroup">提交建群</button>
+</view>
+
+<block wx:for="{{groups}}" wx:key="id">
+  <view class="card">
+    <view class="row">
+      <text class="group-name">{{item.name}}</text>
+      <text class="member-count">{{item.memberCount}}人</text>
+    </view>
+    <view class="subtitle">{{item.category}} | {{item.destination || "未设置目的地"}}</view>
+    <view class="subtitle">群主：{{item.ownerNickname}}</view>
+    <button class="mini-btn" size="mini" data-id="{{item.id}}" bindtap="joinGroup">加入群组</button>
+  </view>
+</block>

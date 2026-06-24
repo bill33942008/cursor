@@ -1,0 +1,31 @@
+<view class="card">
+  <view class="title">发布路上动态</view>
+  <view class="subtitle">可附带行程状态，便于同路旅友看到你</view>
+</view>
+
+<view class="card form">
+  <textarea
+    placeholder="这一程发生了什么？"
+    value="{{content}}"
+    bindinput="onContentInput"
+    maxlength="1000"
+  />
+
+  <picker mode="selector" range="{{transportOptions}}" range-key="label" value="{{transportIndex}}" bindchange="onTransportChange">
+    <view class="picker">交通工具：{{transportOptions[transportIndex].label}}</view>
+  </picker>
+
+  <picker mode="selector" range="{{phaseOptions}}" range-key="label" value="{{phaseIndex}}" bindchange="onPhaseChange">
+    <view class="picker">当前阶段：{{phaseOptions[phaseIndex].label}}</view>
+  </picker>
+
+  <input placeholder="车次/航班（可选）" value="{{routeCode}}" bindinput="onRouteCodeInput" />
+  <input placeholder="出发地（必填）" value="{{origin}}" bindinput="onOriginInput" />
+  <input placeholder="目的地（必填）" value="{{destination}}" bindinput="onDestinationInput" />
+  <input placeholder="出发时间窗口（可选，如 今天 14:00-16:00）" value="{{departureWindow}}" bindinput="onDepartureWindowInput" />
+
+  <switch checked="{{isAnonymous}}" bindchange="onAnonymousChange" />
+  <text class="anonymous-tip">匿名发布（后台仍保留真实账号映射）</text>
+
+  <button class="btn-primary" bindtap="submit">发布</button>
+</view>

@@ -1,0 +1,21 @@
+{
+  "name": "tongxing-server",
+  "version": "0.1.0",
+  "description": "Backend service for 同行/在路上 mini program MVP",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node src/index.js",
+    "start": "NODE_ENV=production node src/index.js",
+    "check": "node -e \"require('./src/db').checkConnection(); console.log('database: ok')\""
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "morgan": "^1.10.0",
+    "uuid": "^11.1.0",
+    "zod": "^3.25.76"
+  }
+}

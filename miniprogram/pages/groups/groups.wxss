@@ -1,0 +1,26 @@
+input {
+  background: #f8fafc;
+  padding: 16rpx;
+  border-radius: 10rpx;
+  margin-bottom: 12rpx;
+}
+
+.mini-btn {
+  margin-right: 14rpx;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.group-name {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.member-count {
+  font-size: 24rpx;
+  color: #6b7280;
+}

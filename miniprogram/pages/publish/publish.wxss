@@ -1,0 +1,29 @@
+.form textarea {
+  width: 100%;
+  height: 220rpx;
+  padding: 16rpx;
+  background: #f8fafc;
+  border-radius: 10rpx;
+  margin-bottom: 18rpx;
+}
+
+.form input {
+  background: #f8fafc;
+  padding: 16rpx;
+  border-radius: 10rpx;
+  margin-bottom: 12rpx;
+}
+
+.picker {
+  background: #f8fafc;
+  padding: 16rpx;
+  border-radius: 10rpx;
+  margin-bottom: 12rpx;
+}
+
+.anonymous-tip {
+  display: block;
+  color: #6b7280;
+  margin: 10rpx 0 20rpx;
+  font-size: 24rpx;
+}

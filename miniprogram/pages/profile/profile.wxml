@@ -1,0 +1,41 @@
+<view class="card">
+  <view class="title">我的主页</view>
+  <view class="subtitle">当前账号与好友关系管理</view>
+</view>
+
+<view class="card" wx:if="{{user}}">
+  <view>昵称：{{user.nickname}}</view>
+  <view class="subtitle">用户ID：{{user.id}}</view>
+</view>
+
+<view class="card">
+  <view class="title section-title">添加好友</view>
+  <input placeholder="输入对方用户ID" value="{{targetUserId}}" bindinput="onTargetUserInput" />
+  <button class="mini-btn" size="mini" bindtap="sendFriendRequest">发送申请</button>
+</view>
+
+<view class="card">
+  <view class="title section-title">收到的好友申请</view>
+  <block wx:if="{{incomingRequests.length === 0}}">
+    <text class="subtitle">暂无申请</text>
+  </block>
+  <block wx:for="{{incomingRequests}}" wx:key="id">
+    <view class="request-item">
+      <text>{{item.fromNickname}}（{{item.fromUserId}}）</text>
+      <view>
+        <button class="mini-btn" size="mini" data-id="{{item.id}}" data-action="accept" bindtap="handleRequest">同意</button>
+        <button class="mini-btn" size="mini" data-id="{{item.id}}" data-action="reject" bindtap="handleRequest">拒绝</button>
+      </view>
+    </view>
+  </block>
+</view>
+
+<view class="card">
+  <view class="title section-title">我的好友（{{friends.length}}）</view>
+  <block wx:for="{{friends}}" wx:key="id">
+    <view class="friend-item">
+      <text>{{item.nickname}}</text>
+      <text class="subtitle">{{item.id}}</text>
+    </view>
+  </block>
+</view>

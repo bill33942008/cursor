@@ -1,0 +1,21 @@
+input {
+  background: #f8fafc;
+  padding: 16rpx;
+  border-radius: 10rpx;
+  margin: 12rpx 0;
+}
+
+.section-title {
+  font-size: 30rpx;
+  margin-bottom: 10rpx;
+}
+
+.request-item,
+.friend-item {
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #f0f2f5;
+}
+
+.mini-btn {
+  margin-right: 10rpx;
+}

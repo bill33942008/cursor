@@ -1,0 +1,9 @@
+{
+  "desc": "同行/在路上 sitemap",
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
+}

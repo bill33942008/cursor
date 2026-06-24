@@ -1,0 +1,18 @@
+{
+  "description": "同行/在路上 mini program MVP",
+  "packOptions": {
+    "ignore": []
+  },
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": false
+  },
+  "compileType": "miniprogram",
+  "libVersion": "3.6.8",
+  "appid": "touristappid",
+  "projectname": "tongxing-miniapp",
+  "miniprogramRoot": "./",
+  "condition": {}
+}

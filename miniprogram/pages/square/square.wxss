@@ -1,0 +1,46 @@
+.page {
+  padding-bottom: 24rpx;
+}
+
+.error {
+  color: #b91c1c;
+}
+
+.post-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10rpx;
+}
+
+.post-user {
+  font-weight: 600;
+}
+
+.post-time {
+  font-size: 22rpx;
+  color: #6b7280;
+}
+
+.post-content {
+  line-height: 1.6;
+  margin-bottom: 12rpx;
+}
+
+.post-tags {
+  margin-bottom: 16rpx;
+}
+
+.tag {
+  display: inline-block;
+  background: #eaf2ff;
+  color: #1f6feb;
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  margin-right: 8rpx;
+  font-size: 22rpx;
+}
+
+.mini-btn {
+  margin-left: 0;
+}

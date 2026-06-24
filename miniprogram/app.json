@@ -1,0 +1,37 @@
+{
+  "pages": [
+    "pages/square/square",
+    "pages/publish/publish",
+    "pages/groups/groups",
+    "pages/profile/profile"
+  ],
+  "window": {
+    "navigationBarTitleText": "同行/在路上",
+    "navigationBarBackgroundColor": "#1f6feb",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f7fb"
+  },
+  "tabBar": {
+    "selectedColor": "#1f6feb",
+    "list": [
+      {
+        "pagePath": "pages/square/square",
+        "text": "广场"
+      },
+      {
+        "pagePath": "pages/publish/publish",
+        "text": "发布"
+      },
+      {
+        "pagePath": "pages/groups/groups",
+        "text": "同行群"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}
