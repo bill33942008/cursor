@@ -3,7 +3,8 @@
     "pages/square/square",
     "pages/publish/publish",
     "pages/groups/groups",
-    "pages/profile/profile"
+    "pages/profile/profile",
+    "pages/chat/chat"
   ],
   "window": {
     "navigationBarTitleText": "同行/在路上",

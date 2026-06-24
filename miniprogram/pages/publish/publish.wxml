@@ -27,5 +27,17 @@
   <switch checked="{{isAnonymous}}" bindchange="onAnonymousChange" />
   <text class="anonymous-tip">匿名发布（后台仍保留真实账号映射）</text>
 
+  <view class="media-header">
+    <text>媒体（图片/视频）</text>
+    <button class="mini-btn" size="mini" bindtap="chooseMedia" loading="{{uploading}}">选择媒体</button>
+  </view>
+  <block wx:for="{{mediaAssets}}" wx:key="id">
+    <view class="media-item">
+      <text class="subtitle">{{item.mimeType}} | 审核: {{item.moderationStatus}}</text>
+      <text class="media-url">{{item.url}}</text>
+      <button class="mini-btn" size="mini" data-id="{{item.id}}" bindtap="removeMedia">移除</button>
+    </view>
+  </block>
+
   <button class="btn-primary" bindtap="submit">发布</button>
 </view>

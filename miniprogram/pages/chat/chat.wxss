@@ -1,0 +1,43 @@
+.messages {
+  height: 70vh;
+  padding: 0 20rpx;
+}
+
+.message-item {
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 14rpx;
+  margin-bottom: 10rpx;
+}
+
+.msg-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6rpx;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.time {
+  font-size: 22rpx;
+  color: #6b7280;
+}
+
+.msg-content {
+  line-height: 1.5;
+}
+
+.composer input {
+  background: #f8fafc;
+  border-radius: 10rpx;
+  padding: 14rpx;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-top: 10rpx;
+}

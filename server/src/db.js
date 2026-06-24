@@ -13,6 +13,14 @@ const db = new Database(absoluteDbPath);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
+function addColumnIfMissing(tableName, columnName, definitionSql) {
+  const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
+  const exists = columns.some((column) => column.name === columnName);
+  if (!exists) {
+    db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${definitionSql};`);
+  }
+}
+
 function initSchema() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -57,6 +65,7 @@ function initSchema() {
       media_json TEXT NOT NULL DEFAULT '[]',
       visibility TEXT NOT NULL DEFAULT 'public',
       is_anonymous INTEGER NOT NULL DEFAULT 0,
+      moderation_status TEXT NOT NULL DEFAULT 'approved',
       like_count INTEGER NOT NULL DEFAULT 0,
       comment_count INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -104,6 +113,7 @@ function initSchema() {
       route_code TEXT,
       description TEXT,
       status TEXT NOT NULL DEFAULT 'active',
+      moderation_status TEXT NOT NULL DEFAULT 'approved',
       expires_at TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -126,6 +136,7 @@ function initSchema() {
       user_id TEXT NOT NULL,
       content TEXT NOT NULL,
       is_anonymous INTEGER NOT NULL DEFAULT 0,
+      moderation_status TEXT NOT NULL DEFAULT 'approved',
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (group_id) REFERENCES groups_table(id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -138,16 +149,67 @@ function initSchema() {
       target_id TEXT NOT NULL,
       reason TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'open',
+      handled_by_admin TEXT,
+      handled_at TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (reporter_user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS media_assets (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      storage_key TEXT NOT NULL,
+      url TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      size_bytes INTEGER NOT NULL,
+      moderation_status TEXT NOT NULL DEFAULT 'approved',
+      moderation_reason TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS moderation_events (
+      id TEXT PRIMARY KEY,
+      target_type TEXT NOT NULL,
+      target_id TEXT NOT NULL,
+      moderator_type TEXT NOT NULL,
+      status TEXT NOT NULL,
+      reason TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_actions (
+      id TEXT PRIMARY KEY,
+      action_type TEXT NOT NULL,
+      target_type TEXT NOT NULL,
+      target_id TEXT NOT NULL,
+      payload_json TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts (created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_posts_visibility ON posts (visibility);
+    CREATE INDEX IF NOT EXISTS idx_posts_mod_status ON posts (moderation_status, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_journeys_user_id ON journeys (user_id);
     CREATE INDEX IF NOT EXISTS idx_journeys_transport_dest ON journeys (transport_type, destination);
     CREATE INDEX IF NOT EXISTS idx_group_messages_group_id ON group_messages (group_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_group_messages_mod_status ON group_messages (moderation_status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_groups_mod_status ON groups_table (moderation_status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_reports_status ON reports (status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_media_assets_user_id ON media_assets (user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_media_assets_mod_status ON media_assets (moderation_status, created_at DESC);
   `);
+
+  addColumnIfMissing("posts", "moderation_status", "moderation_status TEXT NOT NULL DEFAULT 'approved'");
+  addColumnIfMissing("groups_table", "moderation_status", "moderation_status TEXT NOT NULL DEFAULT 'approved'");
+  addColumnIfMissing(
+    "group_messages",
+    "moderation_status",
+    "moderation_status TEXT NOT NULL DEFAULT 'approved'"
+  );
+  addColumnIfMissing("reports", "handled_by_admin", "handled_by_admin TEXT");
+  addColumnIfMissing("reports", "handled_at", "handled_at TEXT");
 }
 
 function checkConnection() {

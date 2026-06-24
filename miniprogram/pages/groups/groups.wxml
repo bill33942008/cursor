@@ -32,6 +32,9 @@
     </view>
     <view class="subtitle">{{item.category}} | {{item.destination || "未设置目的地"}}</view>
     <view class="subtitle">群主：{{item.ownerNickname}}</view>
-    <button class="mini-btn" size="mini" data-id="{{item.id}}" bindtap="joinGroup">加入群组</button>
+    <view class="actions">
+      <button class="mini-btn" size="mini" data-id="{{item.id}}" bindtap="joinGroup">加入群组</button>
+      <button class="mini-btn" size="mini" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="enterChat">进入聊天</button>
+    </view>
   </view>
 </block>

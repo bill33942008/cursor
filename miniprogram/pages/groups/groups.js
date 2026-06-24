@@ -57,6 +57,22 @@ Page({
     }
   },
 
+  async enterChat(e) {
+    const groupId = e.currentTarget.dataset.id;
+    const groupName = e.currentTarget.dataset.name || "群聊";
+    try {
+      await request({
+        url: `/api/groups/${groupId}/join`,
+        method: "POST",
+      });
+    } catch (_err) {
+      // Ignore join errors here; if already a member, navigation should still continue.
+    }
+    wx.navigateTo({
+      url: `/pages/chat/chat?groupId=${groupId}&groupName=${encodeURIComponent(groupName)}`,
+    });
+  },
+
   toggleCreate() {
     this.setData({ creating: !this.data.creating });
   },
@@ -67,12 +83,16 @@ Page({
       return;
     }
     try {
-      await request({
+      const res = await request({
         url: "/api/groups",
         method: "POST",
         data: this.data.createForm,
       });
-      wx.showToast({ title: "建群成功", icon: "success" });
+      if (res.moderationStatus === "approved") {
+        wx.showToast({ title: "建群成功", icon: "success" });
+      } else {
+        wx.showToast({ title: "建群成功，等待审核", icon: "none" });
+      }
       this.setData({
         creating: false,
         createForm: {

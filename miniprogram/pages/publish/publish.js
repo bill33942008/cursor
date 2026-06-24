@@ -1,4 +1,4 @@
-const { request } = require("../../utils/request");
+const { request, uploadFile } = require("../../utils/request");
 
 Page({
   data: {
@@ -24,6 +24,8 @@ Page({
     origin: "",
     destination: "",
     departureWindow: "",
+    mediaAssets: [],
+    uploading: false,
   },
 
   onContentInput(e) {
@@ -58,6 +60,43 @@ Page({
     this.setData({ isAnonymous: e.detail.value });
   },
 
+  async chooseMedia() {
+    if (this.data.mediaAssets.length >= 9) {
+      wx.showToast({ title: "最多上传9个媒体文件", icon: "none" });
+      return;
+    }
+    wx.chooseMedia({
+      count: Math.min(9 - this.data.mediaAssets.length, 3),
+      mediaType: ["image", "video"],
+      success: async (res) => {
+        this.setData({ uploading: true });
+        try {
+          const assets = [...this.data.mediaAssets];
+          for (const file of res.tempFiles) {
+            const uploaded = await uploadFile({
+              url: "/api/media/upload",
+              filePath: file.tempFilePath,
+            });
+            assets.push(uploaded.asset);
+          }
+          this.setData({ mediaAssets: assets });
+          wx.showToast({ title: "上传完成", icon: "success" });
+        } catch (err) {
+          wx.showToast({ title: err.message || "上传失败", icon: "none" });
+        } finally {
+          this.setData({ uploading: false });
+        }
+      },
+    });
+  },
+
+  removeMedia(e) {
+    const mediaId = e.currentTarget.dataset.id;
+    this.setData({
+      mediaAssets: this.data.mediaAssets.filter((item) => item.id !== mediaId),
+    });
+  },
+
   async submit() {
     if (!this.data.content.trim()) {
       wx.showToast({ title: "请输入动态内容", icon: "none" });
@@ -86,7 +125,7 @@ Page({
         },
       });
 
-      await request({
+      const postRes = await request({
         url: "/api/posts",
         method: "POST",
         data: {
@@ -94,11 +133,15 @@ Page({
           isAnonymous: this.data.isAnonymous,
           journeyId: journeyRes.journey.id,
           visibility: "public",
-          media: [],
+          mediaAssetIds: this.data.mediaAssets.map((item) => item.id),
         },
       });
 
-      wx.showToast({ title: "发布成功", icon: "success" });
+      if (postRes.post.moderationStatus === "approved") {
+        wx.showToast({ title: "发布成功", icon: "success" });
+      } else {
+        wx.showToast({ title: "发布成功，等待审核", icon: "none" });
+      }
       this.setData({
         content: "",
         routeCode: "",
@@ -106,6 +149,7 @@ Page({
         destination: "",
         departureWindow: "",
         isAnonymous: false,
+        mediaAssets: [],
       });
       setTimeout(() => {
         wx.switchTab({ url: "/pages/square/square" });

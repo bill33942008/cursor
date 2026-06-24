@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require("uuid");
 const { db } = require("../db");
 const { authRequired } = require("../middleware/auth");
 const { parsePagination } = require("../utils");
+const { moderateText } = require("../services/moderation");
 
 const router = express.Router();
 
@@ -11,52 +12,101 @@ const postSchema = z.object({
   content: z.string().min(1).max(1000),
   visibility: z.enum(["public", "friends"]).default("public"),
   isAnonymous: z.boolean().default(false),
-  media: z.array(z.string().url()).max(9).default([]),
+  mediaAssetIds: z.array(z.string().uuid()).max(9).default([]),
   journeyId: z.string().uuid().optional(),
 });
 
-router.post("/", authRequired, (req, res) => {
+function getUserOpenId(userId) {
+  const user = db.prepare("SELECT wx_openid AS openid FROM users WHERE id = ?").get(userId);
+  return user?.openid || "";
+}
+
+router.post("/", authRequired, async (req, res, next) => {
   const parsed = postSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ message: "invalid post payload", errors: parsed.error.issues });
   }
-  const data = parsed.data;
-  const postId = uuidv4();
 
-  db.prepare(
-    `
-    INSERT INTO posts (id, user_id, journey_id, content, media_json, visibility, is_anonymous)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    `
-  ).run(
-    postId,
-    req.user.id,
-    data.journeyId || null,
-    data.content,
-    JSON.stringify(data.media || []),
-    data.visibility,
-    data.isAnonymous ? 1 : 0
-  );
+  try {
+    const data = parsed.data;
+    const postId = uuidv4();
+    const moderation = await moderateText({
+      content: data.content,
+      openid: getUserOpenId(req.user.id),
+    });
+    if (moderation.status === "rejected") {
+      return res.status(400).json({
+        message: "content rejected by moderation",
+        moderation,
+      });
+    }
 
-  const created = db
-    .prepare(
+    let mediaUrls = [];
+    if (data.mediaAssetIds.length) {
+      const rows = db
+        .prepare(
+          `
+          SELECT id, url, moderation_status AS moderationStatus
+          FROM media_assets
+          WHERE user_id = ? AND id IN (${data.mediaAssetIds.map(() => "?").join(",")})
+          `
+        )
+        .all(req.user.id, ...data.mediaAssetIds);
+      if (rows.length !== data.mediaAssetIds.length) {
+        return res.status(400).json({ message: "invalid media assets" });
+      }
+      if (rows.some((item) => item.moderationStatus === "rejected")) {
+        return res.status(400).json({ message: "contains rejected media asset" });
+      }
+      mediaUrls = rows.map((item) => item.url);
+    }
+
+    db.prepare(
       `
-      SELECT id, content, media_json AS mediaJson, visibility,
-             is_anonymous AS isAnonymous, like_count AS likeCount,
-             comment_count AS commentCount, created_at AS createdAt
-      FROM posts
-      WHERE id = ?
+      INSERT INTO posts (
+        id, user_id, journey_id, content, media_json, visibility, is_anonymous, moderation_status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `
-    )
-    .get(postId);
+    ).run(
+      postId,
+      req.user.id,
+      data.journeyId || null,
+      data.content,
+      JSON.stringify(mediaUrls),
+      data.visibility,
+      data.isAnonymous ? 1 : 0,
+      moderation.status
+    );
 
-  res.status(201).json({
-    post: {
-      ...created,
-      media: JSON.parse(created.mediaJson || "[]"),
-      mediaJson: undefined,
-    },
-  });
+    db.prepare(
+      `
+      INSERT INTO moderation_events (id, target_type, target_id, moderator_type, status, reason)
+      VALUES (?, 'post', ?, ?, ?, ?)
+      `
+    ).run(uuidv4(), postId, moderation.provider, moderation.status, moderation.reason || null);
+
+    const created = db
+      .prepare(
+        `
+        SELECT id, content, media_json AS mediaJson, visibility,
+               is_anonymous AS isAnonymous, moderation_status AS moderationStatus,
+               like_count AS likeCount, comment_count AS commentCount, created_at AS createdAt
+        FROM posts
+        WHERE id = ?
+        `
+      )
+      .get(postId);
+
+    return res.status(201).json({
+      post: {
+        ...created,
+        media: JSON.parse(created.mediaJson || "[]"),
+        mediaJson: undefined,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
 });
 
 router.get("/square", authRequired, (req, res) => {
@@ -71,6 +121,7 @@ router.get("/square", authRequired, (req, res) => {
         p.media_json AS mediaJson,
         p.visibility,
         p.is_anonymous AS isAnonymous,
+        p.moderation_status AS moderationStatus,
         p.like_count AS likeCount,
         p.comment_count AS commentCount,
         p.created_at AS createdAt,
@@ -84,6 +135,7 @@ router.get("/square", authRequired, (req, res) => {
       JOIN users u ON u.id = p.user_id
       LEFT JOIN journeys j ON j.id = p.journey_id
       WHERE p.visibility = 'public'
+        AND p.moderation_status = 'approved'
       ORDER BY p.created_at DESC
       LIMIT ? OFFSET ?
       `

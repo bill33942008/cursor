@@ -1,6 +1,7 @@
 App({
   globalData: {
     baseUrl: "http://localhost:3000",
+    wsUrl: "",
     token: "",
     user: null,
   },
@@ -14,5 +15,7 @@ App({
     if (user) {
       this.globalData.user = user;
     }
+    const wsBase = this.globalData.baseUrl.replace(/^http/, "ws").replace(/\/$/, "");
+    this.globalData.wsUrl = `${wsBase}/ws`;
   },
 });

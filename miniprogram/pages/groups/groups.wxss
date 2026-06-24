@@ -9,6 +9,10 @@ input {
   margin-right: 14rpx;
 }
 
+.actions {
+  margin-top: 10rpx;
+}
+
 .row {
   display: flex;
   align-items: center;

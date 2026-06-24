@@ -1,6 +1,14 @@
 const { request } = require("../../utils/request");
 const app = getApp();
 
+function resolveMediaUrl(url) {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  return `${app.globalData.baseUrl}${url}`;
+}
+
 Page({
   data: {
     loading: false,
@@ -58,7 +66,12 @@ Page({
       url: "/api/posts/square?limit=20&offset=0",
       method: "GET",
     });
-    this.setData({ posts: res.items || [] });
+    this.setData({
+      posts: (res.items || []).map((item) => ({
+        ...item,
+        media: (item.media || []).map(resolveMediaUrl),
+      })),
+    });
   },
 
   async likePost(e) {

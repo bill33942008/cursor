@@ -3,6 +3,7 @@ const { z } = require("zod");
 const { v4: uuidv4 } = require("uuid");
 const { db } = require("../db");
 const { authRequired } = require("../middleware/auth");
+const { exchangeCodeForOpenId, isRealLoginMode } = require("../services/wechat");
 
 const router = express.Router();
 
@@ -12,55 +13,59 @@ const loginSchema = z.object({
   avatarUrl: z.string().url().optional(),
 });
 
-router.post("/wx-login", (req, res) => {
+router.post("/wx-login", async (req, res, next) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ message: "invalid login payload", errors: parsed.error.issues });
   }
 
-  const { code, nickname, avatarUrl } = parsed.data;
-  const mockOpenId = `mock_wx_${code}`;
+  try {
+    const { code, nickname, avatarUrl } = parsed.data;
+    const loginResult = await exchangeCodeForOpenId(code);
+    const wxOpenId = loginResult.openid;
 
-  const existingUser = db.prepare("SELECT id FROM users WHERE wx_openid = ?").get(mockOpenId);
-  const userId = existingUser?.id || uuidv4();
+    const existingUser = db.prepare("SELECT id FROM users WHERE wx_openid = ?").get(wxOpenId);
+    const userId = existingUser?.id || uuidv4();
 
-  if (existingUser) {
-    db.prepare(
-      `
-      UPDATE users
-      SET nickname = ?, avatar_url = COALESCE(?, avatar_url), updated_at = datetime('now')
-      WHERE id = ?
-    `
-    ).run(nickname, avatarUrl || null, userId);
-  } else {
     db.prepare(
       `
       INSERT INTO users (id, wx_openid, nickname, avatar_url)
       VALUES (?, ?, ?, ?)
+      ON CONFLICT(wx_openid) DO UPDATE SET
+        nickname = excluded.nickname,
+        avatar_url = COALESCE(excluded.avatar_url, users.avatar_url),
+        updated_at = datetime('now')
     `
-    ).run(userId, mockOpenId, nickname, avatarUrl || null);
+    ).run(userId, wxOpenId, nickname, avatarUrl || null);
+
+    const resolvedUser = db.prepare("SELECT id FROM users WHERE wx_openid = ?").get(wxOpenId);
+    const ttlHours = Number(process.env.TOKEN_TTL_HOURS || 168);
+    const expiresAt = new Date(Date.now() + ttlHours * 60 * 60 * 1000).toISOString();
+    const token = uuidv4();
+    db.prepare(
+      `
+      INSERT INTO user_sessions (token, user_id, expires_at)
+      VALUES (?, ?, ?)
+    `
+    ).run(token, resolvedUser.id, expiresAt);
+
+    const user = db
+      .prepare("SELECT id, nickname, avatar_url AS avatarUrl, bio, created_at AS createdAt FROM users WHERE id = ?")
+      .get(resolvedUser.id);
+
+    return res.json({
+      accessToken: token,
+      expiresAt,
+      user,
+      loginMode: isRealLoginMode() ? "real" : "mock",
+    });
+  } catch (err) {
+    const message = err.message || "login failed";
+    if (message.includes("code2Session")) {
+      return res.status(400).json({ message });
+    }
+    return next(err);
   }
-
-  const ttlHours = Number(process.env.TOKEN_TTL_HOURS || 168);
-  const expiresAt = new Date(Date.now() + ttlHours * 60 * 60 * 1000).toISOString();
-  const token = uuidv4();
-  db.prepare(
-    `
-    INSERT INTO user_sessions (token, user_id, expires_at)
-    VALUES (?, ?, ?)
-  `
-  ).run(token, userId, expiresAt);
-
-  const user = db
-    .prepare("SELECT id, nickname, avatar_url AS avatarUrl, bio, created_at AS createdAt FROM users WHERE id = ?")
-    .get(userId);
-
-  return res.json({
-    accessToken: token,
-    expiresAt,
-    user,
-    note: "MVP uses mock wx login code. Replace with code2Session in production.",
-  });
 });
 
 router.get("/me", authRequired, (req, res) => {

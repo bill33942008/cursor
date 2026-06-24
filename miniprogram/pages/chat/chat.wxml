@@ -1,0 +1,25 @@
+<view class="card">
+  <view class="title">{{groupName}}</view>
+  <view class="subtitle">WebSocket 实时群聊已启用</view>
+</view>
+
+<scroll-view class="messages" scroll-y="true">
+  <block wx:for="{{messages}}" wx:key="id">
+    <view class="message-item">
+      <view class="msg-head">
+        <text class="name">{{item.displayName}}</text>
+        <text class="time">{{item.createdAt}}</text>
+      </view>
+      <view class="msg-content">{{item.content}}</view>
+    </view>
+  </block>
+</scroll-view>
+
+<view class="composer card">
+  <input placeholder="输入消息..." value="{{inputText}}" bindinput="onInputText" />
+  <view class="composer-actions">
+    <switch checked="{{isAnonymous}}" bindchange="onAnonymousChange" />
+    <text class="subtitle">匿名</text>
+    <button size="mini" class="btn-primary" bindtap="sendMessage">发送</button>
+  </view>
+</view>

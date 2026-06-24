@@ -27,3 +27,25 @@
   margin: 10rpx 0 20rpx;
   font-size: 24rpx;
 }
+
+.media-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+
+.media-item {
+  background: #f8fafc;
+  border-radius: 10rpx;
+  padding: 12rpx;
+  margin-bottom: 10rpx;
+}
+
+.media-url {
+  display: block;
+  font-size: 22rpx;
+  color: #6b7280;
+  word-break: break-all;
+  margin: 8rpx 0;
+}

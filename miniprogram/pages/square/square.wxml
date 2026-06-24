@@ -19,6 +19,12 @@
         <text class="post-time">{{item.createdAt}}</text>
       </view>
       <view class="post-content">{{item.content}}</view>
+      <view class="media-list" wx:if="{{item.media.length}}">
+        <block wx:for="{{item.media}}" wx:key="index" wx:for-item="mediaItem">
+          <video wx:if="{{mediaItem.indexOf('.mp4') !== -1}}" class="post-media" src="{{mediaItem}}" controls />
+          <image wx:else class="post-media" src="{{mediaItem}}" mode="aspectFill" />
+        </block>
+      </view>
       <view class="post-tags" wx:if="{{item.transportType}}">
         <text class="tag">{{item.transportType}}</text>
         <text class="tag">{{item.origin}} -> {{item.destination}}</text>

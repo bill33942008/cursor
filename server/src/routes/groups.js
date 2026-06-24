@@ -4,6 +4,8 @@ const { v4: uuidv4 } = require("uuid");
 const { db } = require("../db");
 const { authRequired } = require("../middleware/auth");
 const { parsePagination } = require("../utils");
+const { moderateText } = require("../services/moderation");
+const { broadcastGroupMessage } = require("../realtime/hub");
 
 const router = express.Router();
 
@@ -16,36 +18,60 @@ const groupSchema = z.object({
   expiresAt: z.string().datetime().optional(),
 });
 
-router.post("/", authRequired, (req, res) => {
+function getUserOpenId(userId) {
+  const user = db.prepare("SELECT wx_openid AS openid FROM users WHERE id = ?").get(userId);
+  return user?.openid || "";
+}
+
+router.post("/", authRequired, async (req, res, next) => {
   const parsed = groupSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ message: "invalid payload", errors: parsed.error.issues });
   }
-  const data = parsed.data;
-  const groupId = uuidv4();
+  try {
+    const data = parsed.data;
+    const groupId = uuidv4();
+    const moderation = await moderateText({
+      content: `${data.name}\n${data.description || ""}`,
+      openid: getUserOpenId(req.user.id),
+    });
+    if (moderation.status === "rejected") {
+      return res.status(400).json({ message: "group content rejected by moderation", moderation });
+    }
 
-  db.prepare(
-    `
-    INSERT INTO groups_table (
-      id, owner_user_id, name, category, destination, route_code, description, expires_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `
-  ).run(
-    groupId,
-    req.user.id,
-    data.name,
-    data.category,
-    data.destination || null,
-    data.routeCode || null,
-    data.description || null,
-    data.expiresAt || null
-  );
+    db.prepare(
+      `
+      INSERT INTO groups_table (
+        id, owner_user_id, name, category, destination, route_code, description, status, moderation_status, expires_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)
+      `
+    ).run(
+      groupId,
+      req.user.id,
+      data.name,
+      data.category,
+      data.destination || null,
+      data.routeCode || null,
+      data.description || null,
+      moderation.status,
+      data.expiresAt || null
+    );
 
-  db.prepare(
-    "INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, 'owner')"
-  ).run(groupId, req.user.id);
+    db.prepare(
+      "INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, 'owner')"
+    ).run(groupId, req.user.id);
 
-  res.status(201).json({ groupId });
+    db.prepare(
+      `
+      INSERT INTO moderation_events (id, target_type, target_id, moderator_type, status, reason)
+      VALUES (?, 'group', ?, ?, ?, ?)
+      `
+    ).run(uuidv4(), groupId, moderation.provider, moderation.status, moderation.reason || null);
+
+    return res.status(201).json({ groupId, moderationStatus: moderation.status });
+  } catch (err) {
+    return next(err);
+  }
 });
 
 router.get("/discover", authRequired, (req, res) => {
@@ -74,6 +100,7 @@ router.get("/discover", authRequired, (req, res) => {
     FROM groups_table g
     JOIN users owner ON owner.id = g.owner_user_id
     WHERE g.status = 'active'
+      AND g.moderation_status = 'approved'
   `;
   const params = [];
 
@@ -96,13 +123,16 @@ router.get("/discover", authRequired, (req, res) => {
 router.post("/:id/join", authRequired, (req, res) => {
   const groupId = req.params.id;
   const group = db
-    .prepare("SELECT id, status FROM groups_table WHERE id = ?")
+    .prepare("SELECT id, status, moderation_status AS moderationStatus FROM groups_table WHERE id = ?")
     .get(groupId);
   if (!group) {
     return res.status(404).json({ message: "group not found" });
   }
   if (group.status !== "active") {
     return res.status(400).json({ message: "group is not active" });
+  }
+  if (group.moderationStatus !== "approved") {
+    return res.status(400).json({ message: "group is under review" });
   }
 
   db.prepare(
@@ -168,12 +198,14 @@ router.get("/:id/messages", authRequired, (req, res) => {
         gm.id,
         gm.content,
         gm.is_anonymous AS isAnonymous,
+        gm.moderation_status AS moderationStatus,
         gm.created_at AS createdAt,
         u.id AS userId,
         u.nickname
       FROM group_messages gm
       JOIN users u ON u.id = gm.user_id
       WHERE gm.group_id = ?
+        AND gm.moderation_status = 'approved'
       ORDER BY gm.created_at DESC
       LIMIT ? OFFSET ?
       `
@@ -188,7 +220,7 @@ router.get("/:id/messages", authRequired, (req, res) => {
   res.json({ items: messages.reverse(), pagination: { limit, offset } });
 });
 
-router.post("/:id/messages", authRequired, (req, res) => {
+router.post("/:id/messages", authRequired, async (req, res, next) => {
   const groupId = req.params.id;
   const schema = z.object({
     content: z.string().min(1).max(500),
@@ -206,15 +238,63 @@ router.post("/:id/messages", authRequired, (req, res) => {
     return res.status(403).json({ message: "join group first" });
   }
 
-  const messageId = uuidv4();
-  db.prepare(
-    `
-    INSERT INTO group_messages (id, group_id, user_id, content, is_anonymous)
-    VALUES (?, ?, ?, ?, ?)
-    `
-  ).run(messageId, groupId, req.user.id, parsed.data.content, parsed.data.isAnonymous ? 1 : 0);
+  try {
+    const moderation = await moderateText({
+      content: parsed.data.content,
+      openid: getUserOpenId(req.user.id),
+    });
+    if (moderation.status === "rejected") {
+      return res.status(400).json({ message: "message rejected by moderation", moderation });
+    }
 
-  res.status(201).json({ messageId });
+    const messageId = uuidv4();
+    db.prepare(
+      `
+      INSERT INTO group_messages (id, group_id, user_id, content, is_anonymous, moderation_status)
+      VALUES (?, ?, ?, ?, ?, ?)
+      `
+    ).run(
+      messageId,
+      groupId,
+      req.user.id,
+      parsed.data.content,
+      parsed.data.isAnonymous ? 1 : 0,
+      moderation.status
+    );
+
+    db.prepare(
+      `
+      INSERT INTO moderation_events (id, target_type, target_id, moderator_type, status, reason)
+      VALUES (?, 'group_message', ?, ?, ?, ?)
+      `
+    ).run(uuidv4(), messageId, moderation.provider, moderation.status, moderation.reason || null);
+
+    const created = db
+      .prepare(
+        `
+        SELECT gm.id, gm.content, gm.is_anonymous AS isAnonymous,
+               gm.created_at AS createdAt, gm.moderation_status AS moderationStatus,
+               u.id AS userId, u.nickname
+        FROM group_messages gm
+        JOIN users u ON u.id = gm.user_id
+        WHERE gm.id = ?
+        `
+      )
+      .get(messageId);
+
+    const wsPayload = {
+      ...created,
+      displayName: created.isAnonymous ? "匿名群友" : created.nickname,
+      nickname: undefined,
+    };
+    if (created.moderationStatus === "approved") {
+      broadcastGroupMessage(groupId, wsPayload);
+    }
+
+    return res.status(201).json({ messageId, moderationStatus: moderation.status });
+  } catch (err) {
+    return next(err);
+  }
 });
 
 module.exports = router;
