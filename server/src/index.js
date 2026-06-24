@@ -27,6 +27,18 @@ async function bootstrap() {
   app.use(morgan("dev"));
   app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
+  app.get("/", (_req, res) => {
+    res.json({
+      service: "tongxing-server",
+      message: "service is running",
+      docs: {
+        health: "/health",
+        api: "/api",
+      },
+      time: new Date().toISOString(),
+    });
+  });
+
   app.get("/health", (_req, res) => {
     res.json({ ok: true, service: "tongxing-server", time: new Date().toISOString() });
   });
