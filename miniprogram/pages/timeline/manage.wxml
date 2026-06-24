@@ -47,6 +47,11 @@
         <block wx:for="{{form.mediaAssets}}" wx:key="url">
           <view class="draft-media-item">
             <image class="draft-media" src="{{item.url}}" mode="aspectFill" data-index="{{index}}" bindtap="previewDraftMedia" />
+            <view wx:if="{{index === 0}}" class="draft-cover-tag">封面</view>
+            <view class="draft-media-order">
+              <text class="order-btn" data-index="{{index}}" bindtap="moveDraftMediaLeft">←</text>
+              <text class="order-btn" data-index="{{index}}" bindtap="moveDraftMediaRight">→</text>
+            </view>
             <view class="draft-media-remove" data-index="{{index}}" bindtap="removeDraftMedia">×</view>
           </view>
         </block>
@@ -95,17 +100,25 @@
           <text class="subtitle">{{item.location}}</text>
           <text class="muted">{{item.occurredAt}}</text>
           <text wx:if="{{item.note}}" class="event-note">{{item.note}}</text>
-          <view wx:if="{{item.media.length > 0}}" class="event-media-grid">
-            <block wx:for="{{item.media}}" wx:key="url" wx:for-item="mediaItem">
-              <image
-                class="event-media"
-                src="{{mediaItem.url}}"
-                mode="aspectFill"
-                data-id="{{item.id}}"
-                data-index="{{index}}"
-                bindtap="previewEventMedia"
-              />
-            </block>
+          <view wx:if="{{item.coverMedia}}" class="event-media-cover-wrap">
+            <image class="event-cover-media" src="{{item.coverMedia.url}}" mode="aspectFill" data-id="{{item.id}}" data-index="0" bindtap="previewEventMedia" />
+            <view wx:if="{{item.thumbMedia.length > 0}}" class="event-thumb-row">
+              <block wx:for="{{item.thumbMedia}}" wx:key="url" wx:for-item="thumb" wx:for-index="thumbIndex">
+                <view class="event-thumb-item">
+                  <image
+                    class="event-thumb-media"
+                    src="{{thumb.url}}"
+                    mode="aspectFill"
+                    data-id="{{item.id}}"
+                    data-index="{{thumbIndex + 1}}"
+                    bindtap="previewEventMedia"
+                  />
+                  <view wx:if="{{item.moreMediaCount > 0 && thumbIndex === item.thumbMedia.length - 1}}" class="more-mask">
+                    +{{item.moreMediaCount}}
+                  </view>
+                </view>
+              </block>
+            </view>
           </view>
           <view class="event-actions">
             <button class="icon-btn mini-del" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="startEdit">编辑</button>

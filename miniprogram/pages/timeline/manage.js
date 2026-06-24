@@ -23,6 +23,9 @@ function mapTimelineEvent(event) {
     ...event,
     media,
     mediaUrls: media.map((item) => item.url),
+    coverMedia: media[0] || null,
+    thumbMedia: media.slice(1, 4),
+    moreMediaCount: Math.max(0, media.length - 4),
   };
 }
 
@@ -180,6 +183,33 @@ Page({
     const index = Number(e.currentTarget.dataset.index);
     if (Number.isNaN(index)) return;
     const next = this.data.form.mediaAssets.filter((_, i) => i !== index);
+    this.setData({
+      form: {
+        ...this.data.form,
+        mediaAssets: next,
+      },
+    });
+  },
+
+  moveDraftMediaLeft(e) {
+    const index = Number(e.currentTarget.dataset.index);
+    if (Number.isNaN(index) || index <= 0) return;
+    const next = [...this.data.form.mediaAssets];
+    [next[index - 1], next[index]] = [next[index], next[index - 1]];
+    this.setData({
+      form: {
+        ...this.data.form,
+        mediaAssets: next,
+      },
+    });
+  },
+
+  moveDraftMediaRight(e) {
+    const index = Number(e.currentTarget.dataset.index);
+    const list = this.data.form.mediaAssets;
+    if (Number.isNaN(index) || index < 0 || index >= list.length - 1) return;
+    const next = [...list];
+    [next[index], next[index + 1]] = [next[index + 1], next[index]];
     this.setData({
       form: {
         ...this.data.form,

@@ -86,17 +86,32 @@
             <text class="subtitle">{{item.location}}</text>
             <text class="muted">{{item.occurredAt}}</text>
             <text wx:if="{{item.note}}" class="event-note">{{item.note}}</text>
-            <view wx:if="{{item.media.length > 0}}" class="timeline-media-grid">
-              <block wx:for="{{item.media}}" wx:key="url" wx:for-item="mediaItem">
-                <image
-                  class="timeline-media"
-                  src="{{mediaItem.url}}"
-                  mode="aspectFill"
-                  data-eventid="{{item.id}}"
-                  data-index="{{index}}"
-                  bindtap="previewTimelineMedia"
-                />
-              </block>
+            <view wx:if="{{item.coverMedia}}" class="timeline-media-wrap">
+              <image
+                class="timeline-cover-media"
+                src="{{item.coverMedia}}"
+                mode="aspectFill"
+                data-eventid="{{item.id}}"
+                data-index="0"
+                bindtap="previewTimelineMedia"
+              />
+              <view wx:if="{{item.thumbMedia.length > 0}}" class="timeline-thumb-row">
+                <block wx:for="{{item.thumbMedia}}" wx:key="*this" wx:for-item="thumb" wx:for-index="thumbIndex">
+                  <view class="timeline-thumb-item">
+                    <image
+                      class="timeline-thumb-media"
+                      src="{{thumb}}"
+                      mode="aspectFill"
+                      data-eventid="{{item.id}}"
+                      data-index="{{thumbIndex + 1}}"
+                      bindtap="previewTimelineMedia"
+                    />
+                    <view wx:if="{{item.moreMediaCount > 0 && thumbIndex === item.thumbMedia.length - 1}}" class="timeline-more-mask">
+                      +{{item.moreMediaCount}}
+                    </view>
+                  </view>
+                </block>
+              </view>
             </view>
           </view>
         </view>
@@ -119,7 +134,10 @@
       </view>
       <block wx:for="{{posts}}" wx:key="id">
         <view class="post-item">
-          <text class="post-content">{{item.content}}</text>
+          <text class="post-content">{{item.expanded ? item.content : item.previewContent}}</text>
+          <text wx:if="{{item.needFold}}" class="post-expand-btn" data-postid="{{item.id}}" bindtap="togglePostExpand">
+            {{item.expanded ? '收起' : '展开全文'}}
+          </text>
           <view wx:if="{{item.mediaUrls.length > 0}}" class="post-media-grid">
             <block wx:for="{{item.mediaUrls}}" wx:key="*this" wx:for-item="mediaUrl">
               <image

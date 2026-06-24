@@ -1,22 +1,6 @@
 const { request } = require("../../utils/request");
 const app = getApp();
 
-function toSafeError(input, fallbackMessage) {
-  if (!input) {
-    return { message: fallbackMessage };
-  }
-  if (typeof input === "string") {
-    return { message: input };
-  }
-  if (typeof input.message === "string" && input.message) {
-    return { message: input.message };
-  }
-  if (typeof input.errMsg === "string" && input.errMsg) {
-    return { message: input.errMsg };
-  }
-  return { message: fallbackMessage };
-}
-
 function resolveMediaUrl(url) {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -104,23 +88,6 @@ function appendCommentToTree(comments, comment) {
   }).concat(matched ? [] : [normalizeComment({ ...comment, parentCommentId: "" })]);
 }
 
-function getMiniProgramAppId() {
-  try {
-    if (typeof wx.getAccountInfoSync !== "function") {
-      return "";
-    }
-    const info = wx.getAccountInfoSync();
-    return info?.miniProgram?.appId || "";
-  } catch (_err) {
-    return "";
-  }
-}
-
-function isTouristMode() {
-  const appId = getMiniProgramAppId();
-  return !appId || appId === "touristappid";
-}
-
 Page({
   data: {
     loading: false,
@@ -147,7 +114,7 @@ Page({
     this.setData({ loading: true, error: "" });
     try {
       if (!app.globalData.token) {
-        await this.wxLogin();
+        await app.ensureAuthSession();
       }
       await this.loadSquare();
     } catch (err) {
@@ -155,48 +122,6 @@ Page({
     } finally {
       this.setData({ loading: false });
     }
-  },
-
-  wxLogin() {
-    return new Promise((resolve, reject) => {
-      const finishLogin = async (code) => {
-        try {
-          const loginRes = await request({
-            url: "/api/auth/wx-login",
-            method: "POST",
-            data: {
-              code: code || `dev-${Date.now()}`,
-              nickname: `旅友${Math.floor(Math.random() * 1000)}`,
-            },
-          });
-          app.globalData.token = loginRes.accessToken;
-          app.globalData.user = loginRes.user;
-          if (!isTouristMode()) {
-            wx.setStorageSync("accessToken", loginRes.accessToken);
-            wx.setStorageSync("currentUser", loginRes.user);
-          }
-          resolve();
-        } catch (err) {
-          reject(toSafeError(err, "wx login failed"));
-        }
-      };
-
-      if (isTouristMode()) {
-        finishLogin(`tourist-${Date.now()}`);
-        return;
-      }
-
-      try {
-        wx.login({
-          success: async (wxRes) => {
-            await finishLogin(wxRes.code || `dev-${Date.now()}`);
-          },
-          fail: (err) => reject(toSafeError(err, "wx.login failed")),
-        });
-      } catch (err) {
-        reject(toSafeError(err, "wx.login invocation failed"));
-      }
-    });
   },
 
   async loadSquare() {
@@ -323,6 +248,7 @@ Page({
         replyToName,
       },
       commentPlaceholder: `回复 @${replyToName}`,
+      commentDraft: (post.commentDraft || "").trim() ? post.commentDraft : `@${replyToName} `,
     }));
   },
 

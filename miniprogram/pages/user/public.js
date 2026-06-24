@@ -1,5 +1,6 @@
 const { request } = require("../../utils/request");
 const app = getApp();
+const POST_PREVIEW_LIMIT = 88;
 
 function resolveAvatar(url) {
   if (!url) return "";
@@ -7,6 +8,16 @@ function resolveAvatar(url) {
     return url;
   }
   return `${app.globalData.baseUrl}${url}`;
+}
+
+function buildFoldableContent(content) {
+  const normalized = String(content || "");
+  const needFold = normalized.length > POST_PREVIEW_LIMIT;
+  return {
+    needFold,
+    expanded: false,
+    previewContent: needFold ? `${normalized.slice(0, POST_PREVIEW_LIMIT)}...` : normalized,
+  };
 }
 
 Page({
@@ -77,6 +88,9 @@ Page({
             url: resolveAvatar(rawUrl),
           })),
           mediaUrls: (item.media || []).map(resolveAvatar),
+          coverMedia: (item.media || []).length ? resolveAvatar(item.media[0]) : "",
+          thumbMedia: (item.media || []).slice(1, 4).map(resolveAvatar),
+          moreMediaCount: Math.max(0, (item.media || []).length - 4),
         })),
       });
     } catch (err) {
@@ -94,10 +108,14 @@ Page({
         method: "GET",
       });
       this.setData({
-        posts: (res.items || []).map((item) => ({
-          ...item,
-          mediaUrls: (item.media || []).map(resolveAvatar),
-        })),
+        posts: (res.items || []).map((item) => {
+          const fold = buildFoldableContent(item.content);
+          return {
+            ...item,
+            ...fold,
+            mediaUrls: (item.media || []).map(resolveAvatar),
+          };
+        }),
       });
     } catch (err) {
       wx.showToast({ title: err.message || "加载公开动态失败", icon: "none" });
@@ -174,6 +192,19 @@ Page({
       current: target.mediaUrls[index],
       urls: target.mediaUrls,
     });
+  },
+
+  togglePostExpand(e) {
+    const postId = e.currentTarget.dataset.postid;
+    if (!postId) return;
+    const nextPosts = this.data.posts.map((item) => {
+      if (item.id !== postId) return item;
+      return {
+        ...item,
+        expanded: !item.expanded,
+      };
+    });
+    this.setData({ posts: nextPosts });
   },
 
   goTimelineManage() {

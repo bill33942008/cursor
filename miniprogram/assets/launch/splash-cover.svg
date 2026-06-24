@@ -1,0 +1,101 @@
+<svg width="750" height="1334" viewBox="0 0 750 1334" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="750" y2="1334" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFEFC7"/>
+      <stop offset="0.52" stop-color="#BDE2FF"/>
+      <stop offset="1" stop-color="#A2D0FF"/>
+    </linearGradient>
+    <linearGradient id="road" x1="130" y1="350" x2="620" y2="910" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE786"/>
+      <stop offset="1" stop-color="#FFD460"/>
+    </linearGradient>
+    <linearGradient id="car1" x1="190" y1="520" x2="365" y2="710" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D7FFF0"/>
+      <stop offset="1" stop-color="#B6E8D8"/>
+    </linearGradient>
+    <linearGradient id="car2" x1="140" y1="770" x2="320" y2="930" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE6CA"/>
+      <stop offset="1" stop-color="#FFC7A2"/>
+    </linearGradient>
+    <linearGradient id="bus" x1="370" y1="520" x2="610" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF7DC"/>
+      <stop offset="1" stop-color="#FFD27C"/>
+    </linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#7FA4C8" flood-opacity="0.24"/>
+    </filter>
+  </defs>
+
+  <rect width="750" height="1334" fill="url(#bg)"/>
+
+  <circle cx="180" cy="270" r="42" fill="#FFF7E8"/>
+  <circle cx="222" cy="262" r="58" fill="#FFF7E8"/>
+  <circle cx="278" cy="280" r="44" fill="#FFF7E8"/>
+  <circle cx="568" cy="292" r="38" fill="#FFF7E8"/>
+  <circle cx="612" cy="306" r="52" fill="#FFF7E8"/>
+  <circle cx="662" cy="288" r="40" fill="#FFF7E8"/>
+  <circle cx="88" cy="1020" r="76" fill="#EAF4FF"/>
+  <circle cx="180" cy="1040" r="72" fill="#EAF4FF"/>
+  <circle cx="590" cy="1032" r="70" fill="#EAF4FF"/>
+  <circle cx="664" cy="1046" r="62" fill="#EAF4FF"/>
+
+  <ellipse cx="370" cy="660" rx="265" ry="252" fill="url(#road)" filter="url(#soft)"/>
+
+  <g filter="url(#soft)">
+    <rect x="166" y="556" width="206" height="130" rx="46" fill="url(#car1)"/>
+    <rect x="212" y="575" width="110" height="54" rx="20" fill="#FCFFFF"/>
+    <circle cx="220" cy="684" r="22" fill="#FFFFFF"/>
+    <circle cx="316" cy="684" r="22" fill="#FFFFFF"/>
+    <circle cx="220" cy="684" r="12" fill="#6D5E5E"/>
+    <circle cx="316" cy="684" r="12" fill="#6D5E5E"/>
+    <circle cx="260" cy="628" r="6" fill="#3D2E2E"/>
+    <circle cx="286" cy="628" r="6" fill="#3D2E2E"/>
+    <path d="M262 646C268 653 278 653 284 646" stroke="#A26B5B" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <g filter="url(#soft)">
+    <rect x="370" y="552" width="244" height="150" rx="42" fill="url(#bus)"/>
+    <rect x="400" y="582" width="152" height="64" rx="20" fill="#F8FCFF"/>
+    <rect x="560" y="590" width="38" height="82" rx="10" fill="#E7EEF6"/>
+    <circle cx="420" cy="706" r="24" fill="#FFFFFF"/>
+    <circle cx="552" cy="706" r="24" fill="#FFFFFF"/>
+    <circle cx="420" cy="706" r="12" fill="#6D5E5E"/>
+    <circle cx="552" cy="706" r="12" fill="#6D5E5E"/>
+    <circle cx="470" cy="642" r="6" fill="#3D2E2E"/>
+    <circle cx="492" cy="642" r="6" fill="#3D2E2E"/>
+    <path d="M468 660C474 667 488 667 494 660" stroke="#A26B5B" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <g filter="url(#soft)">
+    <rect x="146" y="768" width="214" height="136" rx="52" fill="url(#car2)"/>
+    <rect x="196" y="786" width="118" height="58" rx="22" fill="#FFF8F4"/>
+    <circle cx="204" cy="902" r="22" fill="#FFFFFF"/>
+    <circle cx="314" cy="902" r="22" fill="#FFFFFF"/>
+    <circle cx="204" cy="902" r="12" fill="#6D5E5E"/>
+    <circle cx="314" cy="902" r="12" fill="#6D5E5E"/>
+    <circle cx="244" cy="840" r="6" fill="#3D2E2E"/>
+    <circle cx="270" cy="840" r="6" fill="#3D2E2E"/>
+    <path d="M246 858C252 865 262 865 268 858" stroke="#A26B5B" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <g transform="translate(430 770)" filter="url(#soft)">
+    <circle cx="16" cy="74" r="28" fill="#FFFFFF"/>
+    <circle cx="144" cy="74" r="28" fill="#FFFFFF"/>
+    <circle cx="16" cy="74" r="16" fill="#876765"/>
+    <circle cx="144" cy="74" r="16" fill="#876765"/>
+    <path d="M16 74L64 24H120L144 74" stroke="#FF9C4D" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M64 24L80 74" stroke="#FF9C4D" stroke-width="8" stroke-linecap="round"/>
+    <path d="M120 24L108 74" stroke="#FF9C4D" stroke-width="8" stroke-linecap="round"/>
+    <path d="M64 24L52 10" stroke="#FF9C4D" stroke-width="8" stroke-linecap="round"/>
+    <path d="M122 24L132 10" stroke="#FF9C4D" stroke-width="8" stroke-linecap="round"/>
+  </g>
+
+  <path d="M80 374L92 398L118 400L98 416L104 440L80 426L56 440L62 416L42 400L68 398L80 374Z" fill="#FFCA4D"/>
+  <path d="M675 426L685 444L706 446L690 460L694 480L675 470L656 480L660 460L644 446L665 444L675 426Z" fill="#FFCA4D"/>
+  <path d="M300 320L308 336L326 338L312 350L316 367L300 358L284 367L288 350L274 338L292 336L300 320Z" fill="#FFCA4D"/>
+  <path d="M598 306L610 330L636 332L616 350L622 374L598 360L574 374L580 350L560 332L586 330L598 306Z" fill="#FFCA4D"/>
+
+  <text x="375" y="1160" text-anchor="middle" font-size="64" font-family="Arial, PingFang SC, Microsoft YaHei, sans-serif" font-weight="700" fill="#FFF8E0" stroke="#FFB87A" stroke-width="8">L	`</text>
+  <text x="375" y="1248" text-anchor="middle" font-size="76" font-family="Arial, PingFang SC, Microsoft YaHei, sans-serif" font-weight="800" fill="#FFF8E0" stroke="#FF9B8C" stroke-width="9">ï
+dU</text>
+</svg>

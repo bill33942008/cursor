@@ -1,0 +1,24 @@
+<view class="splash-page">
+  <image class="splash-bg" src="/assets/launch/splash-cover.svg" mode="aspectFill" />
+  <view class="splash-mask"></view>
+
+  <view class="bottom-panel">
+    <text class="app-title">同行 / 在路上</text>
+    <text class="app-subtitle">与你同路，旅程不孤单</text>
+
+    <view wx:if="{{readyToEnter}}" class="action-group">
+      <button class="btn-primary enter-btn" loading="{{entering}}" disabled="{{entering}}" hover-class="pressable-hover" bindtap="authorizeAndEnter">
+        授权微信信息并进入
+      </button>
+      <button class="btn-ghost enter-btn ghost-btn" loading="{{entering}}" disabled="{{entering}}" hover-class="pressable-hover" bindtap="quickEnter">
+        稍后授权，先进入
+      </button>
+      <text wx:if="{{authHint}}" class="hint-text">{{authHint}}</text>
+    </view>
+
+    <view wx:else class="loading-row">
+      <view class="loading-dot"></view>
+      <text class="loading-text">启动中...</text>
+    </view>
+  </view>
+</view>

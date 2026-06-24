@@ -1,0 +1,102 @@
+.splash-page {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #cde7ff;
+}
+
+.splash-bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.splash-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(8, 13, 28, 0.04) 30%, rgba(8, 13, 28, 0.6) 100%);
+}
+
+.bottom-panel {
+  position: absolute;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: calc(48rpx + env(safe-area-inset-bottom));
+  padding: 28rpx 24rpx;
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(8rpx);
+}
+
+.app-title {
+  display: block;
+  font-size: 38rpx;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.app-subtitle {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #475467;
+}
+
+.action-group {
+  margin-top: 20rpx;
+}
+
+.enter-btn {
+  width: 100%;
+  height: 84rpx;
+  line-height: 84rpx;
+}
+
+.ghost-btn {
+  margin-top: 12rpx;
+}
+
+.hint-text {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #b42318;
+}
+
+.loading-row {
+  margin-top: 20rpx;
+  display: flex;
+  align-items: center;
+}
+
+.loading-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: #ff2442;
+  animation: pulse 1.1s ease-in-out infinite;
+}
+
+.loading-text {
+  margin-left: 10rpx;
+  font-size: 24rpx;
+  color: #475467;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 1;
+  }
+}
