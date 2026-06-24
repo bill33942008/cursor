@@ -10,9 +10,11 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_url TEXT,
   bio VARCHAR(240),
   is_banned BOOLEAN NOT NULL DEFAULT FALSE,
+  last_active_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE INDEX IF NOT EXISTS idx_users_last_active_at ON users(last_active_at DESC);
 
 CREATE TABLE IF NOT EXISTS user_sessions (
   token UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -130,6 +132,26 @@ CREATE TABLE IF NOT EXISTS reports (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_reports_status_created_at ON reports(status, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS admin_users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  username VARCHAR(64) UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  role VARCHAR(32) NOT NULL DEFAULT 'super_admin',
+  status VARCHAR(16) NOT NULL DEFAULT 'active',
+  last_login_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users(username);
+
+CREATE TABLE IF NOT EXISTS daily_active_users (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  activity_date DATE NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, activity_date)
+);
+CREATE INDEX IF NOT EXISTS idx_daily_active_users_date ON daily_active_users(activity_date DESC);
 
 CREATE TABLE IF NOT EXISTS media_assets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

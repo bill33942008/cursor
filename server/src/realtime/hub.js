@@ -1,7 +1,9 @@
 const { WebSocketServer } = require("ws");
 const { db } = require("../db");
+const { trackUserActivity } = require("../services/activity");
 
 const groupSubscribers = new Map();
+const connectedUsers = new Set();
 
 function sendJson(socket, payload) {
   if (socket.readyState === 1) {
@@ -64,6 +66,8 @@ function setupRealtime(server) {
 
     socket.userId = session.userId;
     socket.subscribedGroups = new Set();
+    connectedUsers.add(session.userId);
+    trackUserActivity(session.userId, { force: true });
 
     sendJson(socket, { type: "connected", userId: session.userId, at: new Date().toISOString() });
 
@@ -77,6 +81,7 @@ function setupRealtime(server) {
       }
 
       if (payload.type === "ping") {
+        trackUserActivity(socket.userId);
         sendJson(socket, { type: "pong", ts: Date.now() });
         return;
       }
@@ -112,6 +117,7 @@ function setupRealtime(server) {
 
     socket.on("close", () => {
       unsubscribeAll(socket);
+      connectedUsers.delete(socket.userId);
     });
   });
 
@@ -133,7 +139,14 @@ function broadcastGroupMessage(groupId, message) {
   }
 }
 
+function getRealtimePresenceStats() {
+  return {
+    connectedUsers: connectedUsers.size,
+  };
+}
+
 module.exports = {
   setupRealtime,
   broadcastGroupMessage,
+  getRealtimePresenceStats,
 };

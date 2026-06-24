@@ -7,13 +7,18 @@
   "scripts": {
     "dev": "node src/index.js",
     "start": "NODE_ENV=production node src/index.js",
-    "check": "node -e \"(async()=>{const db=require('./src/db');await db.initializeDatabase();db.checkConnection();console.log('database: ok');})().catch(err=>{console.error(err);process.exit(1);})\""
+    "check": "node -e \"(async()=>{const db=require('./src/db');await db.initializeDatabase();db.checkConnection();console.log('database: ok');})().catch(err=>{console.error(err);process.exit(1);})\"",
+    "admin:create": "node scripts/create-admin.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.2",
     "cos-nodejs-sdk-v5": "^2.14.8",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "morgan": "^1.10.0",
     "sql.js": "^1.13.0",

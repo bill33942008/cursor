@@ -4,7 +4,9 @@ Base URL: `http://localhost:3000`
 
 鉴权方式：`Authorization: Bearer <accessToken>`
 
-管理端鉴权：`x-admin-token: <ADMIN_TOKEN>`
+管理端鉴权（推荐）：`Authorization: Bearer <adminAccessToken>`
+
+兼容旧模式：`x-admin-token: <ADMIN_TOKEN>`
 
 ---
 
@@ -241,11 +243,62 @@ Base URL: `http://localhost:3000`
 
 ## 8) 管理端接口（V2）
 
+### POST `/api/admin/auth/login`
+
+```json
+{
+  "username": "admin",
+  "password": "ReplaceMe!123"
+}
+```
+
+返回管理员访问令牌（JWT）。
+
+### GET `/api/admin/auth/me`
+
+返回当前管理员身份。
+
+### POST `/api/admin/auth/change-password`
+
+```json
+{
+  "oldPassword": "OldPass!123",
+  "newPassword": "NewPass!1234"
+}
+```
+
 ### GET `/api/admin/overview`
 
-返回 open reports / pending moderation / banned users 等统计。
+返回核心仪表盘统计，包含：
 
-### GET `/api/admin/reports?status=open`
+- 在线人数（onlineUsers）
+- DAU / MAU
+- 用户总量 / 今日新增 / 本月新增
+- 待审核帖子 / 待审核媒体 / 待处理举报
+
+### GET `/api/admin/trends?days=30`
+
+返回按天趋势：DAU、新增用户、新增动态。
+
+### GET `/api/admin/users?status=all&keyword=`
+
+用户管理列表。
+
+### POST `/api/admin/users/:id/status`
+
+```json
+{ "ban": true, "reason": "spam" }
+```
+
+### GET `/api/admin/media?status=review`
+
+媒体审核队列。
+
+### GET `/api/admin/posts?status=review`
+
+动态审核队列。
+
+### GET `/api/admin/reports?status=open|resolved|dismissed|all`
 
 查看举报工单。
 
@@ -253,12 +306,6 @@ Base URL: `http://localhost:3000`
 
 ```json
 { "status": "resolved" }
-```
-
-### POST `/api/admin/users/:id/ban`
-
-```json
-{ "ban": true, "reason": "spam" }
 ```
 
 ### POST `/api/admin/groups/:id/disband`

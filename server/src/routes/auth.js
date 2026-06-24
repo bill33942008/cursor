@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require("uuid");
 const { db } = require("../db");
 const { authRequired } = require("../middleware/auth");
 const { exchangeCodeForOpenId, isRealLoginMode } = require("../services/wechat");
+const { trackUserActivity } = require("../services/activity");
 
 const router = express.Router();
 
@@ -48,6 +49,7 @@ router.post("/wx-login", async (req, res, next) => {
       VALUES (?, ?, ?)
     `
     ).run(token, resolvedUser.id, expiresAt);
+    trackUserActivity(resolvedUser.id, { force: true });
 
     const user = db
       .prepare("SELECT id, nickname, avatar_url AS avatarUrl, bio, created_at AS createdAt FROM users WHERE id = ?")

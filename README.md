@@ -9,7 +9,7 @@
 - 举报能力与审核风控
 - WebSocket 实时群聊
 - 媒体上传（本地存储 / 腾讯 COS）
-- 管理端审核接口（举报、封禁、内容审核）
+- 完整管理后台（登录、仪表盘、用户管理、图片审核、举报处理）
 
 ## 仓库结构
 
@@ -46,6 +46,15 @@ npm run dev
 
 WebSocket 地址：`ws://localhost:3000/ws?token=<accessToken>`
 
+管理后台地址：`http://localhost:3000/admin`
+
+如果你不想使用环境变量自动创建管理员，也可以手动执行：
+
+```bash
+cd server
+npm run admin:create -- admin "StrongPass!123"
+```
+
 ## 2. 启动微信小程序
 
 1. 打开微信开发者工具
@@ -74,20 +83,33 @@ WebSocket 地址：`ws://localhost:3000/ws?token=<accessToken>`
    - 不配置 COS 时，默认本地存储到 `/uploads`
    - 配置 `COS_*` 后自动切换到腾讯 COS
 4. 管理端
-   - 通过 `ADMIN_TOKEN` 控制 `/api/admin/*` 接口访问
+   - `ADMIN_JWT_SECRET`：后台 JWT 签名密钥（必填）
+   - `ADMIN_INIT_USERNAME/ADMIN_INIT_PASSWORD`：首次启动自动创建管理员
+   - `ADMIN_TOKEN`：兼容旧脚本的临时 token（可选，不建议生产使用）
 
 ## 5. V2 新增能力说明
 
 1. 发帖改为使用 `mediaAssetIds`（先上传媒体，再发帖）
 2. 帖子/群消息/群资料均接入审核管道（approved/review/rejected）
 3. 群聊支持 WebSocket 实时推送
-4. 新增管理端接口：
-   - 审核举报
-   - 用户封禁
-   - 群组解散
-   - 帖子/媒体审核
+4. 新增完整管理后台：
+   - 管理员账号密码登录（bcrypt 哈希 + JWT）
+   - 实时运营看板（在线人数、DAU、MAU、增长、待审核量）
+   - 用户管理（搜索、封禁/解封）
+   - 图片/视频审核（通过/拒绝）
+   - 动态审核（通过/拒绝）
+   - 举报处理（resolved/dismissed）
+   - 管理员操作审计日志
 
-## 6. 文档
+## 6. 后台安全建议（务必）
+
+1. 生产环境使用 HTTPS（反向代理 Nginx 或网关 TLS）
+2. 设置高强度 `ADMIN_JWT_SECRET`，至少 32 字符随机串
+3. 使用强密码初始化管理员，首次登录后立即修改
+4. 登录接口已内置限流（防暴力破解），仍建议网关层追加 WAF/IP 限速
+5. 建议禁用 `ADMIN_TOKEN`（仅保留 JWT）
+
+## 7. 文档
 
 - 架构与功能方案：`docs/solution.md`
 - 接口清单：`docs/api.md`

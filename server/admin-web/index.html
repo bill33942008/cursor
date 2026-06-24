@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>同行后台管理系统</title>
+    <link rel="stylesheet" href="/admin/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <section id="login-panel" class="panel visible">
+        <h1>同行后台管理系统</h1>
+        <p class="muted">请使用管理员账号登录</p>
+        <form id="login-form">
+          <label>
+            用户名
+            <input id="username" type="text" autocomplete="username" required />
+          </label>
+          <label>
+            密码
+            <input id="password" type="password" autocomplete="current-password" required />
+          </label>
+          <button type="submit">登录</button>
+          <p id="login-error" class="error"></p>
+        </form>
+      </section>
+
+      <section id="dashboard-panel" class="panel">
+        <header class="dashboard-header">
+          <div>
+            <h1>管理控制台</h1>
+            <p id="admin-meta" class="muted"></p>
+          </div>
+          <div>
+            <button id="refresh-btn">刷新</button>
+            <button id="change-password-btn">修改密码</button>
+            <button id="logout-btn" class="danger">退出登录</button>
+          </div>
+        </header>
+
+        <div class="cards" id="stats-cards"></div>
+
+        <nav class="tabs">
+          <button class="tab active" data-tab="users">用户管理</button>
+          <button class="tab" data-tab="media">图片/视频审核</button>
+          <button class="tab" data-tab="posts">动态审核</button>
+          <button class="tab" data-tab="reports">举报处理</button>
+        </nav>
+
+        <section class="tab-panel visible" data-panel="users">
+          <div class="panel-actions">
+            <input id="user-keyword" placeholder="搜索用户昵称/ID" />
+            <select id="user-status">
+              <option value="all">全部用户</option>
+              <option value="active">正常用户</option>
+              <option value="banned">封禁用户</option>
+            </select>
+            <button id="load-users-btn">查询</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>用户</th>
+                <th>状态</th>
+                <th>最近活跃</th>
+                <th>注册时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="users-body"></tbody>
+          </table>
+        </section>
+
+        <section class="tab-panel" data-panel="media">
+          <div class="panel-actions">
+            <select id="media-status">
+              <option value="review">待审核</option>
+              <option value="approved">已通过</option>
+              <option value="rejected">已拒绝</option>
+              <option value="all">全部</option>
+            </select>
+            <button id="load-media-btn">查询</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>资源</th>
+                <th>上传者</th>
+                <th>类型</th>
+                <th>状态</th>
+                <th>创建时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="media-body"></tbody>
+          </table>
+        </section>
+
+        <section class="tab-panel" data-panel="posts">
+          <div class="panel-actions">
+            <select id="post-status">
+              <option value="review">待审核</option>
+              <option value="approved">已通过</option>
+              <option value="rejected">已拒绝</option>
+              <option value="all">全部</option>
+            </select>
+            <button id="load-posts-btn">查询</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>内容</th>
+                <th>用户</th>
+                <th>状态</th>
+                <th>发布时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="posts-body"></tbody>
+          </table>
+        </section>
+
+        <section class="tab-panel" data-panel="reports">
+          <div class="panel-actions">
+            <select id="report-status">
+              <option value="open">待处理</option>
+              <option value="resolved">已解决</option>
+              <option value="dismissed">已忽略</option>
+              <option value="all">全部</option>
+            </select>
+            <button id="load-reports-btn">查询</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>举报对象</th>
+                <th>原因</th>
+                <th>状态</th>
+                <th>处理人</th>
+                <th>创建时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="reports-body"></tbody>
+          </table>
+        </section>
+      </section>
+    </div>
+    <script src="/admin/app.js"></script>
+  </body>
+</html>

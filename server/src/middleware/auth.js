@@ -1,4 +1,5 @@
 const { db } = require("../db");
+const { trackUserActivity } = require("../services/activity");
 
 function authRequired(req, res, next) {
   const header = req.headers.authorization || "";
@@ -38,6 +39,7 @@ function authRequired(req, res, next) {
     avatarUrl: session.avatar_url,
     token: session.token,
   };
+  trackUserActivity(session.user_id);
   next();
 }
 
