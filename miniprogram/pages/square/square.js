@@ -25,6 +25,24 @@ function resolveMediaUrl(url) {
   return `${app.globalData.baseUrl}${url}`;
 }
 
+function resolveMediaItems(mediaList) {
+  let previewIndex = 0;
+  return (mediaList || []).map((mediaUrl) => {
+    const url = resolveMediaUrl(mediaUrl);
+    const isVideo = /\.(mp4|mov|m4v|webm)(\?|$)/i.test(url);
+    const item = {
+      url,
+      type: isVideo ? "video" : "image",
+      previewIndex: -1,
+    };
+    if (!isVideo) {
+      item.previewIndex = previewIndex;
+      previewIndex += 1;
+    }
+    return item;
+  });
+}
+
 function getMiniProgramAppId() {
   try {
     if (typeof wx.getAccountInfoSync !== "function") {
@@ -115,10 +133,29 @@ Page({
       method: "GET",
     });
     this.setData({
-      posts: (res.items || []).map((item) => ({
-        ...item,
-        media: (item.media || []).map(resolveMediaUrl),
-      })),
+      posts: (res.items || []).map((item) => {
+        const mediaItems = resolveMediaItems(item.media || []);
+        return {
+          ...item,
+          likeCount: Number(item.likeCount || 0),
+          commentCount: Number(item.commentCount || 0),
+          mediaItems,
+          imageUrls: mediaItems.filter((media) => media.type === "image").map((media) => media.url),
+        };
+      }),
+    });
+  },
+
+  previewMedia(e) {
+    const postId = e.currentTarget.dataset.postid;
+    const current = Number(e.currentTarget.dataset.previewIndex);
+    const post = this.data.posts.find((item) => item.id === postId);
+    if (!post || !post.imageUrls || post.imageUrls.length === 0 || current < 0) {
+      return;
+    }
+    wx.previewImage({
+      current: post.imageUrls[current],
+      urls: post.imageUrls,
     });
   },
 
@@ -135,5 +172,20 @@ Page({
     } catch (err) {
       wx.showToast({ title: err.message || "点赞失败", icon: "none" });
     }
+  },
+
+  onCommentTap() {
+    wx.showToast({ title: "评论功能即将上线", icon: "none" });
+  },
+
+  onShareTap(e) {
+    const postId = e.currentTarget.dataset.id;
+    const post = this.data.posts.find((item) => item.id === postId);
+    if (!post) return;
+    wx.setClipboardData({
+      data: `${post.displayName}: ${post.content}`,
+      success: () => wx.showToast({ title: "内容已复制", icon: "success" }),
+      fail: () => wx.showToast({ title: "复制失败", icon: "none" }),
+    });
   },
 });

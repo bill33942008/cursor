@@ -1,8 +1,28 @@
 const { request, uploadFile } = require("../../utils/request");
+const app = getApp();
+
+function resolveMediaUrl(url) {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  return `${app.globalData.baseUrl}${url}`;
+}
+
+function formatMediaAsset(asset) {
+  const displayUrl = resolveMediaUrl(asset.url);
+  const isVideo = /\.(mp4|mov|m4v|webm)(\?|$)/i.test(displayUrl);
+  return {
+    ...asset,
+    displayUrl,
+    mediaKind: isVideo ? "video" : "image",
+  };
+}
 
 Page({
   data: {
     content: "",
+    contentCount: 0,
     isAnonymous: false,
     transportOptions: [
       { label: "高铁", value: "high_speed_rail" },
@@ -29,7 +49,8 @@ Page({
   },
 
   onContentInput(e) {
-    this.setData({ content: e.detail.value });
+    const value = e.detail.value;
+    this.setData({ content: value, contentCount: value.length });
   },
 
   onRouteCodeInput(e) {
@@ -77,7 +98,7 @@ Page({
               url: "/api/media/upload",
               filePath: file.tempFilePath,
             });
-            assets.push(uploaded.asset);
+            assets.push(formatMediaAsset(uploaded.asset));
           }
           this.setData({ mediaAssets: assets });
           wx.showToast({ title: "上传完成", icon: "success" });
@@ -144,6 +165,7 @@ Page({
       }
       this.setData({
         content: "",
+        contentCount: 0,
         routeCode: "",
         origin: "",
         destination: "",

@@ -8,16 +8,20 @@
   ],
   "window": {
     "navigationBarTitleText": "同行/在路上",
-    "navigationBarBackgroundColor": "#1f6feb",
-    "navigationBarTextStyle": "white",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "navigationStyle": "default",
     "backgroundColor": "#f5f7fb"
   },
   "tabBar": {
-    "selectedColor": "#1f6feb",
+    "color": "#8a94a6",
+    "selectedColor": "#ff2442",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
     "list": [
       {
         "pagePath": "pages/square/square",
-        "text": "广场"
+        "text": "发现"
       },
       {
         "pagePath": "pages/publish/publish",
@@ -25,7 +29,7 @@
       },
       {
         "pagePath": "pages/groups/groups",
-        "text": "同行群"
+        "text": "群组"
       },
       {
         "pagePath": "pages/profile/profile",

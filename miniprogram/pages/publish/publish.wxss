@@ -1,51 +1,93 @@
-.form textarea {
-  width: 100%;
-  height: 220rpx;
-  padding: 16rpx;
-  background: #f8fafc;
-  border-radius: 10rpx;
-  margin-bottom: 18rpx;
+.form-card {
+  padding-bottom: 30rpx;
 }
 
-.form input {
-  background: #f8fafc;
-  padding: 16rpx;
-  border-radius: 10rpx;
-  margin-bottom: 12rpx;
+.content-box {
+  margin-bottom: 8rpx;
 }
 
-.picker {
-  background: #f8fafc;
-  padding: 16rpx;
-  border-radius: 10rpx;
-  margin-bottom: 12rpx;
-}
-
-.anonymous-tip {
-  display: block;
-  color: #6b7280;
-  margin: 10rpx 0 20rpx;
-  font-size: 24rpx;
-}
-
-.media-header {
+.content-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12rpx;
+  margin-bottom: 22rpx;
 }
 
-.media-item {
-  background: #f8fafc;
-  border-radius: 10rpx;
-  padding: 12rpx;
+.picker-box,
+.input-box {
+  margin-bottom: 14rpx;
+}
+
+.anonymous-row {
+  margin: 8rpx 0 24rpx;
+  padding: 18rpx 16rpx;
+  border-radius: 18rpx;
+  background: #fff5f7;
+}
+
+.anonymous-title {
+  margin-bottom: 6rpx;
+  font-size: 28rpx;
+}
+
+.media-header {
   margin-bottom: 10rpx;
 }
 
-.media-url {
+.media-title {
+  margin-bottom: 0;
+}
+
+.media-empty {
+  margin-bottom: 10rpx;
+  padding: 22rpx;
+  border-radius: 16rpx;
+  background: #f8fafc;
+}
+
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+.media-item {
+  border-radius: 16rpx;
+  overflow: hidden;
+  background: #f8fafc;
+  border: 2rpx solid #eef1f6;
+}
+
+.media-thumb {
+  width: 100%;
+  height: 220rpx;
   display: block;
-  font-size: 22rpx;
-  color: #6b7280;
-  word-break: break-all;
-  margin: 8rpx 0;
+  background: #e5e7eb;
+}
+
+.media-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10rpx;
+}
+
+.media-status {
+  font-size: 21rpx;
+  color: #667085;
+}
+
+.remove-btn {
+  height: 50rpx;
+  line-height: 50rpx;
+  padding: 0 16rpx;
+  font-size: 21rpx;
+}
+
+.submit-btn {
+  margin-top: 8rpx;
+  height: 84rpx;
+  line-height: 84rpx;
+  font-size: 30rpx;
 }

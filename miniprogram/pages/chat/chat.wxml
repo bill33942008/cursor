@@ -1,25 +1,44 @@
-<view class="card">
-  <view class="title">{{groupName}}</view>
-  <view class="subtitle">WebSocket 实时群聊已启用</view>
-</view>
-
-<scroll-view class="messages" scroll-y="true">
-  <block wx:for="{{messages}}" wx:key="id">
-    <view class="message-item">
-      <view class="msg-head">
-        <text class="name">{{item.displayName}}</text>
-        <text class="time">{{item.createdAt}}</text>
+<view class="page-wrap chat-page">
+  <view class="chat-top card">
+    <view class="row-between">
+      <view>
+        <view class="section-title">💬 {{groupName}}</view>
+        <text class="subtitle">旅途中说两句，互相照应更安心</text>
       </view>
-      <view class="msg-content">{{item.content}}</view>
+      <text class="ws-status {{wsConnected ? 'online' : 'offline'}}">{{wsConnected ? "在线" : "离线"}}</text>
     </view>
-  </block>
-</scroll-view>
+  </view>
 
-<view class="composer card">
-  <input placeholder="输入消息..." value="{{inputText}}" bindinput="onInputText" />
-  <view class="composer-actions">
-    <switch checked="{{isAnonymous}}" bindchange="onAnonymousChange" />
-    <text class="subtitle">匿名</text>
-    <button size="mini" class="btn-primary" bindtap="sendMessage">发送</button>
+  <scroll-view class="messages" scroll-y="true" scroll-into-view="{{scrollIntoView}}">
+    <block wx:if="{{messages.length === 0}}">
+      <view class="empty-box">
+        <text class="state-icon">🫧</text>
+        <text class="subtitle">还没有消息，发一句开启聊天吧</text>
+      </view>
+    </block>
+    <block wx:for="{{messages}}" wx:key="id">
+      <view class="msg-row {{item.isMine ? 'mine' : ''}}" id="{{item.domId}}">
+        <view class="msg-bubble {{item.isMine ? 'mine-bubble' : ''}}">
+          <view class="msg-head">
+            <text class="name">{{item.displayName}}</text>
+            <text class="time">{{item.createdAt}}</text>
+          </view>
+          <view class="msg-content">{{item.content}}</view>
+        </view>
+      </view>
+    </block>
+  </scroll-view>
+
+  <view class="composer">
+    <view class="compose-input-wrap">
+      <input class="compose-input" placeholder="输入消息，回车发送..." value="{{inputText}}" bindinput="onInputText" />
+    </view>
+    <view class="composer-actions">
+      <view class="anon-switch">
+        <text class="subtitle">🕶️ 匿名</text>
+        <switch color="#ff2442" checked="{{isAnonymous}}" bindchange="onAnonymousChange" />
+      </view>
+      <button size="mini" class="btn-primary send-btn" bindtap="sendMessage">发送</button>
+    </view>
   </view>
 </view>

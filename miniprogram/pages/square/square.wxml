@@ -1,37 +1,76 @@
-<view class="page">
-  <view class="card">
-    <view class="title">在路上广场</view>
-    <view class="subtitle">查看路上旅友的实时分享</view>
+<view class="page-wrap">
+  <view class="hero-card">
+    <view class="hero-title">📍 在路上广场</view>
+    <view class="hero-subtitle">记录这一程，遇见同路的人</view>
+    <view class="hero-pill-row">
+      <text class="hero-pill">🔥 实时动态</text>
+      <text class="hero-pill">🚄 同城同路线</text>
+      <text class="hero-pill">💬 旅途互动</text>
+    </view>
   </view>
 
-  <view wx:if="{{loading}}" class="card">
-    <text>加载中...</text>
+  <view wx:if="{{loading}}" class="card state-card">
+    <text class="state-icon">⏳</text>
+    <text class="section-title">正在加载广场内容...</text>
+    <text class="subtitle">马上就好，正在拉取最新动态</text>
   </view>
 
-  <view wx:if="{{error}}" class="card error">
-    <text>{{error}}</text>
+  <view wx:if="{{error}}" class="card state-card error-card">
+    <text class="state-icon">⚠️</text>
+    <text class="section-title">加载失败</text>
+    <text class="subtitle">{{error}}</text>
+  </view>
+
+  <view wx:if="{{!loading && !error && posts.length === 0}}" class="card state-card">
+    <text class="state-icon">🗂️</text>
+    <text class="section-title">还没有动态</text>
+    <text class="subtitle">去发布页发第一条路上分享吧</text>
   </view>
 
   <block wx:for="{{posts}}" wx:key="id">
-    <view class="card">
-      <view class="post-head">
-        <text class="post-user">{{item.displayName}}</text>
-        <text class="post-time">{{item.createdAt}}</text>
+    <view class="feed-card">
+      <view class="feed-head">
+        <view class="feed-author">
+          <view class="avatar-dot"></view>
+          <view>
+            <text class="feed-user">{{item.displayName}}</text>
+            <text class="feed-time">{{item.createdAt}}</text>
+          </view>
+        </view>
       </view>
-      <view class="post-content">{{item.content}}</view>
-      <view class="media-list" wx:if="{{item.media.length}}">
-        <block wx:for="{{item.media}}" wx:key="index" wx:for-item="mediaItem">
-          <video wx:if="{{mediaItem.indexOf('.mp4') !== -1}}" class="post-media" src="{{mediaItem}}" controls />
-          <image wx:else class="post-media" src="{{mediaItem}}" mode="aspectFill" />
+
+      <view class="feed-content">{{item.content}}</view>
+
+      <view class="media-grid" wx:if="{{item.mediaItems.length}}">
+        <block wx:for="{{item.mediaItems}}" wx:key="url" wx:for-item="mediaItem">
+          <video
+            wx:if="{{mediaItem.type === 'video'}}"
+            class="media-cell media-video {{item.mediaItems.length === 1 ? 'media-single' : ''}}"
+            src="{{mediaItem.url}}"
+            controls
+          />
+          <image
+            wx:else
+            class="media-cell {{item.mediaItems.length === 1 ? 'media-single' : ''}}"
+            src="{{mediaItem.url}}"
+            mode="aspectFill"
+            data-postid="{{item.id}}"
+            data-preview-index="{{mediaItem.previewIndex}}"
+            bindtap="previewMedia"
+          />
         </block>
       </view>
-      <view class="post-tags" wx:if="{{item.transportType}}">
-        <text class="tag">{{item.transportType}}</text>
-        <text class="tag">{{item.origin}} -> {{item.destination}}</text>
+
+      <view class="feed-tags" wx:if="{{item.transportType}}">
+        <text class="chip">🚦 {{item.transportType}}</text>
+        <text class="chip">🧭 {{item.origin}} → {{item.destination}}</text>
       </view>
-      <button class="mini-btn" size="mini" data-id="{{item.id}}" bindtap="likePost">
-        点赞 {{item.likeCount}}
-      </button>
+
+      <view class="feed-actions">
+        <view class="action-item" data-id="{{item.id}}" bindtap="likePost">❤️ {{item.likeCount}}</view>
+        <view class="action-item" bindtap="onCommentTap">💬 {{item.commentCount}}</view>
+        <view class="action-item" data-id="{{item.id}}" bindtap="onShareTap">🔁 分享</view>
+      </view>
     </view>
   </block>
 </view>

@@ -3,8 +3,17 @@ const { request } = require("../../utils/request");
 Page({
   data: {
     groups: [],
+    loading: false,
     destinationKeyword: "",
     creating: false,
+    categoryOptions: [
+      { label: "目的地同行", value: "destination" },
+      { label: "航班同行", value: "flight" },
+      { label: "铁路同行", value: "rail" },
+      { label: "自驾同行", value: "road_trip" },
+      { label: "其他主题", value: "custom" },
+    ],
+    categoryIndex: 0,
     createForm: {
       name: "",
       category: "destination",
@@ -33,14 +42,34 @@ Page({
     });
   },
 
+  onCategoryChange(e) {
+    const index = Number(e.detail.value);
+    const option = this.data.categoryOptions[index];
+    this.setData({
+      categoryIndex: index,
+      createForm: {
+        ...this.data.createForm,
+        category: option.value,
+      },
+    });
+  },
+
   async loadGroups() {
+    this.setData({ loading: true });
     try {
       const kw = encodeURIComponent(this.data.destinationKeyword.trim());
       const url = `/api/groups/discover?limit=20&offset=0${kw ? `&destination=${kw}` : ""}`;
       const res = await request({ url, method: "GET" });
-      this.setData({ groups: res.items || [] });
+      this.setData({
+        groups: (res.items || []).map((item) => ({
+          ...item,
+          categoryLabel: this.data.categoryOptions.find((option) => option.value === item.category)?.label || item.category,
+        })),
+      });
     } catch (err) {
       wx.showToast({ title: err.message || "加载群组失败", icon: "none" });
+    } finally {
+      this.setData({ loading: false });
     }
   },
 
@@ -95,6 +124,7 @@ Page({
       }
       this.setData({
         creating: false,
+        categoryIndex: 0,
         createForm: {
           name: "",
           category: "destination",

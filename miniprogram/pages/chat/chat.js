@@ -1,6 +1,14 @@
 const { request } = require("../../utils/request");
 const app = getApp();
 
+function normalizeMessages(messages, currentUserId) {
+  return (messages || []).map((item) => ({
+    ...item,
+    isMine: item.userId === currentUserId,
+    domId: `msg-${item.id}`,
+  }));
+}
+
 Page({
   data: {
     groupId: "",
@@ -8,12 +16,16 @@ Page({
     messages: [],
     inputText: "",
     isAnonymous: false,
+    wsConnected: false,
+    currentUserId: "",
+    scrollIntoView: "",
   },
 
   onLoad(options) {
     this.setData({
       groupId: options.groupId || "",
       groupName: decodeURIComponent(options.groupName || "群聊"),
+      currentUserId: app.globalData.user?.id || "",
     });
     wx.setNavigationBarTitle({ title: this.data.groupName });
     this.loadMessages();
@@ -30,7 +42,12 @@ Page({
         url: `/api/groups/${this.data.groupId}/messages?limit=50&offset=0`,
         method: "GET",
       });
-      this.setData({ messages: res.items || [] });
+      const messages = normalizeMessages(res.items || [], this.data.currentUserId);
+      const last = messages[messages.length - 1];
+      this.setData({
+        messages,
+        scrollIntoView: last ? last.domId : "",
+      });
     } catch (err) {
       wx.showToast({ title: err.message || "加载消息失败", icon: "none" });
     }
@@ -43,6 +60,7 @@ Page({
     const wsUrl = `${app.globalData.wsUrl}?token=${encodeURIComponent(app.globalData.token)}`;
     this.socketTask = wx.connectSocket({ url: wsUrl });
     this.socketTask.onOpen(() => {
+      this.setData({ wsConnected: true });
       this.socketTask.send({
         data: JSON.stringify({
           type: "subscribe_group",
@@ -54,13 +72,23 @@ Page({
       try {
         const payload = JSON.parse(event.data);
         if (payload.type === "group_message" && payload.groupId === this.data.groupId) {
+          const incoming = normalizeMessages([payload.message], this.data.currentUserId)[0];
+          const messages = [...this.data.messages, incoming];
+          const last = messages[messages.length - 1];
           this.setData({
-            messages: [...this.data.messages, payload.message],
+            messages,
+            scrollIntoView: last ? last.domId : "",
           });
         }
       } catch (_err) {
         // Ignore malformed payloads.
       }
+    });
+    this.socketTask.onClose(() => {
+      this.setData({ wsConnected: false });
+    });
+    this.socketTask.onError(() => {
+      this.setData({ wsConnected: false });
     });
   },
 
@@ -69,6 +97,7 @@ Page({
       this.socketTask.close();
       this.socketTask = null;
     }
+    this.setData({ wsConnected: false });
   },
 
   onInputText(e) {

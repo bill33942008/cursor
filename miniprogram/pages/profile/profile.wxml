@@ -1,41 +1,65 @@
-<view class="card">
-  <view class="title">我的主页</view>
-  <view class="subtitle">当前账号与好友关系管理</view>
-</view>
+<view class="page-wrap">
+  <view class="hero-card">
+    <view class="hero-title">🙋 我的主页</view>
+    <view class="hero-subtitle">管理好友关系，连接同路伙伴</view>
+    <view class="hero-pill-row">
+      <text class="hero-pill">🤝 好友 {{friends.length}}</text>
+      <text class="hero-pill">📨 申请 {{incomingRequests.length}}</text>
+    </view>
+  </view>
 
-<view class="card" wx:if="{{user}}">
-  <view>昵称：{{user.nickname}}</view>
-  <view class="subtitle">用户ID：{{user.id}}</view>
-</view>
-
-<view class="card">
-  <view class="title section-title">添加好友</view>
-  <input placeholder="输入对方用户ID" value="{{targetUserId}}" bindinput="onTargetUserInput" />
-  <button class="mini-btn" size="mini" bindtap="sendFriendRequest">发送申请</button>
-</view>
-
-<view class="card">
-  <view class="title section-title">收到的好友申请</view>
-  <block wx:if="{{incomingRequests.length === 0}}">
-    <text class="subtitle">暂无申请</text>
-  </block>
-  <block wx:for="{{incomingRequests}}" wx:key="id">
-    <view class="request-item">
-      <text>{{item.fromNickname}}（{{item.fromUserId}}）</text>
+  <view class="card profile-card" wx:if="{{user}}">
+    <view class="profile-head">
+      <view class="avatar">旅</view>
       <view>
-        <button class="mini-btn" size="mini" data-id="{{item.id}}" data-action="accept" bindtap="handleRequest">同意</button>
-        <button class="mini-btn" size="mini" data-id="{{item.id}}" data-action="reject" bindtap="handleRequest">拒绝</button>
+        <text class="name">{{user.nickname}}</text>
+        <text class="subtitle id-text">ID：{{user.id}}</text>
       </view>
     </view>
-  </block>
-</view>
+  </view>
 
-<view class="card">
-  <view class="title section-title">我的好友（{{friends.length}}）</view>
-  <block wx:for="{{friends}}" wx:key="id">
-    <view class="friend-item">
-      <text>{{item.nickname}}</text>
-      <text class="subtitle">{{item.id}}</text>
-    </view>
-  </block>
+  <view class="card">
+    <view class="section-title">➕ 添加好友</view>
+    <input class="input-box" placeholder="输入对方用户ID" value="{{targetUserId}}" bindinput="onTargetUserInput" />
+    <button class="btn-primary apply-btn" size="mini" bindtap="sendFriendRequest">发送申请</button>
+  </view>
+
+  <view class="card">
+    <view class="section-title">📨 收到的申请</view>
+    <block wx:if="{{incomingRequests.length === 0}}">
+      <view class="empty-state">
+        <text class="subtitle">暂无申请</text>
+      </view>
+    </block>
+    <block wx:for="{{incomingRequests}}" wx:key="id">
+      <view class="request-item">
+        <view>
+          <text class="request-name">{{item.fromNickname}}</text>
+          <text class="subtitle request-id">{{item.fromUserId}}</text>
+        </view>
+        <view class="request-actions">
+          <button class="icon-btn" size="mini" data-id="{{item.id}}" data-action="accept" bindtap="handleRequest">同意</button>
+          <button class="btn-ghost" size="mini" data-id="{{item.id}}" data-action="reject" bindtap="handleRequest">拒绝</button>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <view class="card">
+    <view class="section-title">🤝 我的好友（{{friends.length}}）</view>
+    <block wx:if="{{friends.length === 0}}">
+      <view class="empty-state">
+        <text class="subtitle">还没有好友，去广场认识新朋友吧</text>
+      </view>
+    </block>
+    <block wx:for="{{friends}}" wx:key="id">
+      <view class="friend-item">
+        <view class="friend-avatar">友</view>
+        <view>
+          <text class="friend-name">{{item.nickname}}</text>
+          <text class="subtitle request-id">{{item.id}}</text>
+        </view>
+      </view>
+    </block>
+  </view>
 </view>

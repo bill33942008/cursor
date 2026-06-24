@@ -1,43 +1,73 @@
-<view class="card">
-  <view class="title">发布路上动态</view>
-  <view class="subtitle">可附带行程状态，便于同路旅友看到你</view>
-</view>
-
-<view class="card form">
-  <textarea
-    placeholder="这一程发生了什么？"
-    value="{{content}}"
-    bindinput="onContentInput"
-    maxlength="1000"
-  />
-
-  <picker mode="selector" range="{{transportOptions}}" range-key="label" value="{{transportIndex}}" bindchange="onTransportChange">
-    <view class="picker">交通工具：{{transportOptions[transportIndex].label}}</view>
-  </picker>
-
-  <picker mode="selector" range="{{phaseOptions}}" range-key="label" value="{{phaseIndex}}" bindchange="onPhaseChange">
-    <view class="picker">当前阶段：{{phaseOptions[phaseIndex].label}}</view>
-  </picker>
-
-  <input placeholder="车次/航班（可选）" value="{{routeCode}}" bindinput="onRouteCodeInput" />
-  <input placeholder="出发地（必填）" value="{{origin}}" bindinput="onOriginInput" />
-  <input placeholder="目的地（必填）" value="{{destination}}" bindinput="onDestinationInput" />
-  <input placeholder="出发时间窗口（可选，如 今天 14:00-16:00）" value="{{departureWindow}}" bindinput="onDepartureWindowInput" />
-
-  <switch checked="{{isAnonymous}}" bindchange="onAnonymousChange" />
-  <text class="anonymous-tip">匿名发布（后台仍保留真实账号映射）</text>
-
-  <view class="media-header">
-    <text>媒体（图片/视频）</text>
-    <button class="mini-btn" size="mini" bindtap="chooseMedia" loading="{{uploading}}">选择媒体</button>
-  </view>
-  <block wx:for="{{mediaAssets}}" wx:key="id">
-    <view class="media-item">
-      <text class="subtitle">{{item.mimeType}} | 审核: {{item.moderationStatus}}</text>
-      <text class="media-url">{{item.url}}</text>
-      <button class="mini-btn" size="mini" data-id="{{item.id}}" bindtap="removeMedia">移除</button>
+<view class="page-wrap">
+  <view class="hero-card">
+    <view class="hero-title">📝 发布路上动态</view>
+    <view class="hero-subtitle">像小红书一样记录旅程瞬间，给同路旅友一点参考</view>
+    <view class="hero-pill-row">
+      <text class="hero-pill">🎬 图文/视频</text>
+      <text class="hero-pill">🧭 行程状态</text>
+      <text class="hero-pill">🕶️ 可匿名</text>
     </view>
-  </block>
+  </view>
 
-  <button class="btn-primary" bindtap="submit">发布</button>
+  <view class="card form-card">
+    <view class="section-title">✍️ 分享内容</view>
+    <textarea
+      class="textarea-box content-box"
+      placeholder="这一程发生了什么？有什么值得分享的交通信息？"
+      value="{{content}}"
+      bindinput="onContentInput"
+      maxlength="1000"
+    />
+    <view class="content-footer">
+      <text class="subtitle">越具体越容易被同路人看到</text>
+      <text class="muted">{{contentCount}}/1000</text>
+    </view>
+
+    <view class="section-title">🚦 行程信息</view>
+    <picker mode="selector" range="{{transportOptions}}" range-key="label" value="{{transportIndex}}" bindchange="onTransportChange">
+      <view class="picker-box">交通工具：{{transportOptions[transportIndex].label}}</view>
+    </picker>
+    <picker mode="selector" range="{{phaseOptions}}" range-key="label" value="{{phaseIndex}}" bindchange="onPhaseChange">
+      <view class="picker-box">当前阶段：{{phaseOptions[phaseIndex].label}}</view>
+    </picker>
+
+    <input class="input-box" placeholder="🚄 车次/航班（可选）" value="{{routeCode}}" bindinput="onRouteCodeInput" />
+    <input class="input-box" placeholder="📍 出发地（必填）" value="{{origin}}" bindinput="onOriginInput" />
+    <input class="input-box" placeholder="🏁 目的地（必填）" value="{{destination}}" bindinput="onDestinationInput" />
+    <input class="input-box" placeholder="⏰ 出发时间窗口（可选，如 今天 14:00-16:00）" value="{{departureWindow}}" bindinput="onDepartureWindowInput" />
+
+    <view class="row-between anonymous-row">
+      <view>
+        <text class="section-title anonymous-title">👤 匿名发布</text>
+        <text class="subtitle">仅前台匿名，后台仍保存真实账号</text>
+      </view>
+      <switch color="#ff2442" checked="{{isAnonymous}}" bindchange="onAnonymousChange" />
+    </view>
+
+    <view class="media-header">
+      <text class="section-title media-title">🖼️ 媒体素材</text>
+      <button class="icon-btn" size="mini" bindtap="chooseMedia" loading="{{uploading}}">
+        {{uploading ? "上传中" : "添加媒体"}}
+      </button>
+    </view>
+
+    <view wx:if="{{mediaAssets.length === 0}}" class="media-empty">
+      <text class="subtitle">还没添加媒体，建议至少上传 1 张图提升浏览率</text>
+    </view>
+
+    <view class="media-grid" wx:if="{{mediaAssets.length > 0}}">
+      <block wx:for="{{mediaAssets}}" wx:key="id">
+        <view class="media-item">
+          <image wx:if="{{item.mediaKind === 'image'}}" class="media-thumb" src="{{item.displayUrl}}" mode="aspectFill" />
+          <video wx:else class="media-thumb" src="{{item.displayUrl}}" controls />
+          <view class="media-meta">
+            <text class="media-status">审核：{{item.moderationStatus}}</text>
+            <button class="icon-btn remove-btn" size="mini" data-id="{{item.id}}" bindtap="removeMedia">移除</button>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <button class="btn-primary submit-btn" bindtap="submit">立即发布</button>
+  </view>
 </view>
