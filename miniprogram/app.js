@@ -4,17 +4,33 @@ App({
     wsUrl: "",
     token: "",
     user: null,
+    isTouristMode: true,
   },
 
   onLaunch() {
-    const token = wx.getStorageSync("accessToken");
-    const user = wx.getStorageSync("currentUser");
-    if (token) {
-      this.globalData.token = token;
+    let appId = "";
+    try {
+      if (typeof wx.getAccountInfoSync === "function") {
+        appId = wx.getAccountInfoSync()?.miniProgram?.appId || "";
+      }
+    } catch (_err) {
+      appId = "";
     }
-    if (user) {
-      this.globalData.user = user;
+
+    const isTourist = !appId || appId === "touristappid";
+    this.globalData.isTouristMode = isTourist;
+
+    if (!isTourist) {
+      const token = wx.getStorageSync("accessToken");
+      const user = wx.getStorageSync("currentUser");
+      if (token) {
+        this.globalData.token = token;
+      }
+      if (user) {
+        this.globalData.user = user;
+      }
     }
+
     const wsBase = this.globalData.baseUrl.replace(/^http/, "ws").replace(/\/$/, "");
     this.globalData.wsUrl = `${wsBase}/ws`;
   },
