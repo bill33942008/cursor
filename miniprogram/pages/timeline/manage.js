@@ -1,18 +1,52 @@
-const { request } = require("../../utils/request");
+const { request, uploadFile } = require("../../utils/request");
+const app = getApp();
+
+function resolveMediaUrl(url) {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  return `${app.globalData.baseUrl}${url}`;
+}
+
+function toDateValue(occurredAt) {
+  if (!occurredAt) return "";
+  return String(occurredAt).slice(0, 10);
+}
+
+function mapTimelineEvent(event) {
+  const media = (event.media || []).map((rawUrl) => ({
+    rawUrl,
+    url: resolveMediaUrl(rawUrl),
+  }));
+  return {
+    ...event,
+    media,
+    mediaUrls: media.map((item) => item.url),
+  };
+}
+
+function createDefaultForm() {
+  return {
+    title: "",
+    location: "",
+    note: "",
+    occurredDate: "",
+    isPublic: true,
+    mediaAssets: [],
+  };
+}
 
 Page({
   data: {
     loading: true,
+    submitting: false,
+    uploadingMedia: false,
     savingVisibility: false,
     timelineIsPublic: false,
     events: [],
-    form: {
-      title: "",
-      location: "",
-      note: "",
-      occurredDate: "",
-      isPublic: true,
-    },
+    editingEventId: "",
+    form: createDefaultForm(),
   },
 
   onShow() {
@@ -28,7 +62,7 @@ Page({
       ]);
       this.setData({
         timelineIsPublic: Boolean(visibilityRes.timelineIsPublic),
-        events: timelineRes.items || [],
+        events: (timelineRes.items || []).map(mapTimelineEvent),
       });
     } catch (err) {
       wx.showToast({ title: err.message || "加载时间线失败", icon: "none" });
@@ -84,38 +118,176 @@ Page({
     }
   },
 
-  async createEvent() {
-    const { title, location, note, occurredDate, isPublic } = this.data.form;
+  async chooseMedia() {
+    if (this.data.uploadingMedia) return;
+    const remainCount = 9 - this.data.form.mediaAssets.length;
+    if (remainCount <= 0) {
+      wx.showToast({ title: "最多上传9张图片", icon: "none" });
+      return;
+    }
+    try {
+      const chooseRes = await new Promise((resolve, reject) => {
+        wx.chooseMedia({
+          count: Math.min(6, remainCount),
+          mediaType: ["image"],
+          sourceType: ["album", "camera"],
+          success: resolve,
+          fail: reject,
+        });
+      });
+      const files = chooseRes.tempFiles || [];
+      if (files.length === 0) return;
+      this.setData({ uploadingMedia: true });
+      const uploaded = [];
+      for (const file of files) {
+        const uploadRes = await uploadFile({
+          url: "/api/media/upload",
+          filePath: file.tempFilePath,
+          name: "file",
+        });
+        if (uploadRes.asset?.moderationStatus === "rejected") {
+          wx.showToast({ title: "有图片未通过审核", icon: "none" });
+          continue;
+        }
+        if (!uploadRes.asset?.id || !uploadRes.asset?.url) {
+          continue;
+        }
+        uploaded.push({
+          assetId: uploadRes.asset.id,
+          rawUrl: uploadRes.asset.url,
+          url: resolveMediaUrl(uploadRes.asset.url),
+        });
+      }
+      if (uploaded.length) {
+        this.setData({
+          form: {
+            ...this.data.form,
+            mediaAssets: [...this.data.form.mediaAssets, ...uploaded].slice(0, 9),
+          },
+        });
+      }
+    } catch (err) {
+      if (typeof err?.errMsg === "string" && err.errMsg.includes("cancel")) {
+        return;
+      }
+      wx.showToast({ title: err.message || "上传图片失败", icon: "none" });
+    } finally {
+      this.setData({ uploadingMedia: false });
+    }
+  },
+
+  removeDraftMedia(e) {
+    const index = Number(e.currentTarget.dataset.index);
+    if (Number.isNaN(index)) return;
+    const next = this.data.form.mediaAssets.filter((_, i) => i !== index);
+    this.setData({
+      form: {
+        ...this.data.form,
+        mediaAssets: next,
+      },
+    });
+  },
+
+  previewDraftMedia(e) {
+    const index = Number(e.currentTarget.dataset.index);
+    const urls = this.data.form.mediaAssets.map((item) => item.url);
+    if (Number.isNaN(index) || !urls[index]) return;
+    wx.previewImage({
+      current: urls[index],
+      urls,
+    });
+  },
+
+  startEdit(e) {
+    const eventId = e.currentTarget.dataset.id;
+    const event = this.data.events.find((item) => item.id === eventId);
+    if (!event) return;
+    this.setData({
+      editingEventId: event.id,
+      form: {
+        title: event.title || "",
+        location: event.location || "",
+        note: event.note || "",
+        occurredDate: toDateValue(event.occurredAt),
+        isPublic: Boolean(event.isPublic),
+        mediaAssets: (event.media || []).map((item) => ({
+          assetId: "",
+          rawUrl: item.rawUrl,
+          url: item.url,
+        })),
+      },
+    });
+  },
+
+  cancelEdit() {
+    this.setData({
+      editingEventId: "",
+      form: createDefaultForm(),
+    });
+  },
+
+  async submitEvent() {
+    if (this.data.submitting) return;
+    const { title, location, note, occurredDate, isPublic, mediaAssets } = this.data.form;
     if (!title.trim() || !location.trim() || !occurredDate) {
       wx.showToast({ title: "请填写标题、地点和日期", icon: "none" });
       return;
     }
+    const mediaAssetIds = mediaAssets.map((item) => item.assetId).filter(Boolean);
+    const keepMediaUrls = mediaAssets.map((item) => item.rawUrl).filter(Boolean);
+    this.setData({ submitting: true });
     try {
-      await request({
-        url: "/api/users/me/timeline",
-        method: "POST",
-        data: {
-          title: title.trim(),
-          location: location.trim(),
-          note: note.trim(),
-          occurredAt: `${occurredDate}T00:00:00.000Z`,
-          isPublic,
-        },
-      });
+      if (this.data.editingEventId) {
+        await request({
+          url: `/api/users/me/timeline/${this.data.editingEventId}`,
+          method: "PUT",
+          data: {
+            title: title.trim(),
+            location: location.trim(),
+            note: note.trim(),
+            occurredAt: `${occurredDate}T00:00:00.000Z`,
+            isPublic,
+            mediaAssetIds,
+            keepMediaUrls,
+          },
+        });
+        wx.showToast({ title: "已更新记录", icon: "success" });
+      } else {
+        await request({
+          url: "/api/users/me/timeline",
+          method: "POST",
+          data: {
+            title: title.trim(),
+            location: location.trim(),
+            note: note.trim(),
+            occurredAt: `${occurredDate}T00:00:00.000Z`,
+            isPublic,
+            mediaAssetIds,
+          },
+        });
+        wx.showToast({ title: "已新增记录", icon: "success" });
+      }
       this.setData({
-        form: {
-          title: "",
-          location: "",
-          note: "",
-          occurredDate: "",
-          isPublic: true,
-        },
+        editingEventId: "",
+        form: createDefaultForm(),
       });
-      wx.showToast({ title: "已新增记录", icon: "success" });
       this.loadTimelineData();
     } catch (err) {
-      wx.showToast({ title: err.message || "新增失败", icon: "none" });
+      wx.showToast({ title: err.message || "保存失败", icon: "none" });
+    } finally {
+      this.setData({ submitting: false });
     }
+  },
+
+  previewEventMedia(e) {
+    const eventId = e.currentTarget.dataset.id;
+    const index = Number(e.currentTarget.dataset.index);
+    const event = this.data.events.find((item) => item.id === eventId);
+    if (!event || Number.isNaN(index) || !event.mediaUrls[index]) return;
+    wx.previewImage({
+      current: event.mediaUrls[index],
+      urls: event.mediaUrls,
+    });
   },
 
   async removeEvent(e) {
@@ -132,6 +304,12 @@ Page({
             method: "DELETE",
           });
           wx.showToast({ title: "已删除", icon: "success" });
+          if (this.data.editingEventId === eventId) {
+            this.setData({
+              editingEventId: "",
+              form: createDefaultForm(),
+            });
+          }
           this.loadTimelineData();
         } catch (err) {
           wx.showToast({ title: err.message || "删除失败", icon: "none" });

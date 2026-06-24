@@ -14,12 +14,75 @@ const timelineSchema = z.object({
   note: z.string().max(500).optional(),
   occurredAt: z.string().min(4).max(40),
   isPublic: z.boolean().default(true),
+  mediaAssetIds: z.array(z.string().uuid()).max(9).default([]),
+  keepMediaUrls: z.array(z.string().min(1).max(2000)).max(9).optional().default([]),
 });
 
 function mapTimelineEvent(item) {
+  let media = [];
+  try {
+    media = JSON.parse(item.mediaJson || "[]");
+  } catch (_err) {
+    media = [];
+  }
   return {
     ...item,
     isPublic: Boolean(Number(item.isPublic || 0)),
+    media,
+    mediaJson: undefined,
+  };
+}
+
+function resolveMediaUrlsForUser(userId, mediaAssetIds = []) {
+  if (!mediaAssetIds.length) {
+    return [];
+  }
+  const rows = db
+    .prepare(
+      `
+      SELECT id, url, moderation_status AS moderationStatus
+      FROM media_assets
+      WHERE user_id = ? AND id IN (${mediaAssetIds.map(() => "?").join(",")})
+      `
+    )
+    .all(userId, ...mediaAssetIds);
+
+  if (rows.length !== mediaAssetIds.length) {
+    return null;
+  }
+  if (rows.some((item) => item.moderationStatus === "rejected")) {
+    return false;
+  }
+  return rows.map((item) => item.url);
+}
+
+function normalizeTimelineMedia(userId, mediaAssetIds, keepMediaUrls) {
+  const nextKeepUrls = Array.from(new Set((keepMediaUrls || []).filter((url) => typeof url === "string" && url.trim())));
+  const uploadedUrls = resolveMediaUrlsForUser(userId, mediaAssetIds || []);
+  if (uploadedUrls === null) {
+    return { error: "invalid media assets" };
+  }
+  if (uploadedUrls === false) {
+    return { error: "contains rejected media asset" };
+  }
+  const media = Array.from(new Set([...nextKeepUrls, ...uploadedUrls])).slice(0, 9);
+  return { media };
+}
+
+function mapPublicPost(item) {
+  let media = [];
+  try {
+    media = JSON.parse(item.mediaJson || "[]");
+  } catch (_err) {
+    media = [];
+  }
+  return {
+    ...item,
+    media,
+    mediaJson: undefined,
+    displayName: Number(item.isAnonymous || 0) === 1 ? "匿名旅友" : item.nickname,
+    nickname: undefined,
+    isAnonymous: Boolean(Number(item.isAnonymous || 0)),
   };
 }
 
@@ -30,6 +93,8 @@ function getRelationship(viewerId, targetUserId) {
       isFriend: false,
       hasOutgoingPendingRequest: false,
       hasIncomingPendingRequest: false,
+      outgoingPendingRequestId: "",
+      incomingPendingRequestId: "",
     };
   }
 
@@ -37,34 +102,32 @@ function getRelationship(viewerId, targetUserId) {
   const isFriend = Boolean(
     db.prepare("SELECT 1 FROM friendships WHERE user_id = ? AND friend_user_id = ?").get(viewerId, targetUserId)
   );
-  const hasOutgoingPendingRequest = Boolean(
-    db
-      .prepare(
-        `
-        SELECT 1
-        FROM friend_requests
-        WHERE from_user_id = ? AND to_user_id = ? AND status = 'pending'
-        `
-      )
-      .get(viewerId, targetUserId)
-  );
-  const hasIncomingPendingRequest = Boolean(
-    db
-      .prepare(
-        `
-        SELECT 1
-        FROM friend_requests
-        WHERE from_user_id = ? AND to_user_id = ? AND status = 'pending'
-        `
-      )
-      .get(targetUserId, viewerId)
-  );
+  const outgoingPendingRequest = db
+    .prepare(
+      `
+      SELECT id
+      FROM friend_requests
+      WHERE from_user_id = ? AND to_user_id = ? AND status = 'pending'
+      `
+    )
+    .get(viewerId, targetUserId);
+  const incomingPendingRequest = db
+    .prepare(
+      `
+      SELECT id
+      FROM friend_requests
+      WHERE from_user_id = ? AND to_user_id = ? AND status = 'pending'
+      `
+    )
+    .get(targetUserId, viewerId);
 
   return {
     isSelf,
     isFriend,
-    hasOutgoingPendingRequest,
-    hasIncomingPendingRequest,
+    hasOutgoingPendingRequest: Boolean(outgoingPendingRequest),
+    hasIncomingPendingRequest: Boolean(incomingPendingRequest),
+    outgoingPendingRequestId: outgoingPendingRequest?.id || "",
+    incomingPendingRequestId: incomingPendingRequest?.id || "",
   };
 }
 
@@ -104,6 +167,7 @@ router.get("/me/timeline", authRequired, (req, res) => {
         title,
         location,
         note,
+        media_json AS mediaJson,
         occurred_at AS occurredAt,
         is_public AS isPublic,
         created_at AS createdAt,
@@ -124,11 +188,19 @@ router.post("/me/timeline", authRequired, (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ message: "invalid payload", errors: parsed.error.issues });
   }
+  const { media, error } = normalizeTimelineMedia(
+    req.user.id,
+    parsed.data.mediaAssetIds,
+    []
+  );
+  if (error) {
+    return res.status(400).json({ message: error });
+  }
   const eventId = uuidv4();
   db.prepare(
     `
-    INSERT INTO user_timeline_events (id, user_id, title, location, note, occurred_at, is_public)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO user_timeline_events (id, user_id, title, location, note, media_json, occurred_at, is_public)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `
   ).run(
     eventId,
@@ -136,6 +208,7 @@ router.post("/me/timeline", authRequired, (req, res) => {
     parsed.data.title.trim(),
     parsed.data.location.trim(),
     parsed.data.note?.trim() || null,
+    JSON.stringify(media),
     parsed.data.occurredAt,
     parsed.data.isPublic ? 1 : 0
   );
@@ -149,6 +222,7 @@ router.post("/me/timeline", authRequired, (req, res) => {
         title,
         location,
         note,
+        media_json AS mediaJson,
         occurred_at AS occurredAt,
         is_public AS isPublic,
         created_at AS createdAt,
@@ -168,22 +242,36 @@ router.put("/me/timeline/:eventId", authRequired, (req, res) => {
   }
   const eventId = req.params.eventId;
   const existing = db
-    .prepare("SELECT id FROM user_timeline_events WHERE id = ? AND user_id = ?")
+    .prepare("SELECT id, media_json AS mediaJson FROM user_timeline_events WHERE id = ? AND user_id = ?")
     .get(eventId, req.user.id);
   if (!existing) {
     return res.status(404).json({ message: "timeline event not found" });
   }
 
+  let existedMedia = [];
+  try {
+    existedMedia = JSON.parse(existing.mediaJson || "[]");
+  } catch (_err) {
+    existedMedia = [];
+  }
+  const hasKeepMediaUrls = Array.isArray(req.body?.keepMediaUrls);
+  const keepMediaUrls = hasKeepMediaUrls ? parsed.data.keepMediaUrls : existedMedia;
+  const { media, error } = normalizeTimelineMedia(req.user.id, parsed.data.mediaAssetIds, keepMediaUrls);
+  if (error) {
+    return res.status(400).json({ message: error });
+  }
+
   db.prepare(
     `
     UPDATE user_timeline_events
-    SET title = ?, location = ?, note = ?, occurred_at = ?, is_public = ?, updated_at = datetime('now')
+    SET title = ?, location = ?, note = ?, media_json = ?, occurred_at = ?, is_public = ?, updated_at = datetime('now')
     WHERE id = ? AND user_id = ?
     `
   ).run(
     parsed.data.title.trim(),
     parsed.data.location.trim(),
     parsed.data.note?.trim() || null,
+    JSON.stringify(media),
     parsed.data.occurredAt,
     parsed.data.isPublic ? 1 : 0,
     eventId,
@@ -199,6 +287,7 @@ router.put("/me/timeline/:eventId", authRequired, (req, res) => {
         title,
         location,
         note,
+        media_json AS mediaJson,
         occurred_at AS occurredAt,
         is_public AS isPublic,
         created_at AS createdAt,
@@ -294,6 +383,7 @@ router.get("/:id/timeline", optionalAuth, (req, res) => {
         title,
         location,
         note,
+        media_json AS mediaJson,
         occurred_at AS occurredAt,
         is_public AS isPublic,
         created_at AS createdAt,
@@ -309,6 +399,54 @@ router.get("/:id/timeline", optionalAuth, (req, res) => {
     .map(mapTimelineEvent);
 
   return res.json({ allowed: true, items, pagination: { limit, offset } });
+});
+
+router.get("/:id/public-posts", optionalAuth, (req, res) => {
+  const targetUserId = req.params.id;
+  const { limit, offset } = parsePagination(req.query);
+  const user = db.prepare("SELECT id FROM users WHERE id = ?").get(targetUserId);
+  if (!user) {
+    return res.status(404).json({ message: "user not found" });
+  }
+
+  const relation = getRelationship(req.user?.id || null, targetUserId);
+  const includeNonPublic = relation.isSelf ? 1 : 0;
+  const items = db
+    .prepare(
+      `
+      SELECT
+        p.id,
+        p.user_id AS userId,
+        p.content,
+        p.media_json AS mediaJson,
+        p.visibility,
+        p.is_anonymous AS isAnonymous,
+        p.like_count AS likeCount,
+        p.comment_count AS commentCount,
+        p.created_at AS createdAt,
+        p.updated_at AS updatedAt,
+        p.moderation_status AS moderationStatus,
+        j.transport_type AS transportType,
+        j.origin,
+        j.destination,
+        u.nickname
+      FROM posts p
+      JOIN users u ON u.id = p.user_id
+      LEFT JOIN journeys j ON j.id = p.journey_id
+      WHERE p.user_id = ?
+        AND p.moderation_status = 'approved'
+        AND (p.visibility = 'public' OR ? = 1)
+      ORDER BY p.created_at DESC
+      LIMIT ? OFFSET ?
+      `
+    )
+    .all(targetUserId, includeNonPublic, limit, offset)
+    .map(mapPublicPost);
+
+  return res.json({
+    items,
+    pagination: { limit, offset },
+  });
 });
 
 module.exports = router;

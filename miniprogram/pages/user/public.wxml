@@ -32,8 +32,14 @@
         >
           添加好友
         </button>
-        <button wx:if="{{relation && relation.hasOutgoingPendingRequest}}" class="btn-ghost action-btn" size="mini" disabled>
-          已发送申请
+        <button
+          wx:if="{{relation && relation.hasOutgoingPendingRequest}}"
+          class="btn-ghost action-btn"
+          size="mini"
+          hover-class="pressable-hover"
+          bindtap="revokeRequest"
+        >
+          撤回申请
         </button>
         <button wx:if="{{relation && relation.isFriend}}" class="btn-ghost action-btn" size="mini" disabled>
           已是好友
@@ -41,6 +47,15 @@
         <button wx:if="{{relation && relation.isSelf}}" class="icon-btn action-btn" size="mini" hover-class="pressable-hover" bindtap="goTimelineManage">
           管理我的时间线
         </button>
+      </view>
+      <view wx:if="{{relation && !relation.isSelf && !relation.isFriend && !relation.hasOutgoingPendingRequest}}" class="note-row">
+        <input
+          class="input-box note-input"
+          placeholder="申请备注（可选）"
+          placeholder-style="color:#98a2b3;font-size:24rpx;"
+          value="{{friendNote}}"
+          bindinput="onFriendNoteInput"
+        />
       </view>
     </view>
 
@@ -71,6 +86,56 @@
             <text class="subtitle">{{item.location}}</text>
             <text class="muted">{{item.occurredAt}}</text>
             <text wx:if="{{item.note}}" class="event-note">{{item.note}}</text>
+            <view wx:if="{{item.media.length > 0}}" class="timeline-media-grid">
+              <block wx:for="{{item.media}}" wx:key="url" wx:for-item="mediaItem">
+                <image
+                  class="timeline-media"
+                  src="{{mediaItem.url}}"
+                  mode="aspectFill"
+                  data-eventid="{{item.id}}"
+                  data-index="{{index}}"
+                  bindtap="previewTimelineMedia"
+                />
+              </block>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <view wx:if="{{postsLoading}}" class="card">
+      <view class="skeleton skeleton-line lg"></view>
+      <view class="skeleton skeleton-line"></view>
+      <view class="skeleton skeleton-line sm"></view>
+    </view>
+
+    <view class="card">
+      <view class="row-between">
+        <text class="section-title">公开动态列表</text>
+        <text class="muted">{{posts.length}} 条</text>
+      </view>
+      <view wx:if="{{!postsLoading && posts.length === 0}}" class="empty-posts">
+        <text class="subtitle">暂无公开动态</text>
+      </view>
+      <block wx:for="{{posts}}" wx:key="id">
+        <view class="post-item">
+          <text class="post-content">{{item.content}}</text>
+          <view wx:if="{{item.mediaUrls.length > 0}}" class="post-media-grid">
+            <block wx:for="{{item.mediaUrls}}" wx:key="*this" wx:for-item="mediaUrl">
+              <image
+                class="post-media"
+                src="{{mediaUrl}}"
+                mode="aspectFill"
+                data-postid="{{item.id}}"
+                data-index="{{index}}"
+                bindtap="previewPostMedia"
+              />
+            </block>
+          </view>
+          <view class="post-foot">
+            <text class="chip">{{item.visibility === 'public' ? '公开' : '好友可见'}}</text>
+            <text class="muted">{{item.createdAt}}</text>
+            <text class="muted">❤️ {{item.likeCount}} · 💬 {{item.commentCount}}</text>
           </view>
         </view>
       </block>

@@ -96,14 +96,51 @@
             <view wx:if="{{!item.commentsLoading && item.comments.length === 0}}" class="comments-empty">暂无评论，来抢沙发</view>
             <block wx:for="{{item.comments}}" wx:key="id" wx:for-item="comment">
               <view class="comment-row">
-                <text class="comment-name">{{comment.displayName}}</text>
-                <text class="comment-content">{{comment.content}}</text>
+                <view class="comment-main">
+                  <text class="comment-name">{{comment.displayName}}</text>
+                  <text class="comment-content">{{comment.content}}</text>
+                </view>
+                <text
+                  class="comment-reply"
+                  data-postid="{{item.id}}"
+                  data-commentid="{{comment.id}}"
+                  data-replytouserid="{{comment.userId}}"
+                  data-replytoname="{{comment.displayName}}"
+                  bindtap="beginReply"
+                >
+                  回复
+                </text>
+              </view>
+              <view wx:if="{{comment.replies.length > 0}}" class="reply-list">
+                <block wx:for="{{comment.replies}}" wx:key="id" wx:for-item="reply">
+                  <view class="reply-row">
+                    <view class="comment-main">
+                      <text class="comment-name">{{reply.displayName}}</text>
+                      <text wx:if="{{reply.replyToDisplayName}}" class="comment-content"> 回复 @{{reply.replyToDisplayName}}：{{reply.content}}</text>
+                      <text wx:else class="comment-content">{{reply.content}}</text>
+                    </view>
+                    <text
+                      class="comment-reply"
+                      data-postid="{{item.id}}"
+                      data-commentid="{{comment.id}}"
+                      data-replytouserid="{{reply.userId}}"
+                      data-replytoname="{{reply.displayName}}"
+                      bindtap="beginReply"
+                    >
+                      回复
+                    </text>
+                  </view>
+                </block>
               </view>
             </block>
+            <view wx:if="{{item.replyTarget}}" class="reply-tip">
+              <text class="reply-tip-text">正在回复 @{{item.replyTarget.replyToName}}</text>
+              <text class="reply-cancel" data-postid="{{item.id}}" bindtap="clearReplyTarget">取消</text>
+            </view>
             <view class="comment-input-row">
               <input
                 class="comment-input"
-                placeholder="写下你的评论..."
+                placeholder="{{item.commentPlaceholder}}"
                 placeholder-style="color:#98a2b3;font-size:24rpx;"
                 value="{{item.commentDraft}}"
                 data-id="{{item.id}}"
@@ -166,14 +203,51 @@
             <view wx:if="{{!item.commentsLoading && item.comments.length === 0}}" class="comments-empty">暂无评论，来抢沙发</view>
             <block wx:for="{{item.comments}}" wx:key="id" wx:for-item="comment">
               <view class="comment-row">
-                <text class="comment-name">{{comment.displayName}}</text>
-                <text class="comment-content">{{comment.content}}</text>
+                <view class="comment-main">
+                  <text class="comment-name">{{comment.displayName}}</text>
+                  <text class="comment-content">{{comment.content}}</text>
+                </view>
+                <text
+                  class="comment-reply"
+                  data-postid="{{item.id}}"
+                  data-commentid="{{comment.id}}"
+                  data-replytouserid="{{comment.userId}}"
+                  data-replytoname="{{comment.displayName}}"
+                  bindtap="beginReply"
+                >
+                  回复
+                </text>
+              </view>
+              <view wx:if="{{comment.replies.length > 0}}" class="reply-list">
+                <block wx:for="{{comment.replies}}" wx:key="id" wx:for-item="reply">
+                  <view class="reply-row">
+                    <view class="comment-main">
+                      <text class="comment-name">{{reply.displayName}}</text>
+                      <text wx:if="{{reply.replyToDisplayName}}" class="comment-content"> 回复 @{{reply.replyToDisplayName}}：{{reply.content}}</text>
+                      <text wx:else class="comment-content">{{reply.content}}</text>
+                    </view>
+                    <text
+                      class="comment-reply"
+                      data-postid="{{item.id}}"
+                      data-commentid="{{comment.id}}"
+                      data-replytouserid="{{reply.userId}}"
+                      data-replytoname="{{reply.displayName}}"
+                      bindtap="beginReply"
+                    >
+                      回复
+                    </text>
+                  </view>
+                </block>
               </view>
             </block>
+            <view wx:if="{{item.replyTarget}}" class="reply-tip">
+              <text class="reply-tip-text">正在回复 @{{item.replyTarget.replyToName}}</text>
+              <text class="reply-cancel" data-postid="{{item.id}}" bindtap="clearReplyTarget">取消</text>
+            </view>
             <view class="comment-input-row">
               <input
                 class="comment-input"
-                placeholder="写下你的评论..."
+                placeholder="{{item.commentPlaceholder}}"
                 placeholder-style="color:#98a2b3;font-size:24rpx;"
                 value="{{item.commentDraft}}"
                 data-id="{{item.id}}"

@@ -20,18 +20,55 @@
   </view>
 
   <view class="card">
-    <view class="section-title">新增旅程记录</view>
+    <view class="row-between">
+      <view class="section-title">{{editingEventId ? "编辑旅程记录" : "新增旅程记录"}}</view>
+      <button
+        wx:if="{{editingEventId}}"
+        class="btn-ghost mini-cancel"
+        size="mini"
+        hover-class="pressable-hover"
+        bindtap="cancelEdit"
+      >
+        取消编辑
+      </button>
+    </view>
     <input class="input-box" placeholder="标题，例如：出发去北京" data-key="title" bindinput="onFormInput" value="{{form.title}}" />
     <input class="input-box" placeholder="地点，例如：北京朝阳站" data-key="location" bindinput="onFormInput" value="{{form.location}}" />
     <picker mode="date" value="{{form.occurredDate}}" bindchange="onDateChange">
       <view class="picker-box">{{form.occurredDate ? ("发生日期：" + form.occurredDate) : "选择发生日期"}}</view>
     </picker>
     <textarea class="textarea-box" placeholder="补充描述（可选）" data-key="note" bindinput="onFormInput" value="{{form.note}}" />
+    <view class="media-wrap">
+      <view class="row-between media-head">
+        <text class="section-title tiny-title">图片附件</text>
+        <text class="muted">{{form.mediaAssets.length}} / 9</text>
+      </view>
+      <view class="media-grid">
+        <block wx:for="{{form.mediaAssets}}" wx:key="url">
+          <view class="draft-media-item">
+            <image class="draft-media" src="{{item.url}}" mode="aspectFill" data-index="{{index}}" bindtap="previewDraftMedia" />
+            <view class="draft-media-remove" data-index="{{index}}" bindtap="removeDraftMedia">×</view>
+          </view>
+        </block>
+        <view wx:if="{{form.mediaAssets.length < 9}}" class="media-add pressable" hover-class="pressable-hover" bindtap="chooseMedia">
+          <text class="media-add-plus">{{uploadingMedia ? "上传中..." : "+"}}</text>
+          <text class="media-add-label">添加图片</text>
+        </view>
+      </view>
+    </view>
     <view class="row-between event-public">
       <text class="subtitle">该条记录对外可见</text>
       <switch color="#ff2442" checked="{{form.isPublic}}" bindchange="onEventPublicChange" />
     </view>
-    <button class="btn-primary save-btn" hover-class="pressable-hover" bindtap="createEvent">保存记录</button>
+    <button
+      class="btn-primary save-btn"
+      hover-class="pressable-hover"
+      loading="{{submitting}}"
+      disabled="{{submitting}}"
+      bindtap="submitEvent"
+    >
+      {{editingEventId ? "保存修改" : "保存记录"}}
+    </button>
   </view>
 
   <view wx:if="{{loading}}" class="card">
@@ -58,7 +95,20 @@
           <text class="subtitle">{{item.location}}</text>
           <text class="muted">{{item.occurredAt}}</text>
           <text wx:if="{{item.note}}" class="event-note">{{item.note}}</text>
+          <view wx:if="{{item.media.length > 0}}" class="event-media-grid">
+            <block wx:for="{{item.media}}" wx:key="url" wx:for-item="mediaItem">
+              <image
+                class="event-media"
+                src="{{mediaItem.url}}"
+                mode="aspectFill"
+                data-id="{{item.id}}"
+                data-index="{{index}}"
+                bindtap="previewEventMedia"
+              />
+            </block>
+          </view>
           <view class="event-actions">
+            <button class="icon-btn mini-del" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="startEdit">编辑</button>
             <button class="btn-ghost mini-del" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="removeEvent">删除</button>
           </view>
         </view>

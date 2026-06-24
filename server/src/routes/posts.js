@@ -19,11 +19,49 @@ const postSchema = z.object({
 const commentSchema = z.object({
   content: z.string().min(1).max(500),
   isAnonymous: z.boolean().default(false),
+  parentCommentId: z.string().uuid().optional(),
+  replyToUserId: z.string().uuid().optional(),
 });
 
 function getUserOpenId(userId) {
   const user = db.prepare("SELECT wx_openid AS openid FROM users WHERE id = ?").get(userId);
   return user?.openid || "";
+}
+
+function mapCommentRow(item) {
+  const isAnonymous = Boolean(Number(item.isAnonymous || 0));
+  return {
+    ...item,
+    isAnonymous,
+    displayName: isAnonymous ? "匿名旅友" : item.nickname,
+    replyToDisplayName: item.replyToNickname || "",
+    nickname: undefined,
+    replyToNickname: undefined,
+    replies: [],
+  };
+}
+
+function buildCommentTree(rows) {
+  const byId = new Map();
+  const rootComments = [];
+  rows.forEach((row) => {
+    byId.set(row.id, mapCommentRow(row));
+  });
+
+  rows.forEach((row) => {
+    const mapped = byId.get(row.id);
+    if (!mapped) return;
+    if (row.parentCommentId) {
+      const parent = byId.get(row.parentCommentId);
+      if (parent) {
+        parent.replies.push(mapped);
+        return;
+      }
+    }
+    rootComments.push(mapped);
+  });
+
+  return rootComments;
 }
 
 router.post("/", authRequired, async (req, res, next) => {
@@ -172,26 +210,29 @@ router.get("/:id/comments", authRequired, (req, res) => {
         c.id,
         c.post_id AS postId,
         c.user_id AS userId,
+        c.parent_comment_id AS parentCommentId,
+        c.reply_to_user_id AS replyToUserId,
         c.content,
         c.is_anonymous AS isAnonymous,
         c.created_at AS createdAt,
-        u.nickname
+        u.nickname,
+        ru.nickname AS replyToNickname
       FROM post_comments c
       JOIN users u ON u.id = c.user_id
+      LEFT JOIN users ru ON ru.id = c.reply_to_user_id
       WHERE c.post_id = ?
-      ORDER BY c.created_at DESC
+      ORDER BY c.created_at ASC
       LIMIT ? OFFSET ?
       `
     )
     .all(postId, limit, offset)
     .map((item) => ({
       ...item,
-      isAnonymous: Boolean(Number(item.isAnonymous || 0)),
-      displayName: Number(item.isAnonymous || 0) === 1 ? "匿名旅友" : item.nickname,
-      nickname: undefined,
+      parentCommentId: item.parentCommentId || "",
+      replyToUserId: item.replyToUserId || "",
     }));
 
-  return res.json({ items: items.reverse(), pagination: { limit, offset } });
+  return res.json({ items: buildCommentTree(items), pagination: { limit, offset } });
 });
 
 router.post("/:id/comments", authRequired, async (req, res, next) => {
@@ -219,12 +260,53 @@ router.post("/:id/comments", authRequired, async (req, res, next) => {
     }
 
     const commentId = uuidv4();
+    let parentCommentId = parsed.data.parentCommentId || null;
+    let replyToUserId = parsed.data.replyToUserId || null;
+    if (parentCommentId) {
+      const parent = db
+        .prepare(
+          `
+          SELECT id, post_id AS postId, parent_comment_id AS parentCommentId, user_id AS userId
+          FROM post_comments
+          WHERE id = ? AND post_id = ?
+          `
+        )
+        .get(parentCommentId, postId);
+      if (!parent) {
+        return res.status(404).json({ message: "parent comment not found" });
+      }
+      // Keep a maximum of two levels: replies always挂到一级评论下。
+      if (parent.parentCommentId) {
+        parentCommentId = parent.parentCommentId;
+      }
+      if (!replyToUserId) {
+        replyToUserId = parent.userId;
+      }
+    } else {
+      replyToUserId = null;
+    }
+
+    if (replyToUserId) {
+      const replyTarget = db.prepare("SELECT id FROM users WHERE id = ?").get(replyToUserId);
+      if (!replyTarget) {
+        return res.status(400).json({ message: "reply target user not found" });
+      }
+    }
+
     db.prepare(
       `
-      INSERT INTO post_comments (id, post_id, user_id, content, is_anonymous)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO post_comments (id, post_id, user_id, parent_comment_id, reply_to_user_id, content, is_anonymous)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
       `
-    ).run(commentId, postId, req.user.id, parsed.data.content, parsed.data.isAnonymous ? 1 : 0);
+    ).run(
+      commentId,
+      postId,
+      req.user.id,
+      parentCommentId,
+      replyToUserId,
+      parsed.data.content,
+      parsed.data.isAnonymous ? 1 : 0
+    );
     db.prepare("UPDATE posts SET comment_count = comment_count + 1, updated_at = datetime('now') WHERE id = ?").run(
       postId
     );
@@ -236,24 +318,27 @@ router.post("/:id/comments", authRequired, async (req, res, next) => {
           c.id,
           c.post_id AS postId,
           c.user_id AS userId,
+          c.parent_comment_id AS parentCommentId,
+          c.reply_to_user_id AS replyToUserId,
           c.content,
           c.is_anonymous AS isAnonymous,
           c.created_at AS createdAt,
-          u.nickname
+          u.nickname,
+          ru.nickname AS replyToNickname
         FROM post_comments c
         JOIN users u ON u.id = c.user_id
+        LEFT JOIN users ru ON ru.id = c.reply_to_user_id
         WHERE c.id = ?
         `
       )
       .get(commentId);
 
     return res.status(201).json({
-      comment: {
+      comment: mapCommentRow({
         ...created,
-        isAnonymous: Boolean(Number(created.isAnonymous || 0)),
-        displayName: Number(created.isAnonymous || 0) === 1 ? "匿名旅友" : created.nickname,
-        nickname: undefined,
-      },
+        parentCommentId: created.parentCommentId || "",
+        replyToUserId: created.replyToUserId || "",
+      }),
     });
   } catch (err) {
     return next(err);

@@ -57,6 +57,31 @@ router.post("/request", authRequired, (req, res) => {
   return res.status(201).json({ requestId, status: "pending" });
 });
 
+router.delete("/request/:id", authRequired, (req, res) => {
+  const requestId = req.params.id;
+  const target = db
+    .prepare(
+      `
+      SELECT id, status, from_user_id AS fromUserId
+      FROM friend_requests
+      WHERE id = ?
+      `
+    )
+    .get(requestId);
+  if (!target) {
+    return res.status(404).json({ message: "request not found" });
+  }
+  if (target.fromUserId !== req.user.id) {
+    return res.status(403).json({ message: "cannot revoke this request" });
+  }
+  if (target.status !== "pending") {
+    return res.status(400).json({ message: "only pending request can be revoked" });
+  }
+
+  db.prepare("UPDATE friend_requests SET status = 'revoked', updated_at = datetime('now') WHERE id = ?").run(requestId);
+  return res.json({ success: true, status: "revoked" });
+});
+
 router.post("/request/:id/respond", authRequired, (req, res) => {
   const schema = z.object({
     action: z.enum(["accept", "reject"]),
@@ -130,7 +155,19 @@ router.get("/", authRequired, (req, res) => {
     )
     .all(req.user.id);
 
-  res.json({ friends, incomingRequests });
+  const outgoingRequests = db
+    .prepare(
+      `
+      SELECT fr.id, fr.message, fr.created_at AS createdAt, u.id AS toUserId, u.nickname AS toNickname
+      FROM friend_requests fr
+      JOIN users u ON u.id = fr.to_user_id
+      WHERE fr.from_user_id = ? AND fr.status = 'pending'
+      ORDER BY fr.created_at DESC
+      `
+    )
+    .all(req.user.id);
+
+  res.json({ friends, incomingRequests, outgoingRequests });
 });
 
 module.exports = router;

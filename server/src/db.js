@@ -315,11 +315,15 @@ function initSchema() {
       id TEXT PRIMARY KEY,
       post_id TEXT NOT NULL,
       user_id TEXT NOT NULL,
+      parent_comment_id TEXT,
+      reply_to_user_id TEXT,
       content TEXT NOT NULL,
       is_anonymous INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (parent_comment_id) REFERENCES post_comments(id) ON DELETE CASCADE,
+      FOREIGN KEY (reply_to_user_id) REFERENCES users(id) ON DELETE SET NULL
     );
 
     CREATE TABLE IF NOT EXISTS user_timeline_events (
@@ -328,6 +332,7 @@ function initSchema() {
       title TEXT NOT NULL,
       location TEXT NOT NULL,
       note TEXT,
+      media_json TEXT NOT NULL DEFAULT '[]',
       occurred_at TEXT NOT NULL,
       is_public INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -348,6 +353,9 @@ function initSchema() {
   addColumnIfMissing("reports", "handled_at", "handled_at TEXT");
   addColumnIfMissing("users", "last_active_at", "last_active_at TEXT");
   addColumnIfMissing("users", "timeline_is_public", "timeline_is_public INTEGER NOT NULL DEFAULT 0");
+  addColumnIfMissing("post_comments", "parent_comment_id", "parent_comment_id TEXT");
+  addColumnIfMissing("post_comments", "reply_to_user_id", "reply_to_user_id TEXT");
+  addColumnIfMissing("user_timeline_events", "media_json", "media_json TEXT NOT NULL DEFAULT '[]'");
 
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts (created_at DESC);
@@ -367,6 +375,7 @@ function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_daily_active_users_date ON daily_active_users (activity_date DESC);
     CREATE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users (username);
     CREATE INDEX IF NOT EXISTS idx_post_comments_post_id ON post_comments (post_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_post_comments_parent_id ON post_comments (parent_comment_id, created_at ASC);
     CREATE INDEX IF NOT EXISTS idx_user_timeline_events_user_id ON user_timeline_events (user_id, occurred_at DESC);
     CREATE INDEX IF NOT EXISTS idx_user_timeline_events_public ON user_timeline_events (is_public, occurred_at DESC);
   `);

@@ -35,6 +35,13 @@
       <input class="input-box friend-input" placeholder="输入对方用户ID" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{targetUserId}}" bindinput="onTargetUserInput" />
       <button class="btn-primary add-btn" size="mini" hover-class="pressable-hover" bindtap="sendFriendRequest">发送</button>
     </view>
+    <input
+      class="input-box request-note-input"
+      placeholder="申请备注（可选）"
+      placeholder-style="color:#98a2b3;font-size:24rpx;"
+      value="{{requestMessage}}"
+      bindinput="onRequestMessageInput"
+    />
   </view>
 
   <view class="card">
@@ -75,11 +82,36 @@
           <view>
             <text class="request-name">{{item.fromNickname}}</text>
             <text class="subtitle request-id">{{item.fromUserId}}</text>
+            <text wx:if="{{item.message}}" class="request-msg">{{item.message}}</text>
           </view>
         </view>
         <view class="request-actions">
           <button class="icon-btn action-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" data-action="accept" catchtap="handleRequest">同意</button>
           <button class="btn-ghost action-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" data-action="reject" catchtap="handleRequest">拒绝</button>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <view class="card">
+    <view class="section-title">我发出的申请</view>
+    <block wx:if="{{outgoingRequests.length === 0}}">
+      <view class="empty-state">
+        <text class="subtitle">暂无待处理申请</text>
+      </view>
+    </block>
+    <block wx:for="{{outgoingRequests}}" wx:key="id">
+      <view class="request-item">
+        <view class="request-left">
+          <view class="dot soft-dot"></view>
+          <view>
+            <text class="request-name">{{item.toNickname}}</text>
+            <text class="subtitle request-id">{{item.toUserId}}</text>
+            <text wx:if="{{item.message}}" class="request-msg">{{item.message}}</text>
+          </view>
+        </view>
+        <view class="request-actions">
+          <button class="btn-ghost action-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="revokeRequest">撤回</button>
         </view>
       </view>
     </block>

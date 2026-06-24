@@ -11,20 +11,20 @@
 .tabbar-inner {
   pointer-events: auto;
   width: 560rpx;
-  margin: 0 auto 18rpx;
-  padding: 12rpx 16rpx calc(12rpx + env(safe-area-inset-bottom));
-  border-radius: 28rpx;
+  margin: 0 auto;
+  padding: 8rpx 14rpx env(safe-area-inset-bottom);
+  border-radius: 24rpx 24rpx 0 0;
   background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 10rpx 28rpx rgba(30, 41, 59, 0.14);
+  box-shadow: 0 -4rpx 22rpx rgba(30, 41, 59, 0.12);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
 }
 
 .tab-item {
   flex: 0 0 24%;
   text-align: center;
-  padding: 10rpx 0 6rpx;
+  padding: 6rpx 0 4rpx;
   border-radius: 20rpx;
   transition: transform 0.2s ease, background-color 0.2s ease;
 }
@@ -35,8 +35,8 @@
 
 .icon-box {
   position: relative;
-  width: 48rpx;
-  height: 48rpx;
+  width: 44rpx;
+  height: 44rpx;
   margin: 0 auto;
 }
 
@@ -44,8 +44,8 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 48rpx;
-  height: 48rpx;
+  width: 44rpx;
+  height: 44rpx;
   transition: opacity 0.2s ease, transform 0.26s ease;
 }
 
@@ -60,8 +60,8 @@
 
 .tab-label {
   display: block;
-  margin-top: 4rpx;
-  font-size: 20rpx;
+  margin-top: 2rpx;
+  font-size: 19rpx;
   color: #98a2b3;
   transition: color 0.2s ease;
 }
@@ -69,7 +69,7 @@
 .active-dot {
   width: 8rpx;
   height: 8rpx;
-  margin: 8rpx auto 0;
+  margin: 6rpx auto 0;
   border-radius: 50%;
   background: #ff2442;
   opacity: 0;

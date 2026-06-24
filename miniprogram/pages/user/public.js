@@ -15,9 +15,12 @@ Page({
     loading: true,
     profile: null,
     relation: null,
+    friendNote: "",
     timeline: [],
     timelineAllowed: false,
     timelineLoading: false,
+    posts: [],
+    postsLoading: false,
   },
 
   onLoad(options) {
@@ -50,6 +53,7 @@ Page({
       } else {
         this.setData({ timelineAllowed: false, timeline: [] });
       }
+      await this.loadPublicPosts();
     } catch (err) {
       wx.showToast({ title: err.message || "加载用户资料失败", icon: "none" });
     } finally {
@@ -66,13 +70,44 @@ Page({
       });
       this.setData({
         timelineAllowed: Boolean(res.allowed),
-        timeline: res.items || [],
+        timeline: (res.items || []).map((item) => ({
+          ...item,
+          media: (item.media || []).map((rawUrl) => ({
+            rawUrl,
+            url: resolveAvatar(rawUrl),
+          })),
+          mediaUrls: (item.media || []).map(resolveAvatar),
+        })),
       });
     } catch (err) {
       wx.showToast({ title: err.message || "加载时间线失败", icon: "none" });
     } finally {
       this.setData({ timelineLoading: false });
     }
+  },
+
+  async loadPublicPosts() {
+    this.setData({ postsLoading: true });
+    try {
+      const res = await request({
+        url: `/api/users/${this.data.userId}/public-posts?limit=20&offset=0`,
+        method: "GET",
+      });
+      this.setData({
+        posts: (res.items || []).map((item) => ({
+          ...item,
+          mediaUrls: (item.media || []).map(resolveAvatar),
+        })),
+      });
+    } catch (err) {
+      wx.showToast({ title: err.message || "加载公开动态失败", icon: "none" });
+    } finally {
+      this.setData({ postsLoading: false });
+    }
+  },
+
+  onFriendNoteInput(e) {
+    this.setData({ friendNote: e.detail.value || "" });
   },
 
   async sendFriendRequest() {
@@ -83,19 +118,62 @@ Page({
         method: "POST",
         data: {
           toUserId: this.data.profile.id,
-          message: "你好，很高兴在路上遇见你",
+          message: (this.data.friendNote || "").trim() || "你好，很高兴在路上遇见你",
         },
       });
       wx.showToast({ title: "好友申请已发送", icon: "success" });
       this.setData({
+        friendNote: "",
         relation: {
           ...this.data.relation,
           hasOutgoingPendingRequest: true,
+          outgoingPendingRequestId: "",
         },
       });
+      this.loadPageData();
     } catch (err) {
       wx.showToast({ title: err.message || "发送申请失败", icon: "none" });
     }
+  },
+
+  async revokeRequest() {
+    const requestId = this.data.relation?.outgoingPendingRequestId;
+    if (!requestId) {
+      wx.showToast({ title: "未找到可撤回申请", icon: "none" });
+      return;
+    }
+    try {
+      await request({
+        url: `/api/friends/request/${requestId}`,
+        method: "DELETE",
+      });
+      wx.showToast({ title: "已撤回申请", icon: "success" });
+      this.loadPageData();
+    } catch (err) {
+      wx.showToast({ title: err.message || "撤回失败", icon: "none" });
+    }
+  },
+
+  previewTimelineMedia(e) {
+    const eventId = e.currentTarget.dataset.eventid;
+    const index = Number(e.currentTarget.dataset.index);
+    const target = this.data.timeline.find((item) => item.id === eventId);
+    if (!target || Number.isNaN(index) || !target.mediaUrls[index]) return;
+    wx.previewImage({
+      current: target.mediaUrls[index],
+      urls: target.mediaUrls,
+    });
+  },
+
+  previewPostMedia(e) {
+    const postId = e.currentTarget.dataset.postid;
+    const index = Number(e.currentTarget.dataset.index);
+    const target = this.data.posts.find((item) => item.id === postId);
+    if (!target || Number.isNaN(index) || !target.mediaUrls[index]) return;
+    wx.previewImage({
+      current: target.mediaUrls[index],
+      urls: target.mediaUrls,
+    });
   },
 
   goTimelineManage() {

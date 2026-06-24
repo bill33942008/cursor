@@ -107,6 +107,13 @@
   line-height: 72rpx;
 }
 
+.request-note-input {
+  margin-top: 10rpx;
+  min-height: 74rpx;
+  padding: 0 16rpx;
+  font-size: 24rpx;
+}
+
 .empty-state {
   padding: 12rpx 0;
 }
@@ -145,10 +152,21 @@
   font-size: 22rpx;
 }
 
+.request-msg {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: #667085;
+}
+
 .request-actions {
   display: flex;
   align-items: center;
   gap: 10rpx;
+}
+
+.soft-dot {
+  background: #fda4af;
 }
 
 .menu-item {

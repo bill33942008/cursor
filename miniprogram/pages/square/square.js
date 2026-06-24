@@ -72,6 +72,38 @@ function splitWaterfall(posts) {
   return { left, right };
 }
 
+function normalizeReply(reply) {
+  return {
+    ...reply,
+    replies: [],
+    replyToDisplayName: reply.replyToDisplayName || "",
+  };
+}
+
+function normalizeComment(comment) {
+  return {
+    ...comment,
+    replies: (comment.replies || []).map(normalizeReply),
+  };
+}
+
+function appendCommentToTree(comments, comment) {
+  if (!comment.parentCommentId) {
+    return [...comments, normalizeComment(comment)];
+  }
+  let matched = false;
+  return comments.map((item) => {
+    if (item.id !== comment.parentCommentId) {
+      return item;
+    }
+    matched = true;
+    return {
+      ...item,
+      replies: [...(item.replies || []), normalizeReply(comment)],
+    };
+  }).concat(matched ? [] : [normalizeComment({ ...comment, parentCommentId: "" })]);
+}
+
 function getMiniProgramAppId() {
   try {
     if (typeof wx.getAccountInfoSync !== "function") {
@@ -182,6 +214,8 @@ Page({
         commentsVisible: false,
         commentsLoading: false,
         commentDraft: "",
+        commentPlaceholder: "写下你的评论...",
+        replyTarget: null,
         mediaItems,
         imageUrls: mediaItems.filter((media) => media.type === "image").map((media) => media.url),
       };
@@ -230,7 +264,7 @@ Page({
       this.updatePost(postId, (post) => ({
         ...post,
         commentsLoading: false,
-        comments: res.items || [],
+        comments: (res.items || []).map(normalizeComment),
       }));
     } catch (err) {
       this.updatePost(postId, (post) => ({
@@ -261,6 +295,8 @@ Page({
     this.updatePost(postId, (post) => ({
       ...post,
       commentsVisible: false,
+      replyTarget: null,
+      commentPlaceholder: "写下你的评论...",
     }));
   },
 
@@ -270,6 +306,33 @@ Page({
     this.updatePost(postId, (post) => ({
       ...post,
       commentDraft: value,
+    }));
+  },
+
+  beginReply(e) {
+    const postId = e.currentTarget.dataset.postid;
+    const commentId = e.currentTarget.dataset.commentid;
+    const replyToUserId = e.currentTarget.dataset.replytouserid;
+    const replyToName = e.currentTarget.dataset.replytoname || "旅友";
+    if (!postId || !commentId || !replyToUserId) return;
+    this.updatePost(postId, (post) => ({
+      ...post,
+      replyTarget: {
+        parentCommentId: commentId,
+        replyToUserId,
+        replyToName,
+      },
+      commentPlaceholder: `回复 @${replyToName}`,
+    }));
+  },
+
+  clearReplyTarget(e) {
+    const postId = e.currentTarget.dataset.postid;
+    if (!postId) return;
+    this.updatePost(postId, (post) => ({
+      ...post,
+      replyTarget: null,
+      commentPlaceholder: "写下你的评论...",
     }));
   },
 
@@ -289,13 +352,17 @@ Page({
         data: {
           content,
           isAnonymous: false,
+          parentCommentId: target.replyTarget?.parentCommentId,
+          replyToUserId: target.replyTarget?.replyToUserId,
         },
       });
       this.updatePost(postId, (post) => ({
         ...post,
         commentDraft: "",
+        replyTarget: null,
+        commentPlaceholder: "写下你的评论...",
         commentCount: post.commentCount + 1,
-        comments: [...(post.comments || []), res.comment],
+        comments: appendCommentToTree(post.comments || [], res.comment),
       }));
       wx.showToast({ title: "评论成功", icon: "success" });
     } catch (err) {

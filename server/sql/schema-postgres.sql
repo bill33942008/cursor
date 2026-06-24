@@ -71,11 +71,14 @@ CREATE TABLE IF NOT EXISTS post_comments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  parent_comment_id UUID REFERENCES post_comments(id) ON DELETE CASCADE,
+  reply_to_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   content TEXT NOT NULL,
   is_anonymous BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_post_comments_post_created_at ON post_comments(post_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_post_comments_parent_created_at ON post_comments(parent_comment_id, created_at ASC);
 
 CREATE TABLE IF NOT EXISTS friend_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -101,6 +104,7 @@ CREATE TABLE IF NOT EXISTS user_timeline_events (
   title VARCHAR(80) NOT NULL,
   location VARCHAR(80) NOT NULL,
   note VARCHAR(500),
+  media_json JSONB NOT NULL DEFAULT '[]'::jsonb,
   occurred_at TIMESTAMPTZ NOT NULL,
   is_public BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

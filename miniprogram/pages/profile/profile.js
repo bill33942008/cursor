@@ -19,7 +19,9 @@ Page({
     user: null,
     friends: [],
     incomingRequests: [],
+    outgoingRequests: [],
     targetUserId: "",
+    requestMessage: "",
   },
 
   onShow() {
@@ -49,6 +51,7 @@ Page({
         user: meRes.user,
         friends: friendRes.friends || [],
         incomingRequests: friendRes.incomingRequests || [],
+        outgoingRequests: friendRes.outgoingRequests || [],
       });
     } catch (err) {
       wx.showToast({ title: err.message || "加载失败", icon: "none" });
@@ -59,6 +62,10 @@ Page({
 
   onTargetUserInput(e) {
     this.setData({ targetUserId: e.detail.value });
+  },
+
+  onRequestMessageInput(e) {
+    this.setData({ requestMessage: e.detail.value || "" });
   },
 
   async sendFriendRequest() {
@@ -72,11 +79,12 @@ Page({
         method: "POST",
         data: {
           toUserId: this.data.targetUserId.trim(),
-          message: "你好，我也在路上",
+          message: (this.data.requestMessage || "").trim() || "你好，我也在路上",
         },
       });
       wx.showToast({ title: "申请已发送", icon: "success" });
-      this.setData({ targetUserId: "" });
+      this.setData({ targetUserId: "", requestMessage: "" });
+      this.loadProfileData();
     } catch (err) {
       wx.showToast({ title: err.message || "发送失败", icon: "none" });
     }
@@ -95,6 +103,21 @@ Page({
       this.loadProfileData();
     } catch (err) {
       wx.showToast({ title: err.message || "处理失败", icon: "none" });
+    }
+  },
+
+  async revokeRequest(e) {
+    const requestId = e.currentTarget.dataset.id;
+    if (!requestId) return;
+    try {
+      await request({
+        url: `/api/friends/request/${requestId}`,
+        method: "DELETE",
+      });
+      wx.showToast({ title: "已撤回", icon: "success" });
+      this.loadProfileData();
+    } catch (err) {
+      wx.showToast({ title: err.message || "撤回失败", icon: "none" });
     }
   },
 
