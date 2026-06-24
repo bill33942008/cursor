@@ -57,7 +57,7 @@ WebSocket 地址：`ws://localhost:3000/ws?token=<accessToken>`
 
 ## 3. 数据库说明
 
-- 本地可运行版本：SQLite（自动初始化）
+- 本地可运行版本：SQLite（基于 `sql.js`，自动初始化，无需本地 C++ 编译环境）
 - 生产推荐版本：PostgreSQL + Redis（见 `infra/docker-compose.yml` 与 `server/sql/schema-postgres.sql`）
 
 ## 4. 环境变量（核心）

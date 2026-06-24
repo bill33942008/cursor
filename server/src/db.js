@@ -1,17 +1,119 @@
 const fs = require("fs");
 const path = require("path");
-const Database = require("better-sqlite3");
+const initSqlJs = require("sql.js");
 
 const dbPath = process.env.DB_PATH || "./data/tongxing.db";
-const absoluteDbPath = path.isAbsolute(dbPath)
-  ? dbPath
-  : path.join(process.cwd(), dbPath);
-
+const absoluteDbPath = path.isAbsolute(dbPath) ? dbPath : path.join(process.cwd(), dbPath);
 fs.mkdirSync(path.dirname(absoluteDbPath), { recursive: true });
 
-const db = new Database(absoluteDbPath);
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
+let sqlDb = null;
+let initPromise = null;
+
+function assertReady() {
+  if (!sqlDb) {
+    throw new Error("database is not initialized");
+  }
+}
+
+function persistDb() {
+  assertReady();
+  const data = sqlDb.export();
+  fs.writeFileSync(absoluteDbPath, Buffer.from(data));
+}
+
+function normalizeParams(params) {
+  if (!params || params.length === 0) {
+    return [];
+  }
+  if (params.length === 1 && Array.isArray(params[0])) {
+    return params[0];
+  }
+  return params;
+}
+
+class StatementWrapper {
+  constructor(sql) {
+    this.sql = sql;
+  }
+
+  get(...params) {
+    assertReady();
+    const stmt = sqlDb.prepare(this.sql);
+    const normalized = normalizeParams(params);
+    if (normalized.length) {
+      stmt.bind(normalized);
+    }
+    let row = undefined;
+    if (stmt.step()) {
+      row = stmt.getAsObject();
+    }
+    stmt.free();
+    return row;
+  }
+
+  all(...params) {
+    assertReady();
+    const stmt = sqlDb.prepare(this.sql);
+    const normalized = normalizeParams(params);
+    if (normalized.length) {
+      stmt.bind(normalized);
+    }
+    const rows = [];
+    while (stmt.step()) {
+      rows.push(stmt.getAsObject());
+    }
+    stmt.free();
+    return rows;
+  }
+
+  run(...params) {
+    assertReady();
+    const stmt = sqlDb.prepare(this.sql);
+    const normalized = normalizeParams(params);
+    stmt.run(normalized);
+    stmt.free();
+    const changes = sqlDb.getRowsModified();
+    persistDb();
+    return { changes };
+  }
+}
+
+const db = {
+  pragma(_sql) {
+    // sql.js does not require pragma config for this MVP.
+  },
+  exec(sql) {
+    assertReady();
+    sqlDb.exec(sql);
+    persistDb();
+  },
+  prepare(sql) {
+    return new StatementWrapper(sql);
+  },
+};
+
+async function initializeDatabase() {
+  if (sqlDb) {
+    return;
+  }
+  if (initPromise) {
+    await initPromise;
+    return;
+  }
+
+  initPromise = (async () => {
+    const SQL = await initSqlJs();
+    if (fs.existsSync(absoluteDbPath)) {
+      const fileBuffer = fs.readFileSync(absoluteDbPath);
+      sqlDb = new SQL.Database(new Uint8Array(fileBuffer));
+    } else {
+      sqlDb = new SQL.Database();
+      persistDb();
+    }
+  })();
+
+  await initPromise;
+}
 
 function addColumnIfMissing(tableName, columnName, definitionSql) {
   const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
@@ -221,6 +323,7 @@ function checkConnection() {
 
 module.exports = {
   db,
+  initializeDatabase,
   initSchema,
   checkConnection,
 };
