@@ -4,7 +4,7 @@ const { db } = require("../db");
 const groupSubscribers = new Map();
 
 function sendJson(socket, payload) {
-  if (socket.readyState === socket.OPEN) {
+  if (socket.readyState === 1) {
     socket.send(JSON.stringify(payload));
   }
 }

@@ -188,6 +188,19 @@ function initSchema() {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+  `);
+
+  addColumnIfMissing("posts", "moderation_status", "moderation_status TEXT NOT NULL DEFAULT 'approved'");
+  addColumnIfMissing("groups_table", "moderation_status", "moderation_status TEXT NOT NULL DEFAULT 'approved'");
+  addColumnIfMissing(
+    "group_messages",
+    "moderation_status",
+    "moderation_status TEXT NOT NULL DEFAULT 'approved'"
+  );
+  addColumnIfMissing("reports", "handled_by_admin", "handled_by_admin TEXT");
+  addColumnIfMissing("reports", "handled_at", "handled_at TEXT");
+
+  db.exec(`
     CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts (created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_posts_visibility ON posts (visibility);
     CREATE INDEX IF NOT EXISTS idx_posts_mod_status ON posts (moderation_status, created_at DESC);
@@ -200,16 +213,6 @@ function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_media_assets_user_id ON media_assets (user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_media_assets_mod_status ON media_assets (moderation_status, created_at DESC);
   `);
-
-  addColumnIfMissing("posts", "moderation_status", "moderation_status TEXT NOT NULL DEFAULT 'approved'");
-  addColumnIfMissing("groups_table", "moderation_status", "moderation_status TEXT NOT NULL DEFAULT 'approved'");
-  addColumnIfMissing(
-    "group_messages",
-    "moderation_status",
-    "moderation_status TEXT NOT NULL DEFAULT 'approved'"
-  );
-  addColumnIfMissing("reports", "handled_by_admin", "handled_by_admin TEXT");
-  addColumnIfMissing("reports", "handled_at", "handled_at TEXT");
 }
 
 function checkConnection() {
