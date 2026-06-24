@@ -1,6 +1,22 @@
 const { request } = require("../../utils/request");
 const app = getApp();
 
+function toSafeError(input, fallbackMessage) {
+  if (!input) {
+    return { message: fallbackMessage };
+  }
+  if (typeof input === "string") {
+    return { message: input };
+  }
+  if (typeof input.message === "string" && input.message) {
+    return { message: input.message };
+  }
+  if (typeof input.errMsg === "string" && input.errMsg) {
+    return { message: input.errMsg };
+  }
+  return { message: fallbackMessage };
+}
+
 function resolveMediaUrl(url) {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -53,10 +69,10 @@ Page({
             wx.setStorageSync("currentUser", loginRes.user);
             resolve();
           } catch (err) {
-            reject(err);
+            reject(toSafeError(err, "wx login failed"));
           }
         },
-        fail: reject,
+        fail: (err) => reject(toSafeError(err, "wx.login failed")),
       });
     });
   },
@@ -83,7 +99,7 @@ Page({
         method: "POST",
       });
       wx.showToast({ title: "已点赞", icon: "success" });
-      this.loadSquare();
+      await this.loadSquare();
     } catch (err) {
       wx.showToast({ title: err.message || "点赞失败", icon: "none" });
     }
