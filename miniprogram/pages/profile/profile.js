@@ -1,6 +1,18 @@
 const { request } = require("../../utils/request");
 const app = getApp();
 
+function canUseStorage() {
+  try {
+    if (typeof wx.getAccountInfoSync !== "function") {
+      return false;
+    }
+    const appId = wx.getAccountInfoSync()?.miniProgram?.appId || "";
+    return Boolean(appId && appId !== "touristappid");
+  } catch (_err) {
+    return false;
+  }
+}
+
 Page({
   data: {
     user: null,
@@ -20,7 +32,9 @@ Page({
         request({ url: "/api/friends", method: "GET" }),
       ]);
       app.globalData.user = meRes.user;
-      wx.setStorageSync("currentUser", meRes.user);
+      if (canUseStorage()) {
+        wx.setStorageSync("currentUser", meRes.user);
+      }
       this.setData({
         user: meRes.user,
         friends: friendRes.friends || [],

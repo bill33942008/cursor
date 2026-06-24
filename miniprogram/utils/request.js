@@ -27,56 +27,64 @@ function normalizeError(input, fallbackMessage) {
 
 function request(options) {
   return new Promise((resolve, reject) => {
-    wx.request({
-      url: `${app.globalData.baseUrl}${options.url}`,
-      method: options.method || "GET",
-      data: options.data || {},
-      header: {
-        "content-type": "application/json",
-        Authorization: app.globalData.token ? `Bearer ${app.globalData.token}` : "",
-      },
-      success: (res) => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve(res.data);
-          return;
-        }
-        reject(normalizeError(res.data, "request failed"));
-      },
-      fail: (err) => {
-        reject(normalizeError(err, "network request failed"));
-      },
-    });
+    try {
+      wx.request({
+        url: `${app.globalData.baseUrl}${options.url}`,
+        method: options.method || "GET",
+        data: options.data || {},
+        header: {
+          "content-type": "application/json",
+          Authorization: app.globalData.token ? `Bearer ${app.globalData.token}` : "",
+        },
+        success: (res) => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(res.data);
+            return;
+          }
+          reject(normalizeError(res.data, "request failed"));
+        },
+        fail: (err) => {
+          reject(normalizeError(err, "network request failed"));
+        },
+      });
+    } catch (err) {
+      reject(normalizeError(err, "request invocation failed"));
+    }
   });
 }
 
 function uploadFile(options) {
   return new Promise((resolve, reject) => {
-    wx.uploadFile({
-      url: `${app.globalData.baseUrl}${options.url}`,
-      filePath: options.filePath,
-      name: options.name || "file",
-      formData: options.formData || {},
-      header: {
-        Authorization: app.globalData.token ? `Bearer ${app.globalData.token}` : "",
-      },
-      success: (res) => {
-        let data = {};
-        try {
-          data = JSON.parse(res.data);
-        } catch (_err) {
-          reject(normalizeError(null, "invalid upload response"));
-          return;
-        }
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve(data);
-          return;
-        }
-        reject(normalizeError(data, "upload failed"));
-      },
-      fail: (err) => {
-        reject(normalizeError(err, "upload network failed"));
-      },
-    });
+    try {
+      wx.uploadFile({
+        url: `${app.globalData.baseUrl}${options.url}`,
+        filePath: options.filePath,
+        name: options.name || "file",
+        formData: options.formData || {},
+        header: {
+          Authorization: app.globalData.token ? `Bearer ${app.globalData.token}` : "",
+        },
+        success: (res) => {
+          let data = {};
+          try {
+            data = JSON.parse(res.data);
+          } catch (_err) {
+            reject(normalizeError(null, "invalid upload response"));
+            return;
+          }
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(data);
+            return;
+          }
+          reject(normalizeError(data, "upload failed"));
+        },
+        fail: (err) => {
+          reject(normalizeError(err, "upload network failed"));
+        },
+      });
+    } catch (err) {
+      reject(normalizeError(err, "upload invocation failed"));
+    }
   });
 }
 
