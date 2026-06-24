@@ -11,6 +11,8 @@ Page({
           wx.clearStorageSync();
           app.globalData.token = "";
           app.globalData.user = null;
+          app.globalData.wxUserProfile = null;
+          app.globalData.splashShownThisLaunch = false;
           wx.showToast({ title: "缓存已清理", icon: "success" });
         } catch (_err) {
           wx.showToast({ title: "清理失败", icon: "none" });
@@ -28,14 +30,17 @@ Page({
         try {
           wx.removeStorageSync("accessToken");
           wx.removeStorageSync("currentUser");
+          wx.removeStorageSync("wxUserProfile");
         } catch (_err) {
           // Ignore storage removal errors.
         }
         app.globalData.token = "";
         app.globalData.user = null;
+        app.globalData.wxUserProfile = null;
+        app.globalData.splashShownThisLaunch = false;
         wx.showToast({ title: "已退出", icon: "success" });
         setTimeout(() => {
-          wx.switchTab({ url: "/pages/square/square" });
+          wx.reLaunch({ url: "/pages/splash/index" });
         }, 300);
       },
     });

@@ -16,7 +16,7 @@
     <view class="op-item danger pressable" hover-class="pressable-hover" bindtap="logout">
       <view>
         <text class="op-title">退出当前账号</text>
-        <text class="subtitle">退出后将回到发现页，可重新登录</text>
+        <text class="subtitle">退出后将清空微信资料缓存，下次会重新获取昵称头像</text>
       </view>
       <text class="op-arrow">›</text>
     </view>
