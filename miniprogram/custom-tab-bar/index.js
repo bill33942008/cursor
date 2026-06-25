@@ -32,17 +32,10 @@ Component({
   },
 
   methods: {
-    syncFromCurrentPage() {
-      const pages = getCurrentPages();
-      const current = pages[pages.length - 1];
-      if (!current || !current.route) return;
-      this.updateSelectedByRoute(`/${current.route}`);
-    },
-
-    updateSelectedByRoute(route) {
-      const selected = TABS.findIndex((tab) => tab.pagePath === route);
-      if (selected >= 0 && selected !== this.data.selected) {
-        this.setData({ selected });
+    // Called by each tab page's onShow() to keep state in sync
+    setSelected(index) {
+      if (index !== this.data.selected) {
+        this.setData({ selected: index });
       }
     },
 
@@ -51,20 +44,27 @@ Component({
       const index = Number(event.currentTarget.dataset.index);
       if (!path) return;
 
+      // Update visual state immediately on tap — do not wait for navigation
       this.setData({ selected: index });
       wx.switchTab({ url: path });
     },
   },
 
-  pageLifetimes: {
-    show() {
-      this.syncFromCurrentPage();
-    },
-  },
+  // pageLifetimes.show() is intentionally removed.
+  // It fires while wx.switchTab is still in flight, so getCurrentPages()
+  // may still point to the outgoing page and overwrite the correct index.
+  // Each tab page calls tabBar.setSelected(n) inside its own onShow() instead.
 
   lifetimes: {
     attached() {
-      this.syncFromCurrentPage();
+      // Sync on first mount in case the component attaches after the page shows
+      const pages = getCurrentPages();
+      const current = pages[pages.length - 1];
+      if (!current || !current.route) return;
+      const index = TABS.findIndex((tab) => tab.pagePath === `/${current.route}`);
+      if (index >= 0) {
+        this.setData({ selected: index });
+      }
     },
   },
 });
