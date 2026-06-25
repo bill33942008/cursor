@@ -30,12 +30,10 @@ Page({
   },
 
   syncTabBar() {
+    app.globalData.currentTabIndex = 2;
     if (typeof this.getTabBar !== "function") return;
     const tabBar = this.getTabBar();
-    if (!tabBar) return;
-    if (typeof tabBar.setSelected === "function") {
-      tabBar.setSelected(2);
-    } else if (typeof tabBar.setData === "function") {
+    if (tabBar && typeof tabBar.setData === "function") {
       tabBar.setData({ selected: 2 });
     }
   },

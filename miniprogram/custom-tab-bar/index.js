@@ -25,6 +25,8 @@ const TABS = [
   },
 ];
 
+const app = getApp();
+
 Component({
   data: {
     selected: 0,
@@ -32,37 +34,36 @@ Component({
   },
 
   methods: {
-    // Called by each tab page's onShow() to keep state in sync
-    setSelected(index) {
-      if (index !== this.data.selected) {
-        this.setData({ selected: index });
-      }
-    },
-
     switchTab(event) {
       const path = event.currentTarget.dataset.path;
       const index = Number(event.currentTarget.dataset.index);
       if (!path) return;
 
-      // Update visual state immediately on tap — do not wait for navigation
+      // Write to global BEFORE wx.switchTab so every tabBar instance
+      // (including the one on the target page) reads the correct value
+      // in pageLifetimes.show().
+      app.globalData.currentTabIndex = index;
       this.setData({ selected: index });
       wx.switchTab({ url: path });
     },
   },
 
-  // pageLifetimes.show() is intentionally removed.
-  // It fires while wx.switchTab is still in flight, so getCurrentPages()
-  // may still point to the outgoing page and overwrite the correct index.
-  // Each tab page calls tabBar.setSelected(n) inside its own onShow() instead.
+  pageLifetimes: {
+    show() {
+      // Each tab page has its own tabBar component instance.
+      // Reading from globalData (already updated by switchTab or by the
+      // page's own onShow) ensures all instances stay in sync.
+      const index = app.globalData.currentTabIndex || 0;
+      if (this.data.selected !== index) {
+        this.setData({ selected: index });
+      }
+    },
+  },
 
   lifetimes: {
     attached() {
-      // Sync on first mount in case the component attaches after the page shows
-      const pages = getCurrentPages();
-      const current = pages[pages.length - 1];
-      if (!current || !current.route) return;
-      const index = TABS.findIndex((tab) => tab.pagePath === `/${current.route}`);
-      if (index >= 0) {
+      const index = app.globalData.currentTabIndex || 0;
+      if (this.data.selected !== index) {
         this.setData({ selected: index });
       }
     },

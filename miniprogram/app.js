@@ -7,6 +7,7 @@ App({
     isTouristMode: true,
     wxUserProfile: null,
     splashShownThisLaunch: false,
+    currentTabIndex: 0,
   },
 
   onLaunch() {
