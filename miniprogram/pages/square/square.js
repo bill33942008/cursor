@@ -103,6 +103,23 @@ Page({
     this.bootstrap();
   },
 
+  async onPullDownRefresh() {
+    try {
+      this.setData({ loading: true, error: "" });
+      if (!app.globalData.token) {
+        await app.ensureAuthSession();
+      }
+      await this.loadSquare();
+    } catch (err) {
+      const message = err.message || "刷新失败";
+      this.setData({ error: message });
+      wx.showToast({ title: message, icon: "none" });
+    } finally {
+      this.setData({ loading: false });
+      wx.stopPullDownRefresh();
+    }
+  },
+
   syncTabBar() {
     app.globalData.currentTabIndex = 0;
     if (typeof this.getTabBar !== "function") return;
