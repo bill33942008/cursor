@@ -17,10 +17,22 @@ Page({
     friends: [],
     incomingRequests: [],
     outgoingRequests: [],
+    guestMode: false,
   },
 
   onShow() {
     this.syncTabBar();
+    if (!app.globalData.token) {
+      this.setData({
+        loading: false,
+        user: null,
+        friends: [],
+        incomingRequests: [],
+        outgoingRequests: [],
+        guestMode: true,
+      });
+      return;
+    }
     this.loadProfileData();
   },
 
@@ -56,12 +68,31 @@ Page({
         friends: friendRes.friends || [],
         incomingRequests: friendRes.incomingRequests || [],
         outgoingRequests: friendRes.outgoingRequests || [],
+        guestMode: false,
       });
     } catch (err) {
-      wx.showToast({ title: err.message || "加载失败", icon: "none" });
+      if (err?.statusCode === 401 || err?.code === "UNAUTHORIZED") {
+        this.setData({
+          user: null,
+          friends: [],
+          incomingRequests: [],
+          outgoingRequests: [],
+          guestMode: true,
+        });
+      } else {
+        wx.showToast({ title: err.message || "加载失败", icon: "none" });
+      }
     } finally {
       this.setData({ loading: false });
     }
+  },
+
+  async joinTongxing() {
+    const ok = await app.ensureInteractiveAuth({ featureName: "个人中心" });
+    if (!ok) {
+      return;
+    }
+    this.loadProfileData();
   },
 
   async handleRequest(e) {

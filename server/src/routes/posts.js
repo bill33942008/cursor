@@ -3,6 +3,7 @@ const { z } = require("zod");
 const { v4: uuidv4 } = require("uuid");
 const { db } = require("../db");
 const { authRequired } = require("../middleware/auth");
+const { optionalAuth } = require("../middleware/optionalAuth");
 const { parsePagination } = require("../utils");
 const { moderateText } = require("../services/moderation");
 
@@ -152,8 +153,9 @@ router.post("/", authRequired, async (req, res, next) => {
   }
 });
 
-router.get("/square", authRequired, (req, res) => {
+router.get("/square", optionalAuth, (req, res) => {
   const { limit, offset } = parsePagination(req.query);
+  const viewerUserId = req.user?.id || "";
 
   const items = db
     .prepare(
@@ -189,7 +191,7 @@ router.get("/square", authRequired, (req, res) => {
       LIMIT ? OFFSET ?
       `
     )
-    .all(req.user.id, limit, offset)
+    .all(viewerUserId, limit, offset)
     .map((item) => ({
       ...item,
       displayName: item.isAnonymous ? "匿名旅友" : item.nickname,

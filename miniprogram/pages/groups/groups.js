@@ -79,9 +79,6 @@ Page({
   async loadGroups() {
     this.setData({ loading: true });
     try {
-      if (!app.globalData.token) {
-        await app.ensureAuthSession();
-      }
       const kw = encodeURIComponent(this.data.destinationKeyword.trim());
       const url = `/api/groups/discover?limit=20&offset=0${kw ? `&keyword=${kw}` : ""}`;
       const res = await request({ url, method: "GET" });
@@ -100,10 +97,11 @@ Page({
   },
 
   async loadCurrentGroup() {
+    if (!app.globalData.token) {
+      this.setData({ currentGroup: null });
+      return;
+    }
     try {
-      if (!app.globalData.token) {
-        await app.ensureAuthSession();
-      }
       const res = await request({
         url: "/api/groups/current",
         method: "GET",
@@ -131,9 +129,20 @@ Page({
     });
   },
 
+  async ensureFeatureAccess(featureName) {
+    if (app.globalData.token) {
+      return true;
+    }
+    return app.ensureInteractiveAuth({ featureName });
+  },
+
   async enterChat(e) {
     const groupId = e.currentTarget.dataset.id;
     const groupName = e.currentTarget.dataset.name || "群聊";
+    const allowed = await this.ensureFeatureAccess("进入群组聊天");
+    if (!allowed) {
+      return;
+    }
     try {
       const res = await request({
         url: `/api/groups/${groupId}/join`,
@@ -156,6 +165,10 @@ Page({
   },
 
   async createGroup() {
+    const allowed = await this.ensureFeatureAccess("创建群组");
+    if (!allowed) {
+      return;
+    }
     if (!this.data.createForm.name.trim()) {
       wx.showToast({ title: "请输入群名称", icon: "none" });
       return;

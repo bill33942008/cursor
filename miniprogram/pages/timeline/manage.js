@@ -161,7 +161,10 @@ Page({
     }
     try {
       if (!app.globalData.token) {
-        await app.ensureAuthSession();
+        const joined = await app.ensureInteractiveAuth({ featureName: "上传时间线图片" });
+        if (!joined) {
+          return;
+        }
       }
       const files = await chooseImages(Math.min(6, remainCount));
       if (files.length === 0) return;

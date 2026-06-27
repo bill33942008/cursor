@@ -60,6 +60,10 @@ function request(options) {
             resolve(res.data);
             return;
           }
+          if (res.statusCode === 401 && !app.globalData.token) {
+            reject({ message: "请先登录后再操作", code: "UNAUTHORIZED", statusCode: 401 });
+            return;
+          }
           if (res.statusCode === 401 && !requestOptions._authRetried) {
             refreshAuthSession()
               .then(() =>
@@ -112,6 +116,10 @@ function uploadFile(options) {
           }
           if (res.statusCode >= 200 && res.statusCode < 300) {
             resolve(data);
+            return;
+          }
+          if (res.statusCode === 401 && !app.globalData.token) {
+            reject({ message: "请先登录后再操作", code: "UNAUTHORIZED", statusCode: 401 });
             return;
           }
           if (res.statusCode === 401 && !uploadOptions._authRetried) {

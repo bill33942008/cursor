@@ -153,18 +153,21 @@ Page({
     this.setData({ isAnonymous: e.detail.value });
   },
 
+  async ensureFeatureAccess(featureName) {
+    if (app.globalData.token) {
+      return true;
+    }
+    return app.ensureInteractiveAuth({ featureName });
+  },
+
   async chooseMedia() {
     if (this.data.uploading) return;
     if (this.data.mediaAssets.length >= 9) {
       wx.showToast({ title: "最多上传9个媒体文件", icon: "none" });
       return;
     }
-    try {
-      if (!app.globalData.token) {
-        await app.ensureAuthSession();
-      }
-    } catch (err) {
-      wx.showToast({ title: err.message || "登录状态异常，请重试", icon: "none" });
+    const uploadAllowed = await this.ensureFeatureAccess("上传媒体并发布动态");
+    if (!uploadAllowed) {
       return;
     }
     this.setData({ uploading: true });
@@ -210,6 +213,10 @@ Page({
   },
 
   async submit() {
+    const allowed = await this.ensureFeatureAccess("发布动态");
+    if (!allowed) {
+      return;
+    }
     if (!this.data.content.trim()) {
       wx.showToast({ title: "请输入动态内容", icon: "none" });
       return;

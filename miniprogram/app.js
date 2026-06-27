@@ -87,6 +87,40 @@ App({
     });
   },
 
+  ensureInteractiveAuth(options = {}) {
+    const { featureName = "该功能", forceRefresh = false } = options;
+    if (this.globalData.token && this.globalData.user && !forceRefresh) {
+      return Promise.resolve(true);
+    }
+
+    return new Promise((resolve) => {
+      wx.showModal({
+        title: "加入同行",
+        content: `${featureName}需要登录授权，加入同行即可开启更多功能。`,
+        confirmText: "去加入",
+        cancelText: "暂不",
+        success: async (res) => {
+          if (!res.confirm) {
+            resolve(false);
+            return;
+          }
+          try {
+            let profile = null;
+            if (!this.globalData.isTouristMode) {
+              profile = await this.requestUserProfile();
+            }
+            await this.ensureAuthSession({ forceRefresh: true, profile });
+            resolve(Boolean(this.globalData.token));
+          } catch (err) {
+            wx.showToast({ title: err.message || "授权失败", icon: "none" });
+            resolve(false);
+          }
+        },
+        fail: () => resolve(false),
+      });
+    });
+  },
+
   ensureAuthSession(options = {}) {
     const { forceRefresh = false, profile = null } = options;
     if (this.globalData.token && !forceRefresh) {

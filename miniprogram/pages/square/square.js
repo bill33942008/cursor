@@ -106,9 +106,6 @@ Page({
   async onPullDownRefresh() {
     try {
       this.setData({ loading: true, error: "" });
-      if (!app.globalData.token) {
-        await app.ensureAuthSession();
-      }
       await this.loadSquare();
     } catch (err) {
       const message = err.message || "刷新失败";
@@ -132,9 +129,6 @@ Page({
   async bootstrap() {
     this.setData({ loading: true, error: "" });
     try {
-      if (!app.globalData.token) {
-        await app.ensureAuthSession();
-      }
       await this.loadSquare();
     } catch (err) {
       this.setData({ error: err.message || "加载失败" });
@@ -182,6 +176,13 @@ Page({
     this.applyPosts(nextPosts);
   },
 
+  async ensureFeatureAccess(featureName) {
+    if (app.globalData.token) {
+      return true;
+    }
+    return app.ensureInteractiveAuth({ featureName });
+  },
+
   openUserProfile(e) {
     const userId = e.currentTarget.dataset.userid;
     const postId = e.currentTarget.dataset.postid;
@@ -227,6 +228,10 @@ Page({
     if (!target) return;
 
     if (!target.commentsVisible) {
+      const allowed = await this.ensureFeatureAccess("查看和参与评论");
+      if (!allowed) {
+        return;
+      }
       this.updatePost(postId, (post) => ({
         ...post,
         commentsVisible: true,
@@ -284,6 +289,10 @@ Page({
 
   async submitComment(e) {
     const postId = e.currentTarget.dataset.id;
+    const allowed = await this.ensureFeatureAccess("发表评论");
+    if (!allowed) {
+      return;
+    }
     const target = this.data.posts.find((post) => post.id === postId);
     if (!target) return;
     const content = (target.commentDraft || "").trim();
@@ -332,6 +341,10 @@ Page({
   async likePost(e) {
     const postId = e.currentTarget.dataset.id;
     if (!postId) return;
+    const allowed = await this.ensureFeatureAccess("点赞");
+    if (!allowed) {
+      return;
+    }
     try {
       const res = await request({
         url: `/api/posts/${postId}/like`,
@@ -348,8 +361,12 @@ Page({
     }
   },
 
-  onShareTap(e) {
+  async onShareTap(e) {
     const postId = e.currentTarget.dataset.id;
+    const allowed = await this.ensureFeatureAccess("复制动态内容");
+    if (!allowed) {
+      return;
+    }
     const post = this.data.posts.find((item) => item.id === postId);
     if (!post) return;
     wx.setClipboardData({

@@ -152,6 +152,12 @@
   background: #fda4af;
 }
 
+.join-btn {
+  margin-top: 16rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+}
+
 .menu-item {
   display: flex;
   align-items: center;
