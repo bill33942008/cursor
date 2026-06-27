@@ -10,7 +10,7 @@
     <view class="profile-head">
       <view class="avatar">
         <image wx:if="{{user.avatarUrl}}" class="avatar-image" src="{{user.avatarUrl}}" mode="aspectFill"></image>
-        <text wx:else>{{(user.nickname || "U").slice(0, 1)}}</text>
+        <text wx:else>{{userInitial}}</text>
       </view>
       <view class="profile-main">
         <text class="name">{{user.nickname}}</text>

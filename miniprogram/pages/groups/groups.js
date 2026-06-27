@@ -89,6 +89,7 @@ Page({
         groups: (res.items || []).map((item) => ({
           ...item,
           categoryLabel: this.data.categoryOptions.find((option) => option.value === item.category)?.label || item.category,
+          destinationDisplay: item.destination ? item.destination : "未设置目的地",
         })),
       });
     } catch (err) {
@@ -108,7 +109,12 @@ Page({
         method: "GET",
       });
       this.setData({
-        currentGroup: res.group || null,
+        currentGroup: res.group
+          ? {
+              ...res.group,
+              messageCount24hDisplay: Number(res.group.messageCount24h || 0),
+            }
+          : null,
       });
     } catch (_err) {
       this.setData({ currentGroup: null });

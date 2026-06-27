@@ -54,7 +54,7 @@
       </view>
       <view class="group-tags">
         <text class="chip">{{item.categoryLabel}}</text>
-        <text class="chip">{{item.destination || "未设置目的地"}}</text>
+        <text class="chip">{{item.destinationDisplay}}</text>
       </view>
       <text class="subtitle owner">群主：{{item.ownerNickname}}</text>
       <view class="group-actions">
@@ -72,7 +72,7 @@
     <view class="current-group-main">
       <text class="fab-title">当前群组</text>
       <text class="fab-name">{{currentGroup.name}}</text>
-      <text class="fab-meta">24h {{currentGroup.messageCount24h || 0}} 条消息</text>
+      <text class="fab-meta">24h {{currentGroup.messageCount24hDisplay}} 条消息</text>
     </view>
   </view>
 </view>

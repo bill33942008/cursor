@@ -13,6 +13,7 @@ Page({
   data: {
     loading: true,
     user: null,
+    userInitial: "U",
     friends: [],
     incomingRequests: [],
     outgoingRequests: [],
@@ -51,6 +52,7 @@ Page({
       }
       this.setData({
         user: mergedUser,
+        userInitial: String(mergedUser.nickname || "U").charAt(0) || "U",
         friends: friendRes.friends || [],
         incomingRequests: friendRes.incomingRequests || [],
         outgoingRequests: friendRes.outgoingRequests || [],
