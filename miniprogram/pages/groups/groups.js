@@ -1,4 +1,5 @@
 const { request } = require("../../utils/request");
+const app = getApp();
 
 Page({
   data: {
@@ -27,6 +28,14 @@ Page({
   onShow() {
     this.syncTabBar();
     this.loadGroups();
+  },
+
+  async onPullDownRefresh() {
+    try {
+      await this.loadGroups();
+    } finally {
+      wx.stopPullDownRefresh();
+    }
   },
 
   syncTabBar() {
@@ -68,6 +77,9 @@ Page({
   async loadGroups() {
     this.setData({ loading: true });
     try {
+      if (!app.globalData.token) {
+        await app.ensureAuthSession();
+      }
       const kw = encodeURIComponent(this.data.destinationKeyword.trim());
       const url = `/api/groups/discover?limit=20&offset=0${kw ? `&keyword=${kw}` : ""}`;
       const res = await request({ url, method: "GET" });
