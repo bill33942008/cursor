@@ -7,6 +7,8 @@ const { optionalAuth } = require("../middleware/optionalAuth");
 const { parsePagination } = require("../utils");
 const { moderateText } = require("../services/moderation");
 const { broadcastGroupMessage } = require("../realtime/hub");
+const { isMockDataEnabled } = require("../services/appSettings");
+const { getMockGroups } = require("../services/mockData");
 
 const router = express.Router();
 
@@ -188,7 +190,8 @@ router.get("/discover", optionalAuth, (req, res) => {
   params.push(limit, offset);
 
   const items = db.prepare(query).all(...params);
-  res.json({ items, pagination: { limit, offset } });
+  const mergedItems = isMockDataEnabled() ? [...items, ...getMockGroups()] : items;
+  res.json({ items: mergedItems, pagination: { limit, offset }, mockDataEnabled: isMockDataEnabled() });
 });
 
 router.get("/current", authRequired, (req, res) => {

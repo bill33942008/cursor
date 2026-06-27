@@ -17,6 +17,7 @@ const groupRoutes = require("./routes/groups");
 const mediaRoutes = require("./routes/media");
 const adminRoutes = require("./routes/admin");
 const userRoutes = require("./routes/users");
+const sceneRoutes = require("./routes/scenes");
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -76,6 +77,7 @@ async function bootstrap() {
   app.use("/api/groups", groupRoutes);
   app.use("/api/media", mediaRoutes);
   app.use("/api/users", userRoutes);
+  app.use("/api/scenes", sceneRoutes);
   app.use("/api/admin", adminRoutes);
 
   app.use((err, _req, res, _next) => {

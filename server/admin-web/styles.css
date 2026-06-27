@@ -92,6 +92,30 @@ button.danger {
   margin-bottom: 16px;
 }
 
+.mock-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+}
+
+.mock-setting h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.switch-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
 .card {
   background: #fff;
   border-radius: 12px;

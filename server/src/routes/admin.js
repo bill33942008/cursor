@@ -15,6 +15,7 @@ const {
 const { getActivityStats } = require("../services/activity");
 const { getRealtimePresenceStats } = require("../realtime/hub");
 const { parsePagination } = require("../utils");
+const { isMockDataEnabled, setMockDataEnabled } = require("../services/appSettings");
 
 const router = express.Router();
 
@@ -198,8 +199,32 @@ router.get("/overview", (_req, res) => {
       dau: activity.dau,
       mau: activity.mau,
       connectedUsers: realtime.connectedUsers,
+      mockDataEnabled: isMockDataEnabled(),
     },
   });
+});
+
+router.get("/settings/mock-data", (_req, res) => {
+  res.json({ enabled: isMockDataEnabled() });
+});
+
+router.post("/settings/mock-data", (req, res) => {
+  const schema = z.object({
+    enabled: z.boolean(),
+  });
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: "invalid payload", errors: parsed.error.issues });
+  }
+  setMockDataEnabled(parsed.data.enabled);
+  logAdminAction({
+    actionType: "toggle_mock_data",
+    targetType: "app_setting",
+    targetId: "mock_data_enabled",
+    payload: parsed.data,
+    adminId: req.admin.id,
+  });
+  return res.json({ success: true, enabled: isMockDataEnabled() });
 });
 
 router.get("/trends", (req, res) => {

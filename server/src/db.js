@@ -293,6 +293,12 @@ function initSchema() {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS app_settings (
+      setting_key TEXT PRIMARY KEY,
+      setting_value TEXT NOT NULL,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS admin_users (
       id TEXT PRIMARY KEY,
       username TEXT UNIQUE NOT NULL,
@@ -377,6 +383,7 @@ function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_users_current_group_id ON users (current_group_id);
     CREATE INDEX IF NOT EXISTS idx_daily_active_users_date ON daily_active_users (activity_date DESC);
     CREATE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users (username);
+    CREATE INDEX IF NOT EXISTS idx_app_settings_key ON app_settings (setting_key);
     CREATE INDEX IF NOT EXISTS idx_post_comments_post_id ON post_comments (post_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_post_comments_parent_id ON post_comments (parent_comment_id, created_at ASC);
     CREATE INDEX IF NOT EXISTS idx_user_timeline_events_user_id ON user_timeline_events (user_id, occurred_at DESC);

@@ -391,4 +391,10 @@ Page({
       fail: () => wx.showToast({ title: "复制失败", icon: "none" }),
     });
   },
+
+  openSceneTheater() {
+    wx.navigateTo({
+      url: "/pages/scene/vertical",
+    });
+  },
 });

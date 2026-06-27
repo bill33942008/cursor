@@ -7,6 +7,7 @@
     "pages/profile/profile",
     "pages/chat/chat",
     "pages/timeline/manage",
+    "pages/scene/vertical",
     "pages/user/public",
     "pages/settings/index",
     "pages/settings/privacy",

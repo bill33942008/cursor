@@ -222,3 +222,10 @@ CREATE TABLE IF NOT EXISTS admin_actions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_admin_actions_created_at ON admin_actions(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS app_settings (
+  setting_key VARCHAR(120) PRIMARY KEY,
+  setting_value TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_app_settings_key ON app_settings(setting_key);

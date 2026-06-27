@@ -2,6 +2,10 @@
   <view class="hero-card">
     <view class="hero-title">📍 在路上广场</view>
     <view class="hero-subtitle">记录这一程，遇见同路的人</view>
+    <view class="scene-entry pressable" hover-class="pressable-hover" bindtap="openSceneTheater">
+      <text class="scene-entry-title">🎬 同程聚合剧场</text>
+      <text class="scene-entry-subtitle">同车次 / 同航班 / 同景点，沉浸式浏览</text>
+    </view>
     <view class="hero-pill-row">
       <text class="hero-pill">🔥 实时动态</text>
       <text class="hero-pill">🚄 同城同路线</text>

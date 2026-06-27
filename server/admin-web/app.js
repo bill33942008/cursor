@@ -93,6 +93,13 @@
     renderStats(overview);
   }
 
+  async function loadMockDataSetting() {
+    const data = await api("/settings/mock-data");
+    const enabled = Boolean(data.enabled);
+    $("mock-data-toggle").checked = enabled;
+    $("mock-data-label").textContent = enabled ? "开启" : "关闭";
+  }
+
   async function loadUsers() {
     const keyword = $("user-keyword").value.trim();
     const status = $("user-status").value;
@@ -254,6 +261,7 @@
     state.me = meData.admin;
     $("admin-meta").textContent = `当前登录: ${state.me.username} (${state.me.role})`;
     await loadOverview();
+    await loadMockDataSetting();
     await refreshActiveTab();
 
     if (state.refreshTimer) {
@@ -339,7 +347,24 @@
     });
     $("refresh-btn").addEventListener("click", async () => {
       await loadOverview();
+      await loadMockDataSetting();
       await refreshActiveTab();
+    });
+
+    $("mock-data-toggle").addEventListener("change", async (event) => {
+      const enabled = Boolean(event.target.checked);
+      try {
+        const data = await api("/settings/mock-data", {
+          method: "POST",
+          body: { enabled },
+        });
+        $("mock-data-toggle").checked = Boolean(data.enabled);
+        $("mock-data-label").textContent = data.enabled ? "开启" : "关闭";
+      } catch (err) {
+        event.target.checked = !enabled;
+        $("mock-data-label").textContent = event.target.checked ? "开启" : "关闭";
+        alert(`切换失败: ${err.message}`);
+      }
     });
 
     $("load-users-btn").addEventListener("click", loadUsers);

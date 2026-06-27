@@ -6,6 +6,8 @@ const { authRequired } = require("../middleware/auth");
 const { optionalAuth } = require("../middleware/optionalAuth");
 const { parsePagination } = require("../utils");
 const { moderateText } = require("../services/moderation");
+const { isMockDataEnabled } = require("../services/appSettings");
+const { getMockSquarePosts } = require("../services/mockData");
 
 const router = express.Router();
 
@@ -201,7 +203,9 @@ router.get("/square", optionalAuth, (req, res) => {
       nickname: undefined,
     }));
 
-  res.json({ items, pagination: { limit, offset } });
+  const mergedItems = isMockDataEnabled() ? [...items, ...getMockSquarePosts()] : items;
+
+  res.json({ items: mergedItems, pagination: { limit, offset }, mockDataEnabled: isMockDataEnabled() });
 });
 
 router.get("/:id/comments", authRequired, (req, res) => {
