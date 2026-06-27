@@ -1,0 +1,35 @@
+<view class="page-wrap">
+  <view class="card">
+    <view class="section-title">设置中心</view>
+    <text class="subtitle">管理应用偏好、隐私与账号安全</text>
+  </view>
+
+  <view class="card">
+    <view class="menu-item pressable" hover-class="pressable-hover" bindtap="goTimelineManage">
+      <text class="menu-icon">🗺️</text>
+      <view class="menu-main">
+        <text class="menu-title">我的时间线</text>
+        <text class="subtitle">记录并管理你的公开旅程故事</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+
+    <view class="menu-item pressable" hover-class="pressable-hover" bindtap="goPrivacy">
+      <text class="menu-icon">🔒</text>
+      <view class="menu-main">
+        <text class="menu-title">隐私设置</text>
+        <text class="subtitle">匿名展示、推荐可见性与交互权限</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+
+    <view class="menu-item pressable" hover-class="pressable-hover" bindtap="goSecurity">
+      <text class="menu-icon">🛡️</text>
+      <view class="menu-main">
+        <text class="menu-title">账号安全</text>
+        <text class="subtitle">登录状态、缓存清理、设备会话</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+</view>

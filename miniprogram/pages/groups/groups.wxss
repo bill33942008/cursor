@@ -1,0 +1,101 @@
+.filter-card {
+  margin-bottom: 16rpx;
+}
+
+.filter-card .input-box {
+  margin-bottom: 16rpx;
+}
+
+.actions-inline {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 2rpx;
+}
+
+.create-toggle {
+  padding: 0 24rpx;
+}
+
+.create-card .input-box,
+.create-card .picker-box {
+  margin-bottom: 14rpx;
+}
+
+.submit-btn {
+  margin-top: 8rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.group-card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 10rpx 32rpx rgba(20, 31, 56, 0.08);
+}
+
+.group-name {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #101828;
+}
+
+.member-count {
+  font-size: 23rpx;
+  color: #667085;
+}
+
+.group-tags {
+  margin: 12rpx 0 8rpx;
+}
+
+.owner {
+  display: block;
+  margin-bottom: 16rpx;
+}
+
+.group-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12rpx;
+}
+
+.chat-btn {
+  height: 62rpx;
+  line-height: 62rpx;
+  padding: 0 26rpx;
+}
+
+.group-skeleton-card {
+  padding: 10rpx 18rpx;
+}
+
+.group-skeleton-item {
+  padding: 14rpx 0;
+  border-bottom: 1rpx solid #f0f2f6;
+}
+
+.skeleton-row {
+  height: 20rpx;
+  border-radius: 10rpx;
+  margin-bottom: 8rpx;
+}
+
+.skeleton-row.lg {
+  width: 80%;
+}
+
+.skeleton-row {
+  width: 96%;
+}
+
+.skeleton-row.sm {
+  width: 50%;
+}

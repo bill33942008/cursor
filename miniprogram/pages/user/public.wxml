@@ -1,0 +1,162 @@
+<view class="page-wrap">
+  <view wx:if="{{loading}}" class="card">
+    <view class="skeleton skeleton-line lg"></view>
+    <view class="skeleton skeleton-line"></view>
+    <view class="skeleton skeleton-line sm"></view>
+  </view>
+
+  <block wx:if="{{!loading && profile}}">
+    <view class="profile-header">
+      <view class="profile-head">
+        <image wx:if="{{profile.avatarUrl}}" class="avatar-image" src="{{profile.avatarUrl}}" mode="aspectFill" />
+        <view wx:else class="avatar-placeholder">U</view>
+        <view class="profile-main">
+          <text class="name">{{profile.nickname}}</text>
+          <text class="subtitle">{{profile.bio || "这个人很低调，还没有写简介"}}</text>
+        </view>
+      </view>
+      <view class="profile-id">
+        <text class="muted">用户ID：{{profile.id}}</text>
+      </view>
+      <view class="row-between summary-row">
+        <text class="subtitle">时间线记录：{{profile.timelineCount}}</text>
+        <text class="chip">{{profile.canViewTimeline ? "可查看" : "未公开"}}</text>
+      </view>
+      <view class="profile-actions">
+        <button
+          wx:if="{{relation && !relation.isSelf && !relation.isFriend && !relation.hasOutgoingPendingRequest}}"
+          class="btn-primary action-btn"
+          size="mini"
+          hover-class="pressable-hover"
+          bindtap="sendFriendRequest"
+        >
+          添加好友
+        </button>
+        <button
+          wx:if="{{relation && relation.hasOutgoingPendingRequest}}"
+          class="btn-ghost action-btn"
+          size="mini"
+          hover-class="pressable-hover"
+          bindtap="revokeRequest"
+        >
+          撤回申请
+        </button>
+        <button wx:if="{{relation && relation.isFriend}}" class="btn-ghost action-btn" size="mini" disabled>
+          已是好友
+        </button>
+        <button wx:if="{{relation && relation.isSelf}}" class="icon-btn action-btn" size="mini" hover-class="pressable-hover" bindtap="goTimelineManage">
+          管理我的时间线
+        </button>
+      </view>
+      <view wx:if="{{relation && !relation.isSelf && !relation.isFriend && !relation.hasOutgoingPendingRequest}}" class="note-row">
+        <input
+          class="input-box note-input"
+          placeholder="申请备注（可选）"
+          placeholder-style="color:#98a2b3;font-size:24rpx;"
+          value="{{friendNote}}"
+          bindinput="onFriendNoteInput"
+        />
+      </view>
+    </view>
+
+    <view wx:if="{{timelineLoading}}" class="card">
+      <view class="skeleton skeleton-line lg"></view>
+      <view class="skeleton skeleton-line"></view>
+      <view class="skeleton skeleton-line sm"></view>
+    </view>
+
+    <view wx:if="{{!timelineLoading && !timelineAllowed}}" class="card state-card">
+      <text class="state-icon">🔐</text>
+      <text class="section-title">该用户未公开时间线</text>
+      <text class="subtitle">目前仅可查看基础信息</text>
+    </view>
+
+    <view wx:if="{{!timelineLoading && timelineAllowed && timeline.length === 0}}" class="card state-card">
+      <text class="state-icon">🧭</text>
+      <text class="section-title">暂无时间线记录</text>
+      <text class="subtitle">他还没有公开旅程故事</text>
+    </view>
+
+    <view wx:if="{{!timelineLoading && timelineAllowed && timeline.length > 0}}" class="timeline-list">
+      <block wx:for="{{timeline}}" wx:key="id">
+        <view class="timeline-item list-appear">
+          <view class="timeline-dot"></view>
+          <view class="timeline-card">
+            <text class="event-title">{{item.title}}</text>
+            <text class="subtitle">{{item.location}}</text>
+            <text class="muted">{{item.occurredAt}}</text>
+            <text wx:if="{{item.note}}" class="event-note">{{item.note}}</text>
+            <view wx:if="{{item.coverMedia}}" class="timeline-media-wrap">
+              <image
+                class="timeline-cover-media"
+                src="{{item.coverMedia}}"
+                mode="aspectFill"
+                data-eventid="{{item.id}}"
+                data-index="0"
+                bindtap="previewTimelineMedia"
+              />
+              <view wx:if="{{item.thumbMedia.length > 0}}" class="timeline-thumb-row">
+                <block wx:for="{{item.thumbMedia}}" wx:key="*this" wx:for-item="thumb" wx:for-index="thumbIndex">
+                  <view class="timeline-thumb-item">
+                    <image
+                      class="timeline-thumb-media"
+                      src="{{thumb}}"
+                      mode="aspectFill"
+                      data-eventid="{{item.id}}"
+                      data-index="{{thumbIndex + 1}}"
+                      bindtap="previewTimelineMedia"
+                    />
+                    <view wx:if="{{item.moreMediaCount > 0 && thumbIndex === item.thumbMedia.length - 1}}" class="timeline-more-mask">
+                      +{{item.moreMediaCount}}
+                    </view>
+                  </view>
+                </block>
+              </view>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <view wx:if="{{postsLoading}}" class="card">
+      <view class="skeleton skeleton-line lg"></view>
+      <view class="skeleton skeleton-line"></view>
+      <view class="skeleton skeleton-line sm"></view>
+    </view>
+
+    <view class="card">
+      <view class="row-between">
+        <text class="section-title">公开动态列表</text>
+        <text class="muted">{{posts.length}} 条</text>
+      </view>
+      <view wx:if="{{!postsLoading && posts.length === 0}}" class="empty-posts">
+        <text class="subtitle">暂无公开动态</text>
+      </view>
+      <block wx:for="{{posts}}" wx:key="id">
+        <view class="post-item">
+          <text class="post-content">{{item.expanded ? item.content : item.previewContent}}</text>
+          <text wx:if="{{item.needFold}}" class="post-expand-btn" data-postid="{{item.id}}" bindtap="togglePostExpand">
+            {{item.expanded ? '收起' : '展开全文'}}
+          </text>
+          <view wx:if="{{item.mediaUrls.length > 0}}" class="post-media-grid">
+            <block wx:for="{{item.mediaUrls}}" wx:key="*this" wx:for-item="mediaUrl">
+              <image
+                class="post-media"
+                src="{{mediaUrl}}"
+                mode="aspectFill"
+                data-postid="{{item.id}}"
+                data-index="{{index}}"
+                bindtap="previewPostMedia"
+              />
+            </block>
+          </view>
+          <view class="post-foot">
+            <text class="chip">{{item.visibility === 'public' ? '公开' : '好友可见'}}</text>
+            <text class="muted">{{item.createdAt}}</text>
+            <text class="muted">❤️ {{item.likeCount}} · 💬 {{item.commentCount}}</text>
+          </view>
+        </view>
+      </block>
+    </view>
+  </block>
+</view>

@@ -1,0 +1,23 @@
+.op-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid #f0f2f6;
+}
+
+.op-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  margin-bottom: 4rpx;
+}
+
+.op-arrow {
+  font-size: 30rpx;
+  color: #98a2b3;
+}
+
+.danger .op-title {
+  color: #d92d20;
+}
