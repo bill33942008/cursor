@@ -36,9 +36,42 @@
     <picker mode="region" value="{{originRegion}}" bindchange="onOriginRegionChange">
       <view class="picker-box">{{originRegionText}}</view>
     </picker>
-    <picker mode="region" value="{{destinationRegion}}" bindchange="onDestinationRegionChange">
-      <view class="picker-box">{{destinationRegionText}}</view>
-    </picker>
+    <view class="destination-mode-wrap">
+      <text class="subtitle mode-label">目的地输入方式</text>
+      <view class="mode-options">
+        <block wx:for="{{destinationModeOptions}}" wx:key="value">
+          <view
+            class="mode-chip {{destinationModeIndex === index ? 'active' : ''}}"
+            data-index="{{index}}"
+            bindtap="onDestinationModeChange"
+          >
+            {{item.label}}
+          </view>
+        </block>
+      </view>
+    </view>
+    <block wx:if="{{destinationModeOptions[destinationModeIndex].value === 'region'}}">
+      <picker mode="region" value="{{destinationRegion}}" bindchange="onDestinationRegionChange">
+        <view class="picker-box">{{destinationRegionText}}</view>
+      </picker>
+    </block>
+    <block wx:else>
+      <input
+        class="input-box"
+        placeholder="输入景点/地点名称（如 西湖、兵马俑）"
+        placeholder-style="color:#98a2b3;font-size:27rpx;"
+        value="{{destinationSpotInput}}"
+        bindinput="onDestinationSpotInput"
+      />
+      <view class="suggestion-box" wx:if="{{destinationSpotSuggestions.length > 0}}">
+        <view class="subtitle suggestion-title">热门/匹配推荐（也可直接输入）</view>
+        <view class="suggestion-list">
+          <block wx:for="{{destinationSpotSuggestions}}" wx:key="*this">
+            <text class="suggestion-item" data-value="{{item}}" bindtap="onDestinationSuggestionTap">{{item}}</text>
+          </block>
+        </view>
+      </view>
+    </block>
     <input class="input-box" placeholder="出发时间窗口（可选，如 今天 14:00-16:00）" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{departureWindow}}" bindinput="onDepartureWindowInput" />
 
     <view class="row-between anonymous-row">

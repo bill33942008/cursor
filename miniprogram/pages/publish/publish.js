@@ -1,6 +1,64 @@
 const { request, uploadFile } = require("../../utils/request");
 const app = getApp();
 
+const HOT_DESTINATION_SPOTS = [
+  "北京故宫",
+  "八达岭长城",
+  "颐和园",
+  "上海外滩",
+  "上海迪士尼",
+  "东方明珠",
+  "杭州西湖",
+  "千岛湖",
+  "乌镇",
+  "西溪湿地",
+  "苏州园林",
+  "拙政园",
+  "南京夫子庙",
+  "中山陵",
+  "黄山风景区",
+  "九华山",
+  "厦门鼓浪屿",
+  "武夷山",
+  "深圳世界之窗",
+  "广州长隆",
+  "珠海长隆海洋王国",
+  "桂林漓江",
+  "阳朔西街",
+  "张家界国家森林公园",
+  "凤凰古城",
+  "武汉黄鹤楼",
+  "三峡大坝",
+  "洛阳龙门石窟",
+  "西安兵马俑",
+  "华山",
+  "大唐不夜城",
+  "成都宽窄巷子",
+  "都江堰",
+  "九寨沟",
+  "稻城亚丁",
+  "重庆洪崖洞",
+  "磁器口古镇",
+  "青岛栈桥",
+  "泰山",
+  "大连老虎滩",
+  "哈尔滨冰雪大世界",
+  "长白山天池",
+  "呼伦贝尔草原",
+  "敦煌莫高窟",
+  "鸣沙山月牙泉",
+  "青海湖",
+  "茶卡盐湖",
+  "拉萨布达拉宫",
+  "纳木错",
+  "三亚亚龙湾",
+  "蜈支洲岛",
+  "丽江古城",
+  "玉龙雪山",
+  "大理洱海",
+  "西双版纳",
+];
+
 function resolveMediaUrl(url) {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -85,6 +143,18 @@ function formatRegion(region) {
   return region.filter(Boolean).join(" ");
 }
 
+function normalizeKeyword(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function buildSpotSuggestions(keyword) {
+  const q = normalizeKeyword(keyword);
+  if (!q) {
+    return HOT_DESTINATION_SPOTS.slice(0, 10);
+  }
+  return HOT_DESTINATION_SPOTS.filter((item) => item.toLowerCase().includes(q)).slice(0, 10);
+}
+
 Page({
   data: {
     content: "",
@@ -106,11 +176,18 @@ Page({
     ],
     transportIndex: 0,
     phaseIndex: 2,
+    destinationModeOptions: [
+      { label: "省市区", value: "region" },
+      { label: "景点/地点", value: "spot" },
+    ],
+    destinationModeIndex: 0,
     routeCode: "",
     originRegion: [],
     destinationRegion: [],
     originRegionText: "出发地（必填）",
     destinationRegionText: "目的地（必填）",
+    destinationSpotInput: "",
+    destinationSpotSuggestions: HOT_DESTINATION_SPOTS.slice(0, 10),
     departureWindow: "",
     mediaAssets: [],
     uploading: false,
@@ -153,6 +230,32 @@ Page({
     this.setData({
       destinationRegion: region,
       destinationRegionText: text ? `目的地：${text}` : "目的地（必填）",
+    });
+  },
+
+  onDestinationModeChange(e) {
+    const index = Number(e.currentTarget.dataset.index || 0);
+    const option = this.data.destinationModeOptions[index];
+    const isSpotMode = option?.value === "spot";
+    this.setData({
+      destinationModeIndex: index,
+      destinationSpotSuggestions: buildSpotSuggestions(isSpotMode ? this.data.destinationSpotInput : ""),
+    });
+  },
+
+  onDestinationSpotInput(e) {
+    const value = e.detail.value;
+    this.setData({
+      destinationSpotInput: value,
+      destinationSpotSuggestions: buildSpotSuggestions(value),
+    });
+  },
+
+  onDestinationSuggestionTap(e) {
+    const value = e.currentTarget.dataset.value || "";
+    this.setData({
+      destinationSpotInput: value,
+      destinationSpotSuggestions: buildSpotSuggestions(value),
     });
   },
 
@@ -241,7 +344,10 @@ Page({
       return;
     }
     const originText = formatRegion(this.data.originRegion);
-    const destinationText = formatRegion(this.data.destinationRegion);
+    const isSpotMode = this.data.destinationModeOptions[this.data.destinationModeIndex]?.value === "spot";
+    const destinationText = isSpotMode
+      ? String(this.data.destinationSpotInput || "").trim()
+      : formatRegion(this.data.destinationRegion);
     if (!originText || !destinationText) {
       wx.showToast({ title: "请填写出发地和目的地", icon: "none" });
       return;
@@ -290,6 +396,9 @@ Page({
         destinationRegion: [],
         originRegionText: "出发地（必填）",
         destinationRegionText: "目的地（必填）",
+        destinationModeIndex: 0,
+        destinationSpotInput: "",
+        destinationSpotSuggestions: HOT_DESTINATION_SPOTS.slice(0, 10),
         departureWindow: "",
         isAnonymous: false,
         mediaAssets: [],

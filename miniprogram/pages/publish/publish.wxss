@@ -18,6 +18,65 @@
   margin-bottom: 14rpx;
 }
 
+.destination-mode-wrap {
+  margin-bottom: 12rpx;
+}
+
+.mode-label {
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.mode-options {
+  display: flex;
+  gap: 10rpx;
+}
+
+.mode-chip {
+  height: 56rpx;
+  line-height: 56rpx;
+  padding: 0 18rpx;
+  border-radius: 999rpx;
+  font-size: 23rpx;
+  color: #475467;
+  background: #f2f4f7;
+  border: 2rpx solid #e5e7eb;
+}
+
+.mode-chip.active {
+  color: #ff2442;
+  border-color: #ffc8d2;
+  background: #fff1f4;
+}
+
+.suggestion-box {
+  margin-top: -4rpx;
+  margin-bottom: 14rpx;
+  padding: 14rpx;
+  border-radius: 16rpx;
+  background: #f8f9fc;
+  border: 2rpx solid #edf0f5;
+}
+
+.suggestion-title {
+  display: block;
+  margin-bottom: 10rpx;
+}
+
+.suggestion-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.suggestion-item {
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 23rpx;
+  color: #ff2442;
+  background: #fff1f4;
+}
+
 .anonymous-row {
   margin: 8rpx 0 24rpx;
   padding: 18rpx 16rpx;
