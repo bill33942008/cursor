@@ -153,6 +153,7 @@ Page({
       return {
         ...item,
         likeCount: Number(item.likeCount || 0),
+        likedByMe: Boolean(Number(item.likedByMe || 0)),
         commentCount: Number(item.commentCount || 0),
         comments: [],
         commentsVisible: false,
@@ -332,15 +333,16 @@ Page({
     const postId = e.currentTarget.dataset.id;
     if (!postId) return;
     try {
-      await request({
+      const res = await request({
         url: `/api/posts/${postId}/like`,
         method: "POST",
       });
-      wx.showToast({ title: "已点赞", icon: "success" });
       this.updatePost(postId, (post) => ({
         ...post,
-        likeCount: post.likeCount + 1,
+        likedByMe: Boolean(res.liked),
+        likeCount: Number(res.likeCount ?? post.likeCount),
       }));
+      wx.showToast({ title: res.liked ? "已点赞" : "已取消", icon: "none" });
     } catch (err) {
       wx.showToast({ title: err.message || "点赞失败", icon: "none" });
     }

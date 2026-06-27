@@ -23,7 +23,7 @@ App({
     const isTourist = !appId || appId === "touristappid";
     this.globalData.isTouristMode = isTourist;
 
-    if (!isTourist) {
+    try {
       const token = wx.getStorageSync("accessToken");
       const user = wx.getStorageSync("currentUser");
       const wxUserProfile = wx.getStorageSync("wxUserProfile");
@@ -36,6 +36,8 @@ App({
       if (wxUserProfile) {
         this.globalData.wxUserProfile = wxUserProfile;
       }
+    } catch (_err) {
+      // Ignore storage read errors in unsupported environments.
     }
 
     const wsBase = this.globalData.baseUrl.replace(/^http/, "ws").replace(/\/$/, "");
@@ -95,7 +97,13 @@ App({
     }
 
     const fallbackNickname = `旅友${Math.floor(Math.random() * 1000)}`;
-    const cachedProfile = this.globalData.wxUserProfile || (!this.globalData.isTouristMode ? wx.getStorageSync("wxUserProfile") : null);
+    let persistedProfile = null;
+    try {
+      persistedProfile = wx.getStorageSync("wxUserProfile");
+    } catch (_err) {
+      persistedProfile = null;
+    }
+    const cachedProfile = this.globalData.wxUserProfile || persistedProfile;
     const mergedProfile = {
       nickname: (profile?.nickname || cachedProfile?.nickname || "").trim() || fallbackNickname,
       avatarUrl: profile?.avatarUrl || cachedProfile?.avatarUrl || "",
@@ -132,13 +140,20 @@ App({
               return;
             }
             const loginData = res.data || {};
+            const serverUser = loginData.user || {};
+            const syncedProfile = {
+              nickname: (serverUser.nickname || mergedProfile.nickname || "").trim() || fallbackNickname,
+              avatarUrl: serverUser.avatarUrl || mergedProfile.avatarUrl || "",
+            };
             this.globalData.token = loginData.accessToken || "";
-            this.globalData.user = loginData.user || null;
-            this.globalData.wxUserProfile = mergedProfile;
-            if (!this.globalData.isTouristMode) {
+            this.globalData.user = serverUser || null;
+            this.globalData.wxUserProfile = syncedProfile;
+            try {
               wx.setStorageSync("accessToken", this.globalData.token);
               wx.setStorageSync("currentUser", this.globalData.user);
-              wx.setStorageSync("wxUserProfile", mergedProfile);
+              wx.setStorageSync("wxUserProfile", syncedProfile);
+            } catch (_err) {
+              // Ignore storage persistence errors in limited environments.
             }
             resolve(loginData);
           },

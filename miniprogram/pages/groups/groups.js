@@ -4,6 +4,7 @@ const app = getApp();
 Page({
   data: {
     groups: [],
+    currentGroup: null,
     loading: false,
     skeletonRows: [1, 2, 3],
     destinationKeyword: "",
@@ -28,11 +29,12 @@ Page({
   onShow() {
     this.syncTabBar();
     this.loadGroups();
+    this.loadCurrentGroup();
   },
 
   async onPullDownRefresh() {
     try {
-      await this.loadGroups();
+      await Promise.all([this.loadGroups(), this.loadCurrentGroup()]);
     } finally {
       wx.stopPullDownRefresh();
     }
@@ -96,33 +98,51 @@ Page({
     }
   },
 
-  async joinGroup(e) {
-    const groupId = e.currentTarget.dataset.id;
+  async loadCurrentGroup() {
     try {
-      await request({
-        url: `/api/groups/${groupId}/join`,
-        method: "POST",
+      if (!app.globalData.token) {
+        await app.ensureAuthSession();
+      }
+      const res = await request({
+        url: "/api/groups/current",
+        method: "GET",
       });
-      wx.showToast({ title: "加入成功", icon: "success" });
-    } catch (err) {
-      wx.showToast({ title: err.message || "加入失败", icon: "none" });
+      this.setData({
+        currentGroup: res.group || null,
+      });
+    } catch (_err) {
+      this.setData({ currentGroup: null });
     }
+  },
+
+  openCurrentGroup() {
+    const group = this.data.currentGroup;
+    if (!group?.id) {
+      return;
+    }
+    wx.navigateTo({
+      url: `/pages/chat/chat?groupId=${group.id}&groupName=${encodeURIComponent(group.name || "群聊")}`,
+    });
   },
 
   async enterChat(e) {
     const groupId = e.currentTarget.dataset.id;
     const groupName = e.currentTarget.dataset.name || "群聊";
     try {
-      await request({
+      const res = await request({
         url: `/api/groups/${groupId}/join`,
         method: "POST",
       });
-    } catch (_err) {
-      // Ignore join errors here; if already a member, navigation should still continue.
+      this.setData({
+        currentGroup: res.currentGroup || this.data.currentGroup,
+      });
+      wx.showToast({ title: "进入成功", icon: "success" });
+      wx.navigateTo({
+        url: `/pages/chat/chat?groupId=${groupId}&groupName=${encodeURIComponent(groupName)}`,
+      });
+    } catch (err) {
+      wx.showToast({ title: err.message || "进入群聊失败", icon: "none" });
     }
-    wx.navigateTo({
-      url: `/pages/chat/chat?groupId=${groupId}&groupName=${encodeURIComponent(groupName)}`,
-    });
   },
 
   toggleCreate() {
@@ -146,6 +166,9 @@ Page({
         wx.showToast({ title: "建群成功，等待审核", icon: "none" });
       }
       this.setData({
+        currentGroup: res.currentGroup || this.data.currentGroup,
+      });
+      this.setData({
         creating: false,
         categoryIndex: 0,
         createForm: {
@@ -157,6 +180,7 @@ Page({
         },
       });
       this.loadGroups();
+      this.loadCurrentGroup();
     } catch (err) {
       wx.showToast({ title: err.message || "建群失败", icon: "none" });
     }

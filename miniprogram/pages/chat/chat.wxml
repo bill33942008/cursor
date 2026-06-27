@@ -5,7 +5,10 @@
         <view class="section-title">💬 {{groupName}}</view>
         <text class="subtitle">旅途中说两句，互相照应更安心</text>
       </view>
-      <text class="ws-status {{wsConnected ? 'online' : 'offline'}}">{{wsConnected ? "在线" : "离线"}}</text>
+      <view class="top-actions">
+        <text class="ws-status {{wsConnected ? 'online' : 'offline'}}">{{wsConnected ? "在线" : "离线"}}</text>
+        <button class="settings-btn" size="mini" bindtap="openGroupSettings">群设置</button>
+      </view>
     </view>
   </view>
 
@@ -34,11 +37,16 @@
       <input class="compose-input" placeholder="输入消息，回车发送..." placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{inputText}}" bindinput="onInputText" />
     </view>
     <view class="composer-actions">
-      <view class="anon-switch">
-        <text class="subtitle">🕶️ 匿名</text>
-        <switch color="#ff2442" checked="{{isAnonymous}}" bindchange="onAnonymousChange" />
+      <view class="left-actions">
+        <button class="emoji-btn" size="mini" bindtap="toggleEmojiPanel">{{emojiPanelVisible ? "收起表情" : "😀 表情"}}</button>
+        <text class="anon-tag">{{isAnonymous ? "🕶️ 匿名发送中" : "实名发送"}}</text>
       </view>
       <button size="mini" class="btn-primary send-btn" bindtap="sendMessage">发送</button>
+    </view>
+    <view wx:if="{{emojiPanelVisible}}" class="emoji-panel">
+      <block wx:for="{{emojiList}}" wx:key="*this">
+        <text class="emoji-item" data-emoji="{{item}}" bindtap="appendEmoji">{{item}}</text>
+      </block>
     </view>
   </view>
 </view>

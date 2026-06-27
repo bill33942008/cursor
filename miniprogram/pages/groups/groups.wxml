@@ -58,9 +58,21 @@
       </view>
       <text class="subtitle owner">群主：{{item.ownerNickname}}</text>
       <view class="group-actions">
-        <button class="icon-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="joinGroup">加入</button>
-        <button class="btn-primary chat-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="enterChat">进入聊天</button>
+        <button class="btn-primary chat-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="enterChat">进入群聊（即加入）</button>
       </view>
     </view>
   </block>
+
+  <view wx:if="{{currentGroup}}" class="current-group-fab pressable" hover-class="pressable-hover" bindtap="openCurrentGroup">
+    <view class="current-group-bars">
+      <text class="bar b1"></text>
+      <text class="bar b2"></text>
+      <text class="bar b3"></text>
+    </view>
+    <view class="current-group-main">
+      <text class="fab-title">当前群组</text>
+      <text class="fab-name">{{currentGroup.name}}</text>
+      <text class="fab-meta">24h {{currentGroup.messageCount24h || 0}} 条消息</text>
+    </view>
+  </view>
 </view>

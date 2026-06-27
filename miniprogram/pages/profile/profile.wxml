@@ -8,7 +8,10 @@
   <block wx:if="{{!loading}}">
   <view class="profile-header" wx:if="{{user}}">
     <view class="profile-head">
-      <view class="avatar">U</view>
+      <view class="avatar">
+        <image wx:if="{{user.avatarUrl}}" class="avatar-image" src="{{user.avatarUrl}}" mode="aspectFill"></image>
+        <text wx:else>{{(user.nickname || "U").slice(0, 1)}}</text>
+      </view>
       <view class="profile-main">
         <text class="name">{{user.nickname}}</text>
         <text class="subtitle">同行账号</text>

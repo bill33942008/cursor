@@ -70,7 +70,7 @@
 .chat-btn {
   height: 62rpx;
   line-height: 62rpx;
-  padding: 0 26rpx;
+  padding: 0 30rpx;
 }
 
 .group-skeleton-card {
@@ -98,4 +98,89 @@
 
 .skeleton-row.sm {
   width: 50%;
+}
+
+.current-group-fab {
+  position: fixed;
+  right: 24rpx;
+  bottom: 200rpx;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  color: #fff;
+  border-radius: 999rpx;
+  padding: 14rpx 18rpx;
+  box-shadow: 0 12rpx 30rpx rgba(15, 23, 42, 0.26);
+}
+
+.current-group-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4rpx;
+  width: 24rpx;
+  height: 24rpx;
+}
+
+.bar {
+  width: 5rpx;
+  border-radius: 999rpx;
+  background: #4ade80;
+  animation: barPulse 1.1s ease-in-out infinite;
+}
+
+.bar.b1 {
+  height: 12rpx;
+}
+
+.bar.b2 {
+  height: 20rpx;
+  animation-delay: 0.18s;
+}
+
+.bar.b3 {
+  height: 16rpx;
+  animation-delay: 0.36s;
+}
+
+.current-group-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2rpx;
+}
+
+.fab-title {
+  font-size: 20rpx;
+  opacity: 0.85;
+}
+
+.fab-name {
+  max-width: 220rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fab-meta {
+  max-width: 220rpx;
+  font-size: 20rpx;
+  opacity: 0.84;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes barPulse {
+  0%,
+  100% {
+    transform: scaleY(0.72);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
 }

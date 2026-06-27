@@ -19,6 +19,22 @@
   color: #12b76a;
 }
 
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.settings-btn {
+  height: 52rpx;
+  line-height: 52rpx;
+  font-size: 22rpx;
+  border-radius: 999rpx;
+  background: #f3f4f6;
+  color: #111827;
+  padding: 0 18rpx;
+}
+
 .messages {
   height: 62vh;
   padding: 4rpx 0;
@@ -108,16 +124,53 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8rpx;
 }
 
-.anon-switch {
+.left-actions {
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: 10rpx;
+}
+
+.emoji-btn {
+  height: 56rpx;
+  line-height: 56rpx;
+  border-radius: 999rpx;
+  background: #f3f4f6;
+  color: #1f2937;
+  padding: 0 20rpx;
+}
+
+.anon-tag {
+  font-size: 22rpx;
+  color: #667085;
 }
 
 .send-btn {
   height: 64rpx;
   line-height: 64rpx;
   padding: 0 28rpx;
+}
+
+.emoji-panel {
+  margin-top: 12rpx;
+  border-radius: 16rpx;
+  padding: 12rpx;
+  background: #f8fafc;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  max-height: 240rpx;
+  overflow: auto;
+}
+
+.emoji-item {
+  width: 56rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  text-align: center;
+  border-radius: 14rpx;
+  background: #fff;
+  font-size: 34rpx;
 }

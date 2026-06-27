@@ -12,11 +12,13 @@ CREATE TABLE IF NOT EXISTS users (
   is_banned BOOLEAN NOT NULL DEFAULT FALSE,
   last_active_at TIMESTAMPTZ,
   timeline_is_public BOOLEAN NOT NULL DEFAULT FALSE,
+  current_group_id UUID,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_users_last_active_at ON users(last_active_at DESC);
 CREATE INDEX IF NOT EXISTS idx_users_timeline_public ON users(timeline_is_public);
+CREATE INDEX IF NOT EXISTS idx_users_current_group_id ON users(current_group_id);
 
 CREATE TABLE IF NOT EXISTS user_sessions (
   token UUID PRIMARY KEY DEFAULT gen_random_uuid(),

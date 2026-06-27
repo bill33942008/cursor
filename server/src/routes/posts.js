@@ -167,6 +167,12 @@ router.get("/square", authRequired, (req, res) => {
         p.moderation_status AS moderationStatus,
         p.like_count AS likeCount,
         p.comment_count AS commentCount,
+        EXISTS (
+          SELECT 1
+          FROM post_likes pl
+          WHERE pl.post_id = p.id
+            AND pl.user_id = ?
+        ) AS likedByMe,
         p.created_at AS createdAt,
         u.id AS userId,
         u.nickname,
@@ -183,11 +189,12 @@ router.get("/square", authRequired, (req, res) => {
       LIMIT ? OFFSET ?
       `
     )
-    .all(limit, offset)
+    .all(req.user.id, limit, offset)
     .map((item) => ({
       ...item,
       displayName: item.isAnonymous ? "匿名旅友" : item.nickname,
       media: JSON.parse(item.mediaJson || "[]"),
+      likedByMe: Boolean(Number(item.likedByMe || 0)),
       mediaJson: undefined,
       nickname: undefined,
     }));
@@ -352,14 +359,23 @@ router.post("/:id/like", authRequired, (req, res) => {
     return res.status(404).json({ message: "post not found" });
   }
 
-  try {
-    db.prepare("INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)").run(postId, req.user.id);
-    db.prepare("UPDATE posts SET like_count = like_count + 1 WHERE id = ?").run(postId);
-  } catch (_err) {
-    return res.json({ liked: false, message: "already liked" });
+  const existing = db
+    .prepare("SELECT 1 FROM post_likes WHERE post_id = ? AND user_id = ?")
+    .get(postId, req.user.id);
+
+  if (existing) {
+    db.prepare("DELETE FROM post_likes WHERE post_id = ? AND user_id = ?").run(postId, req.user.id);
+    db.prepare(
+      "UPDATE posts SET like_count = CASE WHEN like_count > 0 THEN like_count - 1 ELSE 0 END, updated_at = datetime('now') WHERE id = ?"
+    ).run(postId);
+    const latest = db.prepare("SELECT like_count AS likeCount FROM posts WHERE id = ?").get(postId);
+    return res.json({ liked: false, likeCount: Number(latest?.likeCount || 0) });
   }
 
-  return res.json({ liked: true });
+  db.prepare("INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)").run(postId, req.user.id);
+  db.prepare("UPDATE posts SET like_count = like_count + 1, updated_at = datetime('now') WHERE id = ?").run(postId);
+  const latest = db.prepare("SELECT like_count AS likeCount FROM posts WHERE id = ?").get(postId);
+  return res.json({ liked: true, likeCount: Number(latest?.likeCount || 0) });
 });
 
 router.post("/:id/report", authRequired, (req, res) => {

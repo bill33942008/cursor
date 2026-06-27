@@ -3,11 +3,7 @@ const app = getApp();
 
 function canUseStorage() {
   try {
-    if (typeof wx.getAccountInfoSync !== "function") {
-      return false;
-    }
-    const appId = wx.getAccountInfoSync()?.miniProgram?.appId || "";
-    return Boolean(appId && appId !== "touristappid");
+    return typeof wx.getStorageSync === "function" && typeof wx.setStorageSync === "function";
   } catch (_err) {
     return false;
   }
@@ -43,12 +39,18 @@ Page({
         request({ url: "/api/auth/me", method: "GET" }),
         request({ url: "/api/friends", method: "GET" }),
       ]);
-      app.globalData.user = meRes.user;
+      const wxProfile = app.globalData.wxUserProfile || (canUseStorage() ? wx.getStorageSync("wxUserProfile") : null);
+      const mergedUser = {
+        ...meRes.user,
+        nickname: meRes.user?.nickname || wxProfile?.nickname || "旅友",
+        avatarUrl: meRes.user?.avatarUrl || wxProfile?.avatarUrl || "",
+      };
+      app.globalData.user = mergedUser;
       if (canUseStorage()) {
-        wx.setStorageSync("currentUser", meRes.user);
+        wx.setStorageSync("currentUser", mergedUser);
       }
       this.setData({
-        user: meRes.user,
+        user: mergedUser,
         friends: friendRes.friends || [],
         incomingRequests: friendRes.incomingRequests || [],
         outgoingRequests: friendRes.outgoingRequests || [],

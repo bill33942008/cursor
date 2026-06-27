@@ -86,7 +86,7 @@
           </view>
 
           <view class="feed-actions">
-            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="likePost">❤️ {{item.likeCount}}</view>
+            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="likePost">{{item.likedByMe ? "❤️" : "🤍"}} {{item.likeCount}}</view>
             <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="toggleComments">💬 {{item.commentCount}}</view>
             <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="onShareTap">🔁</view>
           </view>
@@ -193,7 +193,7 @@
           </view>
 
           <view class="feed-actions">
-            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="likePost">❤️ {{item.likeCount}}</view>
+            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="likePost">{{item.likedByMe ? "❤️" : "🤍"}} {{item.likeCount}}</view>
             <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="toggleComments">💬 {{item.commentCount}}</view>
             <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="onShareTap">🔁</view>
           </view>

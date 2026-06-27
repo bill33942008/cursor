@@ -134,6 +134,7 @@ function initSchema() {
       is_banned INTEGER NOT NULL DEFAULT 0,
       last_active_at TEXT,
       timeline_is_public INTEGER NOT NULL DEFAULT 0,
+      current_group_id TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -353,6 +354,7 @@ function initSchema() {
   addColumnIfMissing("reports", "handled_at", "handled_at TEXT");
   addColumnIfMissing("users", "last_active_at", "last_active_at TEXT");
   addColumnIfMissing("users", "timeline_is_public", "timeline_is_public INTEGER NOT NULL DEFAULT 0");
+  addColumnIfMissing("users", "current_group_id", "current_group_id TEXT");
   addColumnIfMissing("post_comments", "parent_comment_id", "parent_comment_id TEXT");
   addColumnIfMissing("post_comments", "reply_to_user_id", "reply_to_user_id TEXT");
   addColumnIfMissing("user_timeline_events", "media_json", "media_json TEXT NOT NULL DEFAULT '[]'");
@@ -372,6 +374,7 @@ function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_users_last_active_at ON users (last_active_at DESC);
     CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_users_timeline_public ON users (timeline_is_public);
+    CREATE INDEX IF NOT EXISTS idx_users_current_group_id ON users (current_group_id);
     CREATE INDEX IF NOT EXISTS idx_daily_active_users_date ON daily_active_users (activity_date DESC);
     CREATE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users (username);
     CREATE INDEX IF NOT EXISTS idx_post_comments_post_id ON post_comments (post_id, created_at DESC);

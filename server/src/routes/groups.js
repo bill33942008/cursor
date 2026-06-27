@@ -23,6 +23,62 @@ function getUserOpenId(userId) {
   return user?.openid || "";
 }
 
+function getCurrentGroupForUser(userId) {
+  const current = db
+    .prepare("SELECT current_group_id AS currentGroupId FROM users WHERE id = ?")
+    .get(userId);
+  const currentGroupId = current?.currentGroupId || "";
+  if (!currentGroupId) {
+    return null;
+  }
+
+  const group = db
+    .prepare(
+      `
+      SELECT
+        g.id,
+        g.name,
+        g.category,
+        g.destination,
+        g.route_code AS routeCode,
+        g.description,
+        g.status,
+        g.created_at AS createdAt,
+        owner.id AS ownerUserId,
+        owner.nickname AS ownerNickname,
+        (
+          SELECT COUNT(1)
+          FROM group_members gm
+          WHERE gm.group_id = g.id
+        ) AS memberCount,
+        (
+          SELECT COUNT(1)
+          FROM group_messages msg
+          WHERE msg.group_id = g.id
+            AND msg.created_at >= datetime('now', '-24 hours')
+        ) AS messageCount24h
+      FROM groups_table g
+      JOIN users owner ON owner.id = g.owner_user_id
+      JOIN group_members me ON me.group_id = g.id AND me.user_id = ?
+      WHERE g.id = ?
+        AND g.status = 'active'
+        AND g.moderation_status = 'approved'
+      `
+    )
+    .get(userId, currentGroupId);
+
+  if (!group) {
+    db.prepare("UPDATE users SET current_group_id = NULL, updated_at = datetime('now') WHERE id = ?").run(userId);
+    return null;
+  }
+
+  return {
+    ...group,
+    memberCount: Number(group.memberCount || 0),
+    messageCount24h: Number(group.messageCount24h || 0),
+  };
+}
+
 router.post("/", authRequired, async (req, res, next) => {
   const parsed = groupSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -60,6 +116,10 @@ router.post("/", authRequired, async (req, res, next) => {
     db.prepare(
       "INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, 'owner')"
     ).run(groupId, req.user.id);
+    db.prepare("UPDATE users SET current_group_id = ?, updated_at = datetime('now') WHERE id = ?").run(
+      groupId,
+      req.user.id
+    );
 
     db.prepare(
       `
@@ -68,7 +128,11 @@ router.post("/", authRequired, async (req, res, next) => {
       `
     ).run(uuidv4(), groupId, moderation.provider, moderation.status, moderation.reason || null);
 
-    return res.status(201).json({ groupId, moderationStatus: moderation.status });
+    return res.status(201).json({
+      groupId,
+      moderationStatus: moderation.status,
+      currentGroup: getCurrentGroupForUser(req.user.id),
+    });
   } catch (err) {
     return next(err);
   }
@@ -126,6 +190,11 @@ router.get("/discover", authRequired, (req, res) => {
   res.json({ items, pagination: { limit, offset } });
 });
 
+router.get("/current", authRequired, (req, res) => {
+  const group = getCurrentGroupForUser(req.user.id);
+  return res.json({ group });
+});
+
 router.post("/:id/join", authRequired, (req, res) => {
   const groupId = req.params.id;
   const group = db
@@ -141,11 +210,23 @@ router.post("/:id/join", authRequired, (req, res) => {
     return res.status(400).json({ message: "group is under review" });
   }
 
+  // Keep only one active member-group at a time (owner groups are kept).
+  db.prepare("DELETE FROM group_members WHERE user_id = ? AND group_id != ? AND role = 'member'").run(
+    req.user.id,
+    groupId
+  );
   db.prepare(
     "INSERT OR IGNORE INTO group_members (group_id, user_id, role) VALUES (?, ?, 'member')"
   ).run(groupId, req.user.id);
+  db.prepare("UPDATE users SET current_group_id = ?, updated_at = datetime('now') WHERE id = ?").run(
+    groupId,
+    req.user.id
+  );
 
-  res.json({ joined: true });
+  res.json({
+    joined: true,
+    currentGroup: getCurrentGroupForUser(req.user.id),
+  });
 });
 
 router.post("/:id/leave", authRequired, (req, res) => {
@@ -161,7 +242,13 @@ router.post("/:id/leave", authRequired, (req, res) => {
   }
 
   db.prepare("DELETE FROM group_members WHERE group_id = ? AND user_id = ?").run(groupId, req.user.id);
-  res.json({ left: true });
+  const user = db
+    .prepare("SELECT current_group_id AS currentGroupId FROM users WHERE id = ?")
+    .get(req.user.id);
+  if ((user?.currentGroupId || "") === groupId) {
+    db.prepare("UPDATE users SET current_group_id = NULL, updated_at = datetime('now') WHERE id = ?").run(req.user.id);
+  }
+  res.json({ left: true, currentGroup: getCurrentGroupForUser(req.user.id) });
 });
 
 router.post("/:id/disband", authRequired, (req, res) => {
@@ -182,6 +269,9 @@ router.post("/:id/disband", authRequired, (req, res) => {
   db.prepare(
     "UPDATE groups_table SET status = 'disbanded', updated_at = datetime('now') WHERE id = ?"
   ).run(groupId);
+  db.prepare("UPDATE users SET current_group_id = NULL, updated_at = datetime('now') WHERE current_group_id = ?").run(
+    groupId
+  );
 
   res.json({ disbanded: true });
 });

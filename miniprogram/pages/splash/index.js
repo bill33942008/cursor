@@ -21,7 +21,7 @@ Page({
   async bootstrap() {
     try {
       const hasSession = Boolean(app.globalData.token);
-      const cachedProfile = app.globalData.wxUserProfile || (!app.globalData.isTouristMode ? wx.getStorageSync("wxUserProfile") : null);
+      const cachedProfile = app.globalData.wxUserProfile || wx.getStorageSync("wxUserProfile");
       const hasProfile = Boolean(cachedProfile?.nickname || cachedProfile?.avatarUrl);
 
       if (hasSession && hasProfile) {
@@ -38,11 +38,6 @@ Page({
       }
 
       await this.waitForMinimumStay();
-      if (app.globalData.isTouristMode) {
-        await app.ensureAuthSession();
-        this.enterApp();
-        return;
-      }
       await this.promptAuthorization();
     } catch (err) {
       await this.waitForMinimumStay();
@@ -64,7 +59,14 @@ Page({
     if (this.data.entering) return;
     this.setData({ entering: true, authHint: "" });
     try {
-      const profile = await app.requestUserProfile();
+      let profile = null;
+      try {
+        profile = await app.requestUserProfile();
+      } catch (err) {
+        if (!app.globalData.isTouristMode) {
+          throw err;
+        }
+      }
       await app.ensureAuthSession({ forceRefresh: true, profile });
       this.enterApp();
     } catch (err) {
@@ -106,7 +108,6 @@ Page({
   async retryAuthorization() {
     if (this.data.entering) return;
     if (app.globalData.token && app.globalData.user) return;
-    if (app.globalData.isTouristMode) return;
     try {
       await this.promptAuthorization();
     } catch (_err) {
