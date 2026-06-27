@@ -19,21 +19,6 @@ function formatMediaAsset(asset) {
   };
 }
 
-function ensurePrivacyAuthorization() {
-  return new Promise((resolve, reject) => {
-    if (typeof wx.requirePrivacyAuthorize !== "function") {
-      resolve();
-      return;
-    }
-    wx.requirePrivacyAuthorize({
-      success: () => resolve(),
-      fail: (err) => {
-        reject(new Error(err?.errMsg || "隐私授权未通过"));
-      },
-    });
-  });
-}
-
 function chooseImages(maxCount) {
   return new Promise((resolve, reject) => {
     wx.chooseImage({
@@ -168,7 +153,6 @@ Page({
     }
     this.setData({ uploading: true });
     try {
-      await ensurePrivacyAuthorization();
       const typeIndex = await chooseMediaType();
       if (typeIndex < 0) {
         return;
@@ -189,10 +173,6 @@ Page({
     } catch (err) {
       const msg = String(err?.message || err?.errMsg || "");
       if (msg.includes("cancel")) {
-        return;
-      }
-      if (msg.includes("privacy agreement") || msg.includes("requirePrivacyAuthorize")) {
-        wx.showToast({ title: "请先同意隐私指引后再上传", icon: "none" });
         return;
       }
       wx.showToast({ title: msg || "上传失败", icon: "none" });

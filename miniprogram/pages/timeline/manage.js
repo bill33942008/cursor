@@ -40,19 +40,6 @@ function createDefaultForm() {
   };
 }
 
-function ensurePrivacyAuthorization() {
-  return new Promise((resolve, reject) => {
-    if (typeof wx.requirePrivacyAuthorize !== "function") {
-      resolve();
-      return;
-    }
-    wx.requirePrivacyAuthorize({
-      success: () => resolve(),
-      fail: (err) => reject(new Error(err?.errMsg || "隐私授权未通过")),
-    });
-  });
-}
-
 function chooseImages(remainCount) {
   return new Promise((resolve, reject) => {
     wx.chooseImage({
@@ -160,7 +147,6 @@ Page({
       if (!app.globalData.token) {
         await app.ensureAuthSession();
       }
-      await ensurePrivacyAuthorization();
       const files = await chooseImages(Math.min(6, remainCount));
       if (files.length === 0) return;
       this.setData({ uploadingMedia: true });
@@ -195,10 +181,6 @@ Page({
     } catch (err) {
       const message = String(err?.message || err?.errMsg || "");
       if (message.includes("cancel")) {
-        return;
-      }
-      if (message.includes("privacy agreement") || message.includes("requirePrivacyAuthorize")) {
-        wx.showToast({ title: "请先同意隐私指引后再上传", icon: "none" });
         return;
       }
       wx.showToast({ title: message || "上传图片失败", icon: "none" });
