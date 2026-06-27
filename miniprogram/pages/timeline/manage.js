@@ -40,6 +40,34 @@ function createDefaultForm() {
   };
 }
 
+function ensurePrivacyAuthorization() {
+  return new Promise((resolve, reject) => {
+    if (typeof wx.requirePrivacyAuthorize !== "function") {
+      resolve();
+      return;
+    }
+    wx.requirePrivacyAuthorize({
+      success: () => resolve(),
+      fail: (err) => reject(new Error(err?.errMsg || "隐私授权未通过")),
+    });
+  });
+}
+
+function chooseImages(remainCount) {
+  return new Promise((resolve, reject) => {
+    wx.chooseImage({
+      count: Math.min(remainCount, 9),
+      sizeType: ["compressed", "original"],
+      sourceType: ["album", "camera"],
+      success: (res) => {
+        const tempFilePaths = res.tempFilePaths || [];
+        resolve(tempFilePaths.map((path) => ({ tempFilePath: path })));
+      },
+      fail: reject,
+    });
+  });
+}
+
 Page({
   data: {
     loading: true,
@@ -132,16 +160,8 @@ Page({
       if (!app.globalData.token) {
         await app.ensureAuthSession();
       }
-      const chooseRes = await new Promise((resolve, reject) => {
-        wx.chooseMedia({
-          count: Math.min(6, remainCount),
-          mediaType: ["image"],
-          sourceType: ["album", "camera"],
-          success: resolve,
-          fail: reject,
-        });
-      });
-      const files = chooseRes.tempFiles || [];
+      await ensurePrivacyAuthorization();
+      const files = await chooseImages(Math.min(6, remainCount));
       if (files.length === 0) return;
       this.setData({ uploadingMedia: true });
       const uploaded = [];
@@ -173,10 +193,15 @@ Page({
         });
       }
     } catch (err) {
-      if (typeof err?.errMsg === "string" && err.errMsg.includes("cancel")) {
+      const message = String(err?.message || err?.errMsg || "");
+      if (message.includes("cancel")) {
         return;
       }
-      wx.showToast({ title: err.message || "上传图片失败", icon: "none" });
+      if (message.includes("privacy agreement") || message.includes("requirePrivacyAuthorize")) {
+        wx.showToast({ title: "请先同意隐私指引后再上传", icon: "none" });
+        return;
+      }
+      wx.showToast({ title: message || "上传图片失败", icon: "none" });
     } finally {
       this.setData({ uploadingMedia: false });
     }

@@ -19,6 +19,64 @@ function formatMediaAsset(asset) {
   };
 }
 
+function ensurePrivacyAuthorization() {
+  return new Promise((resolve, reject) => {
+    if (typeof wx.requirePrivacyAuthorize !== "function") {
+      resolve();
+      return;
+    }
+    wx.requirePrivacyAuthorize({
+      success: () => resolve(),
+      fail: (err) => {
+        reject(new Error(err?.errMsg || "隐私授权未通过"));
+      },
+    });
+  });
+}
+
+function chooseImages(maxCount) {
+  return new Promise((resolve, reject) => {
+    wx.chooseImage({
+      count: Math.min(maxCount, 9),
+      sizeType: ["compressed", "original"],
+      sourceType: ["album", "camera"],
+      success: (res) => {
+        const tempFilePaths = res.tempFilePaths || [];
+        resolve(tempFilePaths.map((path) => ({ tempFilePath: path })));
+      },
+      fail: reject,
+    });
+  });
+}
+
+function chooseSingleVideo() {
+  return new Promise((resolve, reject) => {
+    wx.chooseVideo({
+      sourceType: ["album", "camera"],
+      compressed: true,
+      maxDuration: 60,
+      success: (res) => resolve([{ tempFilePath: res.tempFilePath }]),
+      fail: reject,
+    });
+  });
+}
+
+function chooseMediaType() {
+  return new Promise((resolve, reject) => {
+    wx.showActionSheet({
+      itemList: ["上传图片", "上传视频"],
+      success: (res) => resolve(res.tapIndex),
+      fail: (err) => {
+        if (String(err?.errMsg || "").includes("cancel")) {
+          resolve(-1);
+          return;
+        }
+        reject(err);
+      },
+    });
+  });
+}
+
 Page({
   data: {
     content: "",
@@ -108,35 +166,39 @@ Page({
       wx.showToast({ title: err.message || "登录状态异常，请重试", icon: "none" });
       return;
     }
-    wx.chooseMedia({
-      count: Math.min(9 - this.data.mediaAssets.length, 3),
-      mediaType: ["image", "video"],
-      success: async (res) => {
-        this.setData({ uploading: true });
-        try {
-          const assets = [...this.data.mediaAssets];
-          for (const file of res.tempFiles) {
-            const uploaded = await uploadFile({
-              url: "/api/media/upload",
-              filePath: file.tempFilePath,
-            });
-            assets.push(formatMediaAsset(uploaded.asset));
-          }
-          this.setData({ mediaAssets: assets });
-          wx.showToast({ title: "上传完成", icon: "success" });
-        } catch (err) {
-          wx.showToast({ title: err.message || "上传失败", icon: "none" });
-        } finally {
-          this.setData({ uploading: false });
-        }
-      },
-      fail: (err) => {
-        if (String(err?.errMsg || "").includes("cancel")) {
-          return;
-        }
-        wx.showToast({ title: err?.errMsg || "选择媒体失败", icon: "none" });
-      },
-    });
+    this.setData({ uploading: true });
+    try {
+      await ensurePrivacyAuthorization();
+      const typeIndex = await chooseMediaType();
+      if (typeIndex < 0) {
+        return;
+      }
+      const remain = 9 - this.data.mediaAssets.length;
+      const selectedFiles =
+        typeIndex === 0 ? await chooseImages(Math.min(remain, 9)) : await chooseSingleVideo();
+      const assets = [...this.data.mediaAssets];
+      for (const file of selectedFiles) {
+        const uploaded = await uploadFile({
+          url: "/api/media/upload",
+          filePath: file.tempFilePath,
+        });
+        assets.push(formatMediaAsset(uploaded.asset));
+      }
+      this.setData({ mediaAssets: assets.slice(0, 9) });
+      wx.showToast({ title: "上传完成", icon: "success" });
+    } catch (err) {
+      const msg = String(err?.message || err?.errMsg || "");
+      if (msg.includes("cancel")) {
+        return;
+      }
+      if (msg.includes("privacy agreement") || msg.includes("requirePrivacyAuthorize")) {
+        wx.showToast({ title: "请先同意隐私指引后再上传", icon: "none" });
+        return;
+      }
+      wx.showToast({ title: msg || "上传失败", icon: "none" });
+    } finally {
+      this.setData({ uploading: false });
+    }
   },
 
   removeMedia(e) {
