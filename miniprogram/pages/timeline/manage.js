@@ -55,6 +55,22 @@ function chooseImages(remainCount) {
   });
 }
 
+function parsePrivacyScopeApi(errMessage) {
+  const text = String(errMessage || "");
+  const match = text.match(/(chooseImage|chooseVideo|chooseMedia):fail api scope is not declared in the privacy agreement/i);
+  return match ? match[1] : "";
+}
+
+function showPrivacyScopeGuide(apiName) {
+  const scopeName = apiName || "chooseImage";
+  wx.showModal({
+    title: "需补充隐私声明",
+    content: `当前小程序未在微信后台隐私指引声明 ${scopeName} 能力。请到微信公众平台 -> 设置 -> 服务内容声明 -> 用户隐私保护指引，勾选对应能力后重试。`,
+    showCancel: false,
+    confirmText: "知道了",
+  });
+}
+
 Page({
   data: {
     loading: true,
@@ -181,6 +197,11 @@ Page({
     } catch (err) {
       const message = String(err?.message || err?.errMsg || "");
       if (message.includes("cancel")) {
+        return;
+      }
+      const apiName = parsePrivacyScopeApi(message);
+      if (apiName) {
+        showPrivacyScopeGuide(apiName);
         return;
       }
       wx.showToast({ title: message || "上传图片失败", icon: "none" });
