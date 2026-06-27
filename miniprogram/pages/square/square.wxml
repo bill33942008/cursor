@@ -81,7 +81,7 @@
           </view>
 
           <view class="feed-tags" wx:if="{{item.transportType}}">
-            <text class="chip">{{item.transportType}}</text>
+            <text class="chip">{{item.transportLabel}}</text>
             <text class="chip">{{item.origin}} → {{item.destination}}</text>
           </view>
 
@@ -188,7 +188,7 @@
           </view>
 
           <view class="feed-tags" wx:if="{{item.transportType}}">
-            <text class="chip">{{item.transportType}}</text>
+            <text class="chip">{{item.transportLabel}}</text>
             <text class="chip">{{item.origin}} → {{item.destination}}</text>
           </view>
 

@@ -1,6 +1,21 @@
 const { request } = require("../../utils/request");
 const app = getApp();
 
+const TRANSPORT_LABELS = {
+  high_speed_rail: "高铁",
+  flight: "飞机",
+  train: "普通火车",
+  road_trip: "自驾",
+  bus: "大巴",
+  other: "其他",
+};
+
+function mapTransportTypeLabel(type) {
+  const raw = String(type || "").trim();
+  if (!raw) return "";
+  return TRANSPORT_LABELS[raw] || raw;
+}
+
 function resolveMediaUrl(url) {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -146,6 +161,7 @@ Page({
       const mediaItems = resolveMediaItems(item.media || []);
       return {
         ...item,
+        transportLabel: mapTransportTypeLabel(item.transportType),
         likeCount: Number(item.likeCount || 0),
         likedByMe: Boolean(Number(item.likedByMe || 0)),
         commentCount: Number(item.commentCount || 0),
