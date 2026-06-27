@@ -129,6 +129,9 @@ Page({
       return;
     }
     try {
+      if (!app.globalData.token) {
+        await app.ensureAuthSession();
+      }
       const chooseRes = await new Promise((resolve, reject) => {
         wx.chooseMedia({
           count: Math.min(6, remainCount),

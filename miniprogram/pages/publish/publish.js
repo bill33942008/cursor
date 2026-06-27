@@ -95,8 +95,17 @@ Page({
   },
 
   async chooseMedia() {
+    if (this.data.uploading) return;
     if (this.data.mediaAssets.length >= 9) {
       wx.showToast({ title: "最多上传9个媒体文件", icon: "none" });
+      return;
+    }
+    try {
+      if (!app.globalData.token) {
+        await app.ensureAuthSession();
+      }
+    } catch (err) {
+      wx.showToast({ title: err.message || "登录状态异常，请重试", icon: "none" });
       return;
     }
     wx.chooseMedia({
@@ -120,6 +129,12 @@ Page({
         } finally {
           this.setData({ uploading: false });
         }
+      },
+      fail: (err) => {
+        if (String(err?.errMsg || "").includes("cancel")) {
+          return;
+        }
+        wx.showToast({ title: err?.errMsg || "选择媒体失败", icon: "none" });
       },
     });
   },

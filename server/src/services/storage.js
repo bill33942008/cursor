@@ -26,17 +26,51 @@ function getExtByMime(mimeType) {
     "image/jpeg": ".jpg",
     "image/png": ".png",
     "image/webp": ".webp",
+    "image/heic": ".heic",
+    "image/heif": ".heif",
     "video/mp4": ".mp4",
+    "video/quicktime": ".mov",
   };
   return map[mimeType] || "";
 }
 
-function normalizeMimeType(mimeType) {
-  const allowed = new Set(["image/jpeg", "image/png", "image/webp", "video/mp4"]);
-  if (!allowed.has(mimeType)) {
-    throw new Error(`unsupported file type: ${mimeType}`);
+function normalizeMimeType(file) {
+  const rawMimeType = String(file?.mimetype || "").toLowerCase().trim();
+  const aliasMap = {
+    "image/jpg": "image/jpeg",
+    "image/pjpeg": "image/jpeg",
+    "image/heic-sequence": "image/heic",
+    "image/heif-sequence": "image/heif",
+    "video/mov": "video/quicktime",
+  };
+  const allowed = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/heic",
+    "image/heif",
+    "video/mp4",
+    "video/quicktime",
+  ]);
+
+  const mappedMimeType = aliasMap[rawMimeType] || rawMimeType;
+  if (allowed.has(mappedMimeType)) {
+    return mappedMimeType;
   }
-  return mimeType;
+
+  const filename = String(file?.originalname || "").toLowerCase();
+  if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) return "image/jpeg";
+  if (filename.endsWith(".png")) return "image/png";
+  if (filename.endsWith(".webp")) return "image/webp";
+  if (filename.endsWith(".heic")) return "image/heic";
+  if (filename.endsWith(".heif")) return "image/heif";
+  if (filename.endsWith(".mp4")) return "video/mp4";
+  if (filename.endsWith(".mov") || filename.endsWith(".m4v")) return "video/quicktime";
+
+  if (!mappedMimeType) {
+    throw new Error("unsupported file type");
+  }
+  throw new Error(`unsupported file type: ${mappedMimeType}`);
 }
 
 function makeStorageKey(mimeType) {
@@ -92,7 +126,7 @@ async function uploadBuffer(file) {
   if (!file?.buffer) {
     throw new Error("file is required");
   }
-  const mimeType = normalizeMimeType(file.mimetype);
+  const mimeType = normalizeMimeType(file);
   const key = makeStorageKey(mimeType);
 
   if (hasCosConfig()) {

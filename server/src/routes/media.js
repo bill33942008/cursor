@@ -28,7 +28,7 @@ router.post("/upload", authRequired, upload.single("file"), async (req, res, nex
 
     const uploaded = await uploadBuffer(req.file);
     const openid = getUserOpenId(req.user.id);
-    const isVideo = req.file.mimetype === "video/mp4";
+    const isVideo = String(req.file.mimetype || "").toLowerCase().startsWith("video/");
     const moderation = await moderateMedia({
       mediaUrl: uploaded.url.startsWith("http")
         ? uploaded.url
