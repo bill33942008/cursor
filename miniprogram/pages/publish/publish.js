@@ -78,6 +78,13 @@ function showPrivacyScopeGuide(apiName) {
   });
 }
 
+function formatRegion(region) {
+  if (!Array.isArray(region) || region.length === 0) {
+    return "";
+  }
+  return region.filter(Boolean).join(" ");
+}
+
 Page({
   data: {
     content: "",
@@ -100,8 +107,10 @@ Page({
     transportIndex: 0,
     phaseIndex: 2,
     routeCode: "",
-    origin: "",
-    destination: "",
+    originRegion: [],
+    destinationRegion: [],
+    originRegionText: "出发地（必填）",
+    destinationRegionText: "目的地（必填）",
     departureWindow: "",
     mediaAssets: [],
     uploading: false,
@@ -129,12 +138,22 @@ Page({
     this.setData({ routeCode: e.detail.value });
   },
 
-  onOriginInput(e) {
-    this.setData({ origin: e.detail.value });
+  onOriginRegionChange(e) {
+    const region = e.detail.value || [];
+    const text = formatRegion(region);
+    this.setData({
+      originRegion: region,
+      originRegionText: text ? `出发地：${text}` : "出发地（必填）",
+    });
   },
 
-  onDestinationInput(e) {
-    this.setData({ destination: e.detail.value });
+  onDestinationRegionChange(e) {
+    const region = e.detail.value || [];
+    const text = formatRegion(region);
+    this.setData({
+      destinationRegion: region,
+      destinationRegionText: text ? `目的地：${text}` : "目的地（必填）",
+    });
   },
 
   onDepartureWindowInput(e) {
@@ -221,7 +240,9 @@ Page({
       wx.showToast({ title: "请输入动态内容", icon: "none" });
       return;
     }
-    if (!this.data.origin.trim() || !this.data.destination.trim()) {
+    const originText = formatRegion(this.data.originRegion);
+    const destinationText = formatRegion(this.data.destinationRegion);
+    if (!originText || !destinationText) {
       wx.showToast({ title: "请填写出发地和目的地", icon: "none" });
       return;
     }
@@ -236,8 +257,8 @@ Page({
         data: {
           transportType,
           routeCode: this.data.routeCode.trim(),
-          origin: this.data.origin.trim(),
-          destination: this.data.destination.trim(),
+          origin: originText,
+          destination: destinationText,
           phase,
           departureWindow: this.data.departureWindow.trim(),
           visibility: "public",
@@ -265,8 +286,10 @@ Page({
         content: "",
         contentCount: 0,
         routeCode: "",
-        origin: "",
-        destination: "",
+        originRegion: [],
+        destinationRegion: [],
+        originRegionText: "出发地（必填）",
+        destinationRegionText: "目的地（必填）",
         departureWindow: "",
         isAnonymous: false,
         mediaAssets: [],

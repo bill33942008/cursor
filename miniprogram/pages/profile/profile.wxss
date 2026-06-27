@@ -155,7 +155,7 @@
 .join-btn {
   margin-top: 16rpx;
   height: 80rpx;
-  line-height: 80rpx;
+  padding: 0;
 }
 
 .menu-item {

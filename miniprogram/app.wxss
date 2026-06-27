@@ -92,6 +92,10 @@ button::after {
   background: linear-gradient(135deg, #ff355a 0%, #ff2442 100%);
   color: #fff;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .btn-ghost {
@@ -100,6 +104,10 @@ button::after {
   background: #fff6f8;
   color: #ff2442;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .icon-btn {

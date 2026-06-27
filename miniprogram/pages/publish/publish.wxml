@@ -33,8 +33,12 @@
     </picker>
 
     <input class="input-box" placeholder="车次/航班（可选）" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{routeCode}}" bindinput="onRouteCodeInput" />
-    <input class="input-box" placeholder="出发地（必填）" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{origin}}" bindinput="onOriginInput" />
-    <input class="input-box" placeholder="目的地（必填）" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{destination}}" bindinput="onDestinationInput" />
+    <picker mode="region" value="{{originRegion}}" bindchange="onOriginRegionChange">
+      <view class="picker-box">{{originRegionText}}</view>
+    </picker>
+    <picker mode="region" value="{{destinationRegion}}" bindchange="onDestinationRegionChange">
+      <view class="picker-box">{{destinationRegionText}}</view>
+    </picker>
     <input class="input-box" placeholder="出发时间窗口（可选，如 今天 14:00-16:00）" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{departureWindow}}" bindinput="onDepartureWindowInput" />
 
     <view class="row-between anonymous-row">
