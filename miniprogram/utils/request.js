@@ -1,4 +1,5 @@
 const app = getApp();
+let refreshingSessionPromise = null;
 
 function normalizeError(input, fallbackMessage) {
   if (!input) {
@@ -25,13 +26,31 @@ function normalizeError(input, fallbackMessage) {
   return { message: fallbackMessage };
 }
 
+function refreshAuthSession() {
+  if (refreshingSessionPromise) {
+    return refreshingSessionPromise;
+  }
+  refreshingSessionPromise = Promise.resolve()
+    .then(() => {
+      if (typeof app.ensureAuthSession !== "function") {
+        throw new Error("认证能力不可用，请重启小程序");
+      }
+      return app.ensureAuthSession({ forceRefresh: true });
+    })
+    .finally(() => {
+      refreshingSessionPromise = null;
+    });
+  return refreshingSessionPromise;
+}
+
 function request(options) {
+  const requestOptions = options || {};
   return new Promise((resolve, reject) => {
     try {
       wx.request({
-        url: `${app.globalData.baseUrl}${options.url}`,
-        method: options.method || "GET",
-        data: options.data || {},
+        url: `${app.globalData.baseUrl}${requestOptions.url}`,
+        method: requestOptions.method || "GET",
+        data: requestOptions.data || {},
         header: {
           "content-type": "application/json",
           Authorization: app.globalData.token ? `Bearer ${app.globalData.token}` : "",
@@ -41,7 +60,25 @@ function request(options) {
             resolve(res.data);
             return;
           }
-          reject(normalizeError(res.data, "request failed"));
+          if (res.statusCode === 401 && !requestOptions._authRetried) {
+            refreshAuthSession()
+              .then(() =>
+                resolve(
+                  request({
+                    ...requestOptions,
+                    _authRetried: true,
+                  })
+                )
+              )
+              .catch((err) => reject(normalizeError(err, "登录状态已失效，请重新进入")))
+              .finally(() => {
+                // no-op
+              });
+            return;
+          }
+          const error = normalizeError(res.data, "request failed");
+          error.statusCode = res.statusCode;
+          reject(error);
         },
         fail: (err) => {
           reject(normalizeError(err, "network request failed"));
@@ -54,13 +91,14 @@ function request(options) {
 }
 
 function uploadFile(options) {
+  const uploadOptions = options || {};
   return new Promise((resolve, reject) => {
     try {
       wx.uploadFile({
-        url: `${app.globalData.baseUrl}${options.url}`,
-        filePath: options.filePath,
-        name: options.name || "file",
-        formData: options.formData || {},
+        url: `${app.globalData.baseUrl}${uploadOptions.url}`,
+        filePath: uploadOptions.filePath,
+        name: uploadOptions.name || "file",
+        formData: uploadOptions.formData || {},
         header: {
           Authorization: app.globalData.token ? `Bearer ${app.globalData.token}` : "",
         },
@@ -74,6 +112,22 @@ function uploadFile(options) {
           }
           if (res.statusCode >= 200 && res.statusCode < 300) {
             resolve(data);
+            return;
+          }
+          if (res.statusCode === 401 && !uploadOptions._authRetried) {
+            refreshAuthSession()
+              .then(() =>
+                resolve(
+                  uploadFile({
+                    ...uploadOptions,
+                    _authRetried: true,
+                  })
+                )
+              )
+              .catch((err) => reject(normalizeError(err, "登录状态已失效，请重新进入")))
+              .finally(() => {
+                // no-op
+              });
             return;
           }
           reject(normalizeError(data, "upload failed"));
