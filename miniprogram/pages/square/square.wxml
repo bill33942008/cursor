@@ -1,0 +1,267 @@
+<view class="page-wrap">
+  <view class="hero-card">
+    <view class="hero-title">📍 在路上广场</view>
+    <view class="hero-subtitle">记录这一程，遇见同路的人</view>
+    <view class="scene-entry pressable" hover-class="pressable-hover" bindtap="openSceneTheater">
+      <text class="scene-entry-title">🎬 同程聚合剧场</text>
+      <text class="scene-entry-subtitle">同车次 / 同航班 / 同景点，沉浸式浏览</text>
+    </view>
+    <view class="hero-pill-row">
+      <text class="hero-pill">🔥 实时动态</text>
+      <text class="hero-pill">🚄 同城同路线</text>
+      <text class="hero-pill">💬 旅途互动</text>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="waterfall">
+    <view class="wf-col">
+      <block wx:for="{{skeletonRows}}" wx:key="*this">
+        <view class="feed-card skeleton-card">
+          <view class="skeleton skeleton-line avatar-skeleton"></view>
+          <view class="skeleton skeleton-line title-skeleton"></view>
+          <view class="skeleton skeleton-line body-skeleton"></view>
+          <view class="skeleton skeleton-media"></view>
+        </view>
+      </block>
+    </view>
+    <view class="wf-col">
+      <block wx:for="{{skeletonRows}}" wx:key="*this">
+        <view class="feed-card skeleton-card">
+          <view class="skeleton skeleton-line avatar-skeleton"></view>
+          <view class="skeleton skeleton-line title-skeleton"></view>
+          <view class="skeleton skeleton-line body-skeleton short"></view>
+          <view class="skeleton skeleton-media tall"></view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <view wx:if="{{error}}" class="card state-card error-card">
+    <text class="state-icon">⚠️</text>
+    <text class="section-title">加载失败</text>
+    <text class="subtitle">{{error}}</text>
+  </view>
+
+  <view wx:if="{{!loading && !error && posts.length === 0}}" class="card state-card">
+    <text class="state-icon">🗂️</text>
+    <text class="section-title">还没有动态</text>
+    <text class="subtitle">去发布页发第一条路上分享吧</text>
+  </view>
+
+  <view wx:if="{{!loading && !error && posts.length > 0}}" class="waterfall">
+    <view class="wf-col">
+      <block wx:for="{{leftPosts}}" wx:key="id">
+        <view class="feed-card pressable list-appear" hover-class="pressable-hover">
+          <view class="feed-head">
+            <view class="feed-author pressable" hover-class="pressable-hover" data-userid="{{item.userId}}" data-postid="{{item.id}}" bindtap="openUserProfile">
+              <view class="avatar-dot"></view>
+              <view>
+                <text class="feed-user">{{item.displayName}}</text>
+                <text class="feed-time">{{item.createdAt}}</text>
+              </view>
+            </view>
+          </view>
+
+          <view class="feed-content">{{item.content}}</view>
+
+          <view class="media-grid" wx:if="{{item.mediaItems.length}}">
+            <block wx:for="{{item.mediaItems}}" wx:key="url" wx:for-item="mediaItem">
+              <video
+                wx:if="{{mediaItem.type === 'video'}}"
+                class="media-cell media-video {{item.mediaItems.length === 1 ? 'media-single' : ''}}"
+                src="{{mediaItem.url}}"
+                controls
+              />
+              <image
+                wx:else
+                class="media-cell {{item.mediaItems.length === 1 ? 'media-single' : ''}}"
+                src="{{mediaItem.url}}"
+                mode="aspectFill"
+                data-postid="{{item.id}}"
+                data-preview-index="{{mediaItem.previewIndex}}"
+                bindtap="previewMedia"
+              />
+            </block>
+          </view>
+
+          <view class="feed-tags" wx:if="{{item.transportType}}">
+            <text class="chip">{{item.transportLabel}}</text>
+            <text class="chip">{{item.origin}} → {{item.destination}}</text>
+          </view>
+
+          <view class="feed-actions">
+            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="likePost">{{item.likedByMe ? "❤️" : "🤍"}} {{item.likeCount}}</view>
+            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="toggleComments">💬 {{item.commentCount}}</view>
+            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="onShareTap">🔁</view>
+          </view>
+
+          <view wx:if="{{item.commentsVisible}}" class="comments-box">
+            <view wx:if="{{item.commentsLoading}}" class="comments-loading">评论加载中...</view>
+            <view wx:if="{{!item.commentsLoading && item.comments.length === 0}}" class="comments-empty">暂无评论，来抢沙发</view>
+            <block wx:for="{{item.comments}}" wx:key="id" wx:for-item="comment">
+              <view class="comment-row">
+                <view class="comment-main">
+                  <text class="comment-name">{{comment.displayName}}</text>
+                  <text class="comment-content">{{comment.content}}</text>
+                </view>
+                <text
+                  class="comment-reply"
+                  data-postid="{{item.id}}"
+                  data-commentid="{{comment.id}}"
+                  data-replytouserid="{{comment.userId}}"
+                  data-replytoname="{{comment.displayName}}"
+                  bindtap="beginReply"
+                >
+                  回复
+                </text>
+              </view>
+              <view wx:if="{{comment.replies.length > 0}}" class="reply-list">
+                <block wx:for="{{comment.replies}}" wx:key="id" wx:for-item="reply">
+                  <view class="reply-row">
+                    <view class="comment-main">
+                      <text class="comment-name">{{reply.displayName}}</text>
+                      <text wx:if="{{reply.replyToDisplayName}}" class="comment-content"> 回复 @{{reply.replyToDisplayName}}：{{reply.content}}</text>
+                      <text wx:else class="comment-content">{{reply.content}}</text>
+                    </view>
+                    <text
+                      class="comment-reply"
+                      data-postid="{{item.id}}"
+                      data-commentid="{{comment.id}}"
+                      data-replytouserid="{{reply.userId}}"
+                      data-replytoname="{{reply.displayName}}"
+                      bindtap="beginReply"
+                    >
+                      回复
+                    </text>
+                  </view>
+                </block>
+              </view>
+            </block>
+            <view wx:if="{{item.replyTarget}}" class="reply-tip">
+              <text class="reply-tip-text">正在回复 @{{item.replyTarget.replyToName}}</text>
+              <text class="reply-cancel" data-postid="{{item.id}}" bindtap="clearReplyTarget">取消</text>
+            </view>
+            <view class="comment-input-row">
+              <input
+                class="comment-input"
+                placeholder="{{item.commentPlaceholder}}"
+                placeholder-style="color:#98a2b3;font-size:24rpx;"
+                value="{{item.commentDraft}}"
+                data-id="{{item.id}}"
+                bindinput="onCommentInput"
+              />
+              <button class="icon-btn comment-send" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="submitComment">发送</button>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+    <view class="wf-col">
+      <block wx:for="{{rightPosts}}" wx:key="id">
+        <view class="feed-card pressable list-appear" hover-class="pressable-hover">
+          <view class="feed-head">
+            <view class="feed-author pressable" hover-class="pressable-hover" data-userid="{{item.userId}}" data-postid="{{item.id}}" bindtap="openUserProfile">
+              <view class="avatar-dot"></view>
+              <view>
+                <text class="feed-user">{{item.displayName}}</text>
+                <text class="feed-time">{{item.createdAt}}</text>
+              </view>
+            </view>
+          </view>
+
+          <view class="feed-content">{{item.content}}</view>
+
+          <view class="media-grid" wx:if="{{item.mediaItems.length}}">
+            <block wx:for="{{item.mediaItems}}" wx:key="url" wx:for-item="mediaItem">
+              <video
+                wx:if="{{mediaItem.type === 'video'}}"
+                class="media-cell media-video {{item.mediaItems.length === 1 ? 'media-single' : ''}}"
+                src="{{mediaItem.url}}"
+                controls
+              />
+              <image
+                wx:else
+                class="media-cell {{item.mediaItems.length === 1 ? 'media-single' : ''}}"
+                src="{{mediaItem.url}}"
+                mode="aspectFill"
+                data-postid="{{item.id}}"
+                data-preview-index="{{mediaItem.previewIndex}}"
+                bindtap="previewMedia"
+              />
+            </block>
+          </view>
+
+          <view class="feed-tags" wx:if="{{item.transportType}}">
+            <text class="chip">{{item.transportLabel}}</text>
+            <text class="chip">{{item.origin}} → {{item.destination}}</text>
+          </view>
+
+          <view class="feed-actions">
+            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="likePost">{{item.likedByMe ? "❤️" : "🤍"}} {{item.likeCount}}</view>
+            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="toggleComments">💬 {{item.commentCount}}</view>
+            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="onShareTap">🔁</view>
+          </view>
+
+          <view wx:if="{{item.commentsVisible}}" class="comments-box">
+            <view wx:if="{{item.commentsLoading}}" class="comments-loading">评论加载中...</view>
+            <view wx:if="{{!item.commentsLoading && item.comments.length === 0}}" class="comments-empty">暂无评论，来抢沙发</view>
+            <block wx:for="{{item.comments}}" wx:key="id" wx:for-item="comment">
+              <view class="comment-row">
+                <view class="comment-main">
+                  <text class="comment-name">{{comment.displayName}}</text>
+                  <text class="comment-content">{{comment.content}}</text>
+                </view>
+                <text
+                  class="comment-reply"
+                  data-postid="{{item.id}}"
+                  data-commentid="{{comment.id}}"
+                  data-replytouserid="{{comment.userId}}"
+                  data-replytoname="{{comment.displayName}}"
+                  bindtap="beginReply"
+                >
+                  回复
+                </text>
+              </view>
+              <view wx:if="{{comment.replies.length > 0}}" class="reply-list">
+                <block wx:for="{{comment.replies}}" wx:key="id" wx:for-item="reply">
+                  <view class="reply-row">
+                    <view class="comment-main">
+                      <text class="comment-name">{{reply.displayName}}</text>
+                      <text wx:if="{{reply.replyToDisplayName}}" class="comment-content"> 回复 @{{reply.replyToDisplayName}}：{{reply.content}}</text>
+                      <text wx:else class="comment-content">{{reply.content}}</text>
+                    </view>
+                    <text
+                      class="comment-reply"
+                      data-postid="{{item.id}}"
+                      data-commentid="{{comment.id}}"
+                      data-replytouserid="{{reply.userId}}"
+                      data-replytoname="{{reply.displayName}}"
+                      bindtap="beginReply"
+                    >
+                      回复
+                    </text>
+                  </view>
+                </block>
+              </view>
+            </block>
+            <view wx:if="{{item.replyTarget}}" class="reply-tip">
+              <text class="reply-tip-text">正在回复 @{{item.replyTarget.replyToName}}</text>
+              <text class="reply-cancel" data-postid="{{item.id}}" bindtap="clearReplyTarget">取消</text>
+            </view>
+            <view class="comment-input-row">
+              <input
+                class="comment-input"
+                placeholder="{{item.commentPlaceholder}}"
+                placeholder-style="color:#98a2b3;font-size:24rpx;"
+                value="{{item.commentDraft}}"
+                data-id="{{item.id}}"
+                bindinput="onCommentInput"
+              />
+              <button class="icon-btn comment-send" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="submitComment">发送</button>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+</view>

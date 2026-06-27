@@ -1,0 +1,9 @@
+{
+  "desc": "同行 sitemap",
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
+}

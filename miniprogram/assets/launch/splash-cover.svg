@@ -1,0 +1,61 @@
+<svg width="750" height="1334" viewBox="0 0 750 1334" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="750" y2="1334" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFEEC2"/>
+      <stop offset="0.55" stop-color="#CBE8FF"/>
+      <stop offset="1" stop-color="#A9D3FF"/>
+    </linearGradient>
+    <linearGradient id="platform" x1="150" y1="450" x2="600" y2="920" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFE98A"/>
+      <stop offset="1" stop-color="#FFD56C"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="750" height="1334" fill="url(#bg)"/>
+
+  <circle cx="160" cy="280" r="64" fill="#FFF8EB"/>
+  <circle cx="220" cy="280" r="78" fill="#FFF8EB"/>
+  <circle cx="280" cy="296" r="58" fill="#FFF8EB"/>
+  <circle cx="560" cy="314" r="58" fill="#FFF8EB"/>
+  <circle cx="618" cy="314" r="74" fill="#FFF8EB"/>
+  <circle cx="680" cy="334" r="52" fill="#FFF8EB"/>
+
+  <ellipse cx="375" cy="690" rx="260" ry="252" fill="url(#platform)"/>
+
+  <rect x="168" y="560" width="200" height="132" rx="52" fill="#D8F8EA"/>
+  <rect x="214" y="580" width="112" height="52" rx="20" fill="#FCFFFF"/>
+  <circle cx="220" cy="690" r="22" fill="#FFF"/>
+  <circle cx="316" cy="690" r="22" fill="#FFF"/>
+  <circle cx="220" cy="690" r="12" fill="#6D5F5F"/>
+  <circle cx="316" cy="690" r="12" fill="#6D5F5F"/>
+
+  <rect x="370" y="560" width="246" height="150" rx="44" fill="#FFF2CF"/>
+  <rect x="402" y="590" width="148" height="62" rx="20" fill="#F9FCFF"/>
+  <circle cx="420" cy="710" r="24" fill="#FFF"/>
+  <circle cx="554" cy="710" r="24" fill="#FFF"/>
+  <circle cx="420" cy="710" r="12" fill="#6D5F5F"/>
+  <circle cx="554" cy="710" r="12" fill="#6D5F5F"/>
+
+  <rect x="146" y="776" width="214" height="136" rx="54" fill="#FFD8BD"/>
+  <rect x="194" y="798" width="120" height="56" rx="20" fill="#FFF7F1"/>
+  <circle cx="204" cy="910" r="22" fill="#FFF"/>
+  <circle cx="314" cy="910" r="22" fill="#FFF"/>
+  <circle cx="204" cy="910" r="12" fill="#6D5F5F"/>
+  <circle cx="314" cy="910" r="12" fill="#6D5F5F"/>
+
+  <circle cx="452" cy="864" r="28" fill="#FFF"/>
+  <circle cx="582" cy="864" r="28" fill="#FFF"/>
+  <circle cx="452" cy="864" r="16" fill="#876866"/>
+  <circle cx="582" cy="864" r="16" fill="#876866"/>
+  <path d="M452 864L500 814H556L582 864" stroke="#FF9D4D" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M500 814L516 864" stroke="#FF9D4D" stroke-width="8" stroke-linecap="round"/>
+  <path d="M556 814L546 864" stroke="#FF9D4D" stroke-width="8" stroke-linecap="round"/>
+
+  <path d="M84 382L94 404L118 406L100 420L106 444L84 432L62 444L68 420L50 406L74 404L84 382Z" fill="#FFCB4D"/>
+  <path d="M666 432L676 452L698 454L682 468L688 490L666 478L644 490L650 468L634 454L656 452L666 432Z" fill="#FFCB4D"/>
+  <path d="M298 334L306 350L324 352L310 364L314 382L298 372L282 382L286 364L272 352L290 350L298 334Z" fill="#FFCB4D"/>
+  <path d="M596 320L606 342L630 344L612 358L618 382L596 370L574 382L580 358L562 344L586 342L596 320Z" fill="#FFCB4D"/>
+
+  <text x="375" y="1162" text-anchor="middle" font-size="54" font-family="Arial, sans-serif" font-weight="700" fill="#FFF8E0" stroke="#FFB67A" stroke-width="6">Tongxing with You</text>
+  <text x="375" y="1248" text-anchor="middle" font-size="62" font-family="Arial, sans-serif" font-weight="800" fill="#FFF8E0" stroke="#FF9A8B" stroke-width="7">Never Alone on the Road</text>
+</svg>

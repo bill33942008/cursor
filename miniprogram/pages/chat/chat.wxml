@@ -1,0 +1,52 @@
+<view class="page-wrap chat-page">
+  <view class="chat-top card">
+    <view class="row-between">
+      <view>
+        <view class="section-title">💬 {{groupName}}</view>
+        <text class="subtitle">旅途中说两句，互相照应更安心</text>
+      </view>
+      <view class="top-actions">
+        <text class="ws-status {{wsConnected ? 'online' : 'offline'}}">{{wsConnected ? "在线" : "离线"}}</text>
+        <button class="settings-btn" size="mini" bindtap="openGroupSettings">群设置</button>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view class="messages" scroll-y="true" scroll-into-view="{{scrollIntoView}}">
+    <block wx:if="{{messages.length === 0}}">
+      <view class="empty-box">
+        <text class="state-icon">🫧</text>
+        <text class="subtitle">还没有消息，发一句开启聊天吧</text>
+      </view>
+    </block>
+    <block wx:for="{{messages}}" wx:key="id">
+      <view class="msg-row {{item.isMine ? 'mine' : ''}}" id="{{item.domId}}">
+        <view class="msg-bubble {{item.isMine ? 'mine-bubble' : ''}}">
+          <view class="msg-head">
+            <text class="name">{{item.displayName}}</text>
+            <text class="time">{{item.createdAt}}</text>
+          </view>
+          <view class="msg-content">{{item.content}}</view>
+        </view>
+      </view>
+    </block>
+  </scroll-view>
+
+  <view class="composer">
+    <view class="compose-input-wrap">
+      <input class="compose-input" placeholder="输入消息，回车发送..." placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{inputText}}" bindinput="onInputText" />
+    </view>
+    <view class="composer-actions">
+      <view class="left-actions">
+        <button class="emoji-btn" size="mini" bindtap="toggleEmojiPanel">{{emojiPanelVisible ? "收起表情" : "😀 表情"}}</button>
+        <text class="anon-tag">{{isAnonymous ? "🕶️ 匿名发送中" : "实名发送"}}</text>
+      </view>
+      <button size="mini" class="btn-primary send-btn" bindtap="sendMessage">发送</button>
+    </view>
+    <view wx:if="{{emojiPanelVisible}}" class="emoji-panel">
+      <block wx:for="{{emojiList}}" wx:key="*this">
+        <text class="emoji-item" data-emoji="{{item}}" bindtap="appendEmoji">{{item}}</text>
+      </block>
+    </view>
+  </view>
+</view>

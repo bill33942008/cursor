@@ -1,0 +1,186 @@
+.filter-card {
+  margin-bottom: 16rpx;
+}
+
+.filter-card .input-box {
+  margin-bottom: 16rpx;
+}
+
+.actions-inline {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 2rpx;
+}
+
+.create-toggle {
+  padding: 0 24rpx;
+}
+
+.create-card .input-box,
+.create-card .picker-box {
+  margin-bottom: 14rpx;
+}
+
+.submit-btn {
+  margin-top: 8rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.group-card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 10rpx 32rpx rgba(20, 31, 56, 0.08);
+}
+
+.group-name {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #101828;
+}
+
+.member-count {
+  font-size: 23rpx;
+  color: #667085;
+}
+
+.group-tags {
+  margin: 12rpx 0 8rpx;
+}
+
+.owner {
+  display: block;
+  margin-bottom: 16rpx;
+}
+
+.group-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12rpx;
+}
+
+.chat-btn {
+  height: 62rpx;
+  line-height: 62rpx;
+  padding: 0 30rpx;
+}
+
+.group-skeleton-card {
+  padding: 10rpx 18rpx;
+}
+
+.group-skeleton-item {
+  padding: 14rpx 0;
+  border-bottom: 1rpx solid #f0f2f6;
+}
+
+.skeleton-row {
+  height: 20rpx;
+  border-radius: 10rpx;
+  margin-bottom: 8rpx;
+}
+
+.skeleton-row.lg {
+  width: 80%;
+}
+
+.skeleton-row {
+  width: 96%;
+}
+
+.skeleton-row.sm {
+  width: 50%;
+}
+
+.current-group-fab {
+  position: fixed;
+  right: 24rpx;
+  bottom: 200rpx;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  color: #fff;
+  border-radius: 999rpx;
+  padding: 14rpx 18rpx;
+  box-shadow: 0 12rpx 30rpx rgba(15, 23, 42, 0.26);
+}
+
+.current-group-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4rpx;
+  width: 24rpx;
+  height: 24rpx;
+}
+
+.bar {
+  width: 5rpx;
+  border-radius: 999rpx;
+  background: #4ade80;
+  animation: barPulse 1.1s ease-in-out infinite;
+}
+
+.bar.b1 {
+  height: 12rpx;
+}
+
+.bar.b2 {
+  height: 20rpx;
+  animation-delay: 0.18s;
+}
+
+.bar.b3 {
+  height: 16rpx;
+  animation-delay: 0.36s;
+}
+
+.current-group-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2rpx;
+}
+
+.fab-title {
+  font-size: 20rpx;
+  opacity: 0.85;
+}
+
+.fab-name {
+  max-width: 220rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fab-meta {
+  max-width: 220rpx;
+  font-size: 20rpx;
+  opacity: 0.84;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes barPulse {
+  0%,
+  100% {
+    transform: scaleY(0.72);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
