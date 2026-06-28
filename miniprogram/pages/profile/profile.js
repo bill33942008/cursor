@@ -13,14 +13,35 @@ function formatVipExpiryTip(featurePolicy) {
   const policy = featurePolicy || null;
   if (!policy) return "";
   const rawTier = String(policy.rawMembershipTier || policy.membershipTier || "normal");
-  if (rawTier !== "vip") return "当前为普通用户";
+  if (rawTier === "normal") return "当前为普通用户";
   const vipExpiresAt = String(policy.vipExpiresAt || "").trim();
-  if (!vipExpiresAt) return "VIP有效期：永久";
+  const tierLabel = rawTier === "svip" ? "SVIP" : "VIP";
+  if (!vipExpiresAt) return `${tierLabel}有效期：永久`;
   const text = vipExpiresAt.replace("T", " ").slice(0, 16);
-  if (policy.membershipTier === "vip") {
-    return `VIP到期：${text}`;
+  if (policy.membershipTier !== "normal") {
+    return `${tierLabel}到期：${text}`;
   }
-  return `VIP已过期：${text}`;
+  return `${tierLabel}已过期：${text}`;
+}
+
+function buildMemberVisual(featurePolicy) {
+  const tier = String(featurePolicy?.membershipTier || "normal");
+  if (tier === "svip") {
+    return {
+      label: "SVIP",
+      icon: "/assets/membership/member-svip.svg",
+    };
+  }
+  if (tier === "vip") {
+    return {
+      label: "VIP",
+      icon: "/assets/membership/member-vip.svg",
+    };
+  }
+  return {
+    label: "普通",
+    icon: "/assets/membership/member-normal.svg",
+  };
 }
 
 Page({
@@ -31,6 +52,8 @@ Page({
     profilePolicy: null,
     featurePolicy: null,
     vipExpiryTip: "",
+    memberTierLabel: "普通",
+    memberTierIcon: "/assets/membership/member-normal.svg",
     friends: [],
     incomingRequests: [],
     outgoingRequests: [],
@@ -46,6 +69,8 @@ Page({
         profilePolicy: null,
         featurePolicy: null,
         vipExpiryTip: "",
+        memberTierLabel: "普通",
+        memberTierIcon: "/assets/membership/member-normal.svg",
         friends: [],
         incomingRequests: [],
         outgoingRequests: [],
@@ -78,11 +103,14 @@ Page({
         nickname: meRes.user?.nickname || wxProfile?.nickname || "旅友",
         avatarUrl: meRes.user?.avatarUrl || wxProfile?.avatarUrl || "",
       };
+      const visual = buildMemberVisual(meRes.featurePolicy);
       app.globalData.user = mergedUser;
       if (canUseStorage()) {
         wx.setStorageSync("currentUser", mergedUser);
       }
       this.setData({
+        memberTierLabel: visual.label,
+        memberTierIcon: visual.icon,
         user: mergedUser,
         userInitial: String(mergedUser.nickname || "U").charAt(0) || "U",
         profilePolicy: meRes.profilePolicy || null,
@@ -100,6 +128,8 @@ Page({
           profilePolicy: null,
           featurePolicy: null,
           vipExpiryTip: "",
+          memberTierLabel: "普通",
+          memberTierIcon: "/assets/membership/member-normal.svg",
           friends: [],
           incomingRequests: [],
           outgoingRequests: [],

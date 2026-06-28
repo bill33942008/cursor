@@ -68,18 +68,25 @@
 
   function formatVipExpiryLabel(item) {
     const rawTier = String(item.rawMembershipTier || item.membershipTier || "normal");
-    if (rawTier !== "vip") {
+    if (rawTier === "normal") {
       return "非VIP";
     }
     const expiresAt = String(item.vipExpiresAt || "");
     if (!expiresAt) {
-      return "永久VIP";
+      return rawTier === "svip" ? "永久SVIP" : "永久VIP";
     }
     const text = expiresAt.replace("T", " ").slice(0, 16);
-    if (item.membershipTier === "vip") {
+    if (item.membershipTier !== "normal") {
       return `到期：${text}`;
     }
     return `已过期：${text}`;
+  }
+
+  function tierLabel(tier) {
+    const value = String(tier || "normal");
+    if (value === "svip") return "SVIP";
+    if (value === "vip") return "VIP";
+    return "普通";
   }
 
   function opButton(label, action, payload) {
@@ -132,8 +139,8 @@
             <td>${statusBadge(item.isBanned ? "banned" : "active")}</td>
             <td>
               <div class="user-policy">
-                <span class="badge ${item.membershipTier === "vip" ? "vip" : ""}">${escapeHtml(
-                  item.membershipTier === "vip" ? "VIP" : "普通"
+                <span class="badge ${item.membershipTier === "svip" ? "svip" : item.membershipTier === "vip" ? "vip" : ""}">${escapeHtml(
+                  tierLabel(item.membershipTier)
                 )}</span>
                 <div class="muted">${escapeHtml(formatVipExpiryLabel(item))}</div>
                 <div class="muted">年度资料修改：${escapeHtml(
@@ -162,6 +169,10 @@
                   userId: item.id,
                   membershipTier: "vip",
                 })}
+                ${opButton("设SVIP", "user_policy", {
+                  userId: item.id,
+                  membershipTier: "svip",
+                })}
                 ${opButton("设普通", "user_policy", {
                   userId: item.id,
                   membershipTier: "normal",
@@ -187,6 +198,11 @@
                   membershipTier: "vip",
                   clearFeatureOverrides: true,
                 })}
+                ${opButton("SVIP默认权益", "user_policy", {
+                  userId: item.id,
+                  membershipTier: "svip",
+                  clearFeatureOverrides: true,
+                })}
                 ${opButton("VIP+30天", "user_policy", {
                   userId: item.id,
                   grantVipDays: 30,
@@ -195,9 +211,19 @@
                   userId: item.id,
                   grantVipDays: 90,
                 })}
+                ${opButton("SVIP+30天", "user_policy", {
+                  userId: item.id,
+                  membershipTier: "svip",
+                  grantVipDays: 30,
+                })}
                 ${opButton("永久VIP", "user_policy", {
                   userId: item.id,
                   membershipTier: "vip",
+                  makeVipPermanent: true,
+                })}
+                ${opButton("永久SVIP", "user_policy", {
+                  userId: item.id,
+                  membershipTier: "svip",
                   makeVipPermanent: true,
                 })}
                 ${opButton("普通默认权益", "user_policy", {

@@ -1,6 +1,6 @@
 const { db } = require("../db");
 
-const MEMBERSHIP_TIERS = new Set(["normal", "vip"]);
+const MEMBERSHIP_TIERS = new Set(["normal", "vip", "svip"]);
 const FEATURE_POLICY_LIMITS = {
   dailyPostLimit: { min: 1, max: 500 },
   dailyGroupCreateLimit: { min: 1, max: 100 },
@@ -24,20 +24,30 @@ function normalizeMembershipTier(value) {
 
 function resolveEffectiveMembershipTier(row) {
   const rawTier = normalizeMembershipTier(row?.membershipTier);
-  if (rawTier !== "vip") return "normal";
+  if (rawTier === "normal") return "normal";
   const vipExpiresAt = String(row?.vipExpiresAt || "").trim();
-  if (!vipExpiresAt) return "vip";
+  if (!vipExpiresAt) return rawTier;
   const expiresAtMs = toTimeMs(vipExpiresAt);
-  if (!expiresAtMs) return "vip";
-  return expiresAtMs > Date.now() ? "vip" : "normal";
+  if (!expiresAtMs) return rawTier;
+  return expiresAtMs > Date.now() ? rawTier : "normal";
 }
 
 function getDefaultProfileChangeLimit(tier) {
-  return normalizeMembershipTier(tier) === "vip" ? 6 : 2;
+  const normalizedTier = normalizeMembershipTier(tier);
+  if (normalizedTier === "svip") return 12;
+  if (normalizedTier === "vip") return 6;
+  return 2;
 }
 
 function getTierFeatureDefaults(tier) {
   const normalizedTier = normalizeMembershipTier(tier);
+  if (normalizedTier === "svip") {
+    return {
+      dailyPostLimit: 80,
+      dailyGroupCreateLimit: 30,
+      sceneWindowMaxMinutes: 10080,
+    };
+  }
   if (normalizedTier === "vip") {
     return {
       dailyPostLimit: 30,
@@ -88,7 +98,7 @@ function loadPolicyRow(userId) {
 
 function syncVipState(row, userId) {
   if (!row) return null;
-  if (normalizeMembershipTier(row.membershipTier) !== "vip") return row;
+  if (normalizeMembershipTier(row.membershipTier) === "normal") return row;
   const vipExpiresAt = String(row.vipExpiresAt || "").trim();
   if (!vipExpiresAt) return row;
   const expiresAtMs = toTimeMs(vipExpiresAt);
@@ -142,7 +152,7 @@ function formatProfilePolicy(row) {
     rawMembershipTier: normalizeMembershipTier(row.membershipTier),
     vipExpiresAt: vipExpiresAt || "",
     vipIsActive:
-      membershipTier === "vip" &&
+      membershipTier !== "normal" &&
       (!vipExpiresAtMs || vipExpiresAtMs > Date.now()),
     profileChangeLimitPerYear,
     profileChangeUsedThisYear,
@@ -226,7 +236,8 @@ function withFeatureUsage(featurePolicy, usage) {
     dailyGroupsCreatedToday,
     remainingPostsToday: Math.max(featurePolicy.dailyPostLimit - dailyPostsUsedToday, 0),
     remainingGroupsToday: Math.max(featurePolicy.dailyGroupCreateLimit - dailyGroupsCreatedToday, 0),
-    isVip: featurePolicy.membershipTier === "vip",
+    isVip: featurePolicy.membershipTier !== "normal",
+    isSvip: featurePolicy.membershipTier === "svip",
   };
 }
 

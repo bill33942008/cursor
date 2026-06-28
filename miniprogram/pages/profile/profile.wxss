@@ -57,6 +57,28 @@
   display: block;
 }
 
+.member-pill {
+  margin-top: 8rpx;
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 4rpx 12rpx 4rpx 8rpx;
+  border-radius: 999rpx;
+  background: #f8fafc;
+  border: 2rpx solid #e5e7eb;
+}
+
+.member-pill-icon {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+.member-pill-label {
+  font-size: 20rpx;
+  color: #344054;
+  font-weight: 600;
+}
+
 .profile-policy-tip {
   margin-top: 6rpx;
   display: block;

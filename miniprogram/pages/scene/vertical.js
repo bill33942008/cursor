@@ -107,6 +107,13 @@ function buildWindowOptions(maxWindowMinutes) {
   return BASE_WINDOW_OPTIONS.filter((item) => item.value <= maxWindow);
 }
 
+function getMemberTierLabel(tier) {
+  const value = String(tier || "normal");
+  if (value === "svip") return "SVIP";
+  if (value === "vip") return "VIP";
+  return "普通";
+}
+
 Page({
   data: {
     loading: false,
@@ -125,6 +132,7 @@ Page({
     activeSceneIndex: 0,
     mockDataEnabled: false,
     membershipTier: "normal",
+    memberTierLabel: "普通",
     featurePolicy: null,
   },
 
@@ -244,6 +252,9 @@ Page({
           windowOptions,
           windowMinutes,
           membershipTier: featurePolicy && featurePolicy.membershipTier ? featurePolicy.membershipTier : "normal",
+          memberTierLabel: getMemberTierLabel(
+            featurePolicy && featurePolicy.membershipTier ? featurePolicy.membershipTier : "normal"
+          ),
           featurePolicy,
         },
         () => {

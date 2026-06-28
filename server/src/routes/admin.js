@@ -352,7 +352,7 @@ router.get("/users", (req, res) => {
 router.post("/users/:id/profile-policy", (req, res) => {
   const schema = z
     .object({
-      membershipTier: z.enum(["normal", "vip"]).optional(),
+      membershipTier: z.enum(["normal", "vip", "svip"]).optional(),
       profileChangeLimitPerYear: z.number().int().min(0).max(100).optional(),
       resetUsage: z.boolean().optional(),
       dailyPostLimit: z.number().int().min(1).max(500).optional(),
@@ -433,20 +433,27 @@ router.post("/users/:id/profile-policy", (req, res) => {
   if (parsed.data.membershipTier === "normal") {
     nextVipExpiresAt = null;
   }
+  const currentTier = normalizeMembershipTier(current.membershipTier);
+  const grantTargetTier =
+    parsed.data.membershipTier && parsed.data.membershipTier !== "normal"
+      ? normalizeMembershipTier(parsed.data.membershipTier)
+      : currentTier !== "normal"
+      ? currentTier
+      : "vip";
   if (parsed.data.makeVipPermanent) {
-    nextTier = "vip";
+    nextTier = grantTargetTier;
     nextVipExpiresAt = null;
   }
   if (parsed.data.grantVipDays !== undefined) {
-    nextTier = "vip";
+    nextTier = grantTargetTier;
     nextVipExpiresAt = buildVipExpiresAt(current.vipExpiresAt, parsed.data.grantVipDays);
   }
   if (
     parsed.data.profileChangeLimitPerYear === undefined &&
-    nextTier === "vip" &&
-    normalizeMembershipTier(current.membershipTier) !== "vip"
+    nextTier !== "normal" &&
+    currentTier !== nextTier
   ) {
-    nextLimit = Math.max(nextLimit, getDefaultProfileChangeLimit("vip"));
+    nextLimit = Math.max(nextLimit, getDefaultProfileChangeLimit(nextTier));
   }
   if (parsed.data.dailyPostLimit !== undefined) {
     nextDailyPostLimitOverride = clampFeatureValue(

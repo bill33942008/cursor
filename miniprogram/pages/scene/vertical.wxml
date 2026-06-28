@@ -3,7 +3,7 @@
     <view class="hero-title">🎬 同程聚合剧场</view>
     <view class="hero-subtitle">同车次 / 同航班 / 同景点，沉浸式浏览广场信息</view>
     <text wx:if="{{mockDataEnabled}}" class="hero-pill">测试数据模式已开启</text>
-    <text wx:if="{{membershipTier === 'vip'}}" class="hero-pill">VIP权益：已解锁3天/7天聚合视窗</text>
+    <text wx:if="{{membershipTier !== 'normal'}}" class="hero-pill">{{memberTierLabel}}权益：已解锁3天/7天聚合视窗</text>
   </view>
 
   <view class="card">
@@ -29,7 +29,7 @@
         </view>
       </block>
     </view>
-    <text wx:if="{{membershipTier !== 'vip'}}" class="subtitle">普通用户可查看近24小时，升级VIP可解锁近3天/7天聚合</text>
+    <text wx:if="{{membershipTier === 'normal'}}" class="subtitle">普通用户可查看近24小时，升级VIP/SVIP可解锁近3天/7天聚合</text>
     <view class="search-row">
       <input
         class="search-input"

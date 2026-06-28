@@ -23,8 +23,12 @@
       <view class="profile-main">
         <text class="name">{{user.nickname}}</text>
         <text class="subtitle">同行账号</text>
+        <view class="member-pill">
+          <image class="member-pill-icon" src="{{memberTierIcon}}" mode="aspectFit"></image>
+          <text class="member-pill-label">{{memberTierLabel}}</text>
+        </view>
         <text wx:if="{{profilePolicy}}" class="profile-policy-tip">
-          {{profilePolicy.membershipTier === 'vip' ? 'VIP' : '普通'}} · 本年可改 {{profilePolicy.profileChangeLimitPerYear}} 次 · 剩余 {{profilePolicy.remainingChanges}} 次
+          {{memberTierLabel}} · 本年可改 {{profilePolicy.profileChangeLimitPerYear}} 次 · 剩余 {{profilePolicy.remainingChanges}} 次
         </text>
         <text wx:if="{{featurePolicy}}" class="profile-policy-tip">{{vipExpiryTip}}</text>
       </view>

@@ -29,7 +29,7 @@
     <view wx:if="{{profilePolicy}}" class="card policy-card">
       <view class="section-title">年度修改额度</view>
       <text class="subtitle">
-        当前身份：{{profilePolicy.membershipTier === 'vip' ? 'VIP' : '普通用户'}}
+        当前身份：{{memberTierLabel}}
       </text>
       <text class="subtitle">
         本年已用 {{profilePolicy.profileChangeUsedThisYear}} / {{profilePolicy.profileChangeLimitPerYear}} 次，剩余
@@ -40,6 +40,10 @@
 
     <view wx:if="{{featurePolicy}}" class="card policy-card">
       <view class="section-title">功能权限额度</view>
+      <view class="member-tier-row">
+        <image class="member-tier-icon" src="{{memberTierIcon}}" mode="aspectFit"></image>
+        <text class="member-tier-label">{{memberTierLabel}}</text>
+      </view>
       <text class="subtitle">{{vipExpiryText}}</text>
       <text class="subtitle">每日发动态上限：{{featurePolicy.dailyPostLimit}}（今日剩余 {{featurePolicy.remainingPostsToday}}）</text>
       <text class="subtitle">每日创建群组上限：{{featurePolicy.dailyGroupCreateLimit}}（今日剩余 {{featurePolicy.remainingGroupsToday}}）</text>

@@ -21,16 +21,37 @@ function formatVipExpiryText(featurePolicy) {
   const policy = featurePolicy || null;
   if (!policy) return "";
   const rawTier = String(policy.rawMembershipTier || policy.membershipTier || "normal");
-  if (rawTier !== "vip") return "当前为普通用户";
+  if (rawTier === "normal") return "当前为普通用户";
   const vipExpiresAt = String(policy.vipExpiresAt || "").trim();
+  const tierLabel = rawTier === "svip" ? "SVIP" : "VIP";
   if (!vipExpiresAt) {
-    return "VIP有效期：永久";
+    return `${tierLabel}有效期：永久`;
   }
   const text = vipExpiresAt.replace("T", " ").slice(0, 16);
-  if (policy.membershipTier === "vip") {
-    return `VIP到期时间：${text}`;
+  if (policy.membershipTier !== "normal") {
+    return `${tierLabel}到期时间：${text}`;
   }
-  return `VIP已过期：${text}`;
+  return `${tierLabel}已过期：${text}`;
+}
+
+function buildMemberVisual(featurePolicy) {
+  const tier = String(featurePolicy?.membershipTier || "normal");
+  if (tier === "svip") {
+    return {
+      label: "SVIP",
+      icon: "/assets/membership/member-svip.svg",
+    };
+  }
+  if (tier === "vip") {
+    return {
+      label: "VIP",
+      icon: "/assets/membership/member-vip.svg",
+    };
+  }
+  return {
+    label: "普通",
+    icon: "/assets/membership/member-normal.svg",
+  };
 }
 
 Page({
@@ -44,6 +65,8 @@ Page({
     profilePolicy: null,
     featurePolicy: null,
     vipExpiryText: "",
+    memberTierLabel: "普通",
+    memberTierIcon: "/assets/membership/member-normal.svg",
   },
 
   onLoad() {
@@ -60,14 +83,18 @@ Page({
       const user = meRes.user || {};
       const nickname = String(user.nickname || "").trim() || "旅友";
       const avatarUrl = String(user.avatarUrl || "").trim();
+      const featurePolicy = policyRes.featurePolicy || meRes.featurePolicy || null;
+      const visual = buildMemberVisual(featurePolicy);
       this.setData({
         nickname,
         nicknameInitial: nickname.charAt(0) || "U",
         avatarUrl,
         avatarPreviewUrl: resolveMediaUrl(avatarUrl),
         profilePolicy: policyRes.profilePolicy || meRes.profilePolicy || null,
-        featurePolicy: policyRes.featurePolicy || meRes.featurePolicy || null,
-        vipExpiryText: formatVipExpiryText(policyRes.featurePolicy || meRes.featurePolicy || null),
+        featurePolicy,
+        vipExpiryText: formatVipExpiryText(featurePolicy),
+        memberTierLabel: visual.label,
+        memberTierIcon: visual.icon,
       });
     } catch (err) {
       wx.showToast({ title: err.message || "加载失败", icon: "none" });
@@ -138,6 +165,7 @@ Page({
       const user = res.user || {};
       const profilePolicy = res.profilePolicy || null;
       const featurePolicy = res.featurePolicy || null;
+      const visual = buildMemberVisual(featurePolicy);
       const syncedProfile = {
         nickname: user.nickname || nickname,
         avatarUrl: user.avatarUrl || "",
@@ -156,6 +184,8 @@ Page({
         profilePolicy,
         featurePolicy,
         vipExpiryText: formatVipExpiryText(featurePolicy),
+        memberTierLabel: visual.label,
+        memberTierIcon: visual.icon,
       });
       wx.showToast({ title: "资料已更新", icon: "success" });
       setTimeout(() => {
