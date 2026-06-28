@@ -17,6 +17,9 @@ CREATE TABLE IF NOT EXISTS users (
   profile_change_limit_per_year INT NOT NULL DEFAULT 2,
   profile_change_used_this_year INT NOT NULL DEFAULT 0,
   profile_change_cycle_year INT NOT NULL DEFAULT CAST(EXTRACT(YEAR FROM now()) AS INT),
+  daily_post_limit_override INT,
+  daily_group_create_limit_override INT,
+  scene_window_max_minutes_override INT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

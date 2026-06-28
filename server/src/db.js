@@ -139,6 +139,9 @@ function initSchema() {
       profile_change_limit_per_year INTEGER NOT NULL DEFAULT 2,
       profile_change_used_this_year INTEGER NOT NULL DEFAULT 0,
       profile_change_cycle_year INTEGER NOT NULL DEFAULT (CAST(strftime('%Y', 'now') AS INTEGER)),
+      daily_post_limit_override INTEGER,
+      daily_group_create_limit_override INTEGER,
+      scene_window_max_minutes_override INTEGER,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -380,6 +383,17 @@ function initSchema() {
     "users",
     "profile_change_cycle_year",
     "profile_change_cycle_year INTEGER NOT NULL DEFAULT 1970"
+  );
+  addColumnIfMissing("users", "daily_post_limit_override", "daily_post_limit_override INTEGER");
+  addColumnIfMissing(
+    "users",
+    "daily_group_create_limit_override",
+    "daily_group_create_limit_override INTEGER"
+  );
+  addColumnIfMissing(
+    "users",
+    "scene_window_max_minutes_override",
+    "scene_window_max_minutes_override INTEGER"
   );
   addColumnIfMissing("post_comments", "parent_comment_id", "parent_comment_id TEXT");
   addColumnIfMissing("post_comments", "reply_to_user_id", "reply_to_user_id TEXT");

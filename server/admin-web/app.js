@@ -123,6 +123,13 @@
                   `${item.profileChangeUsedThisYear}/${item.profileChangeLimitPerYear}`
                 )}</div>
                 <div class="muted">剩余：${escapeHtml(item.profileChangeRemaining)}</div>
+                <div class="muted">每日发帖上限：${escapeHtml(item.featurePolicy?.dailyPostLimit || "-")}</div>
+                <div class="muted">每日建群上限：${escapeHtml(
+                  item.featurePolicy?.dailyGroupCreateLimit || "-"
+                )}</div>
+                <div class="muted">剧场时间窗上限：${escapeHtml(
+                  item.featurePolicy?.sceneWindowMaxMinutes || "-"
+                )} 分钟</div>
               </div>
             </td>
             <td>${escapeHtml(item.lastActiveAt || "-")}</td>
@@ -157,6 +164,24 @@
                   resetUsage: true,
                 })}
               </div>
+              <div class="op-group">
+                ${opButton("VIP默认权益", "user_policy", {
+                  userId: item.id,
+                  membershipTier: "vip",
+                  clearFeatureOverrides: true,
+                })}
+                ${opButton("普通默认权益", "user_policy", {
+                  userId: item.id,
+                  membershipTier: "normal",
+                  clearFeatureOverrides: true,
+                })}
+                ${opButton("自定义VIP权益", "user_policy_prompt", {
+                  userId: item.id,
+                  currentPost: item.featurePolicy?.dailyPostLimit || 30,
+                  currentGroup: item.featurePolicy?.dailyGroupCreateLimit || 10,
+                  currentWindow: item.featurePolicy?.sceneWindowMaxMinutes || 10080,
+                })}
+              </div>
             </td>
           </tr>
         `
@@ -183,6 +208,26 @@
         await api(`/users/${payload.userId}/profile-policy`, {
           method: "POST",
           body,
+        });
+      }
+      if (action === "user_policy_prompt") {
+        const postLimit = Number(prompt("请输入每日发帖上限（1-500）", String(payload.currentPost || 30)));
+        if (!Number.isFinite(postLimit)) return;
+        const groupLimit = Number(
+          prompt("请输入每日创建群组上限（1-100）", String(payload.currentGroup || 10))
+        );
+        if (!Number.isFinite(groupLimit)) return;
+        const sceneWindowMaxMinutes = Number(
+          prompt("请输入剧场最大时间窗（分钟，30-10080）", String(payload.currentWindow || 10080))
+        );
+        if (!Number.isFinite(sceneWindowMaxMinutes)) return;
+        await api(`/users/${payload.userId}/profile-policy`, {
+          method: "POST",
+          body: {
+            dailyPostLimit: postLimit,
+            dailyGroupCreateLimit: groupLimit,
+            sceneWindowMaxMinutes,
+          },
         });
       }
     });

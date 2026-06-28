@@ -7,6 +7,7 @@ const { optionalAuth } = require("../middleware/optionalAuth");
 const { parsePagination } = require("../utils");
 const {
   getCurrentCycleYear,
+  getUserPolicyBundle,
   getUserProfilePolicy,
   normalizeMembershipTier,
 } = require("../services/profilePolicy");
@@ -152,11 +153,14 @@ function getRelationship(viewerId, targetUserId) {
 }
 
 router.get("/me/profile-policy", authRequired, (req, res) => {
-  const profilePolicy = getUserProfilePolicy(req.user.id);
-  if (!profilePolicy) {
+  const bundle = getUserPolicyBundle(req.user.id);
+  if (!bundle?.profilePolicy) {
     return res.status(404).json({ message: "user not found" });
   }
-  return res.json({ profilePolicy });
+  return res.json({
+    profilePolicy: bundle.profilePolicy,
+    featurePolicy: bundle.featurePolicy,
+  });
 });
 
 router.put("/me/profile", authRequired, (req, res) => {
@@ -256,6 +260,7 @@ router.put("/me/profile", authRequired, (req, res) => {
       membershipTier: normalizeMembershipTier(updatedUser.membershipTier),
     },
     profilePolicy: getUserProfilePolicy(req.user.id),
+    featurePolicy: getUserPolicyBundle(req.user.id)?.featurePolicy || null,
   });
 });
 

@@ -5,7 +5,7 @@ const { db } = require("../db");
 const { authRequired } = require("../middleware/auth");
 const { exchangeCodeForOpenId, isRealLoginMode } = require("../services/wechat");
 const { trackUserActivity } = require("../services/activity");
-const { getUserProfilePolicy, normalizeMembershipTier } = require("../services/profilePolicy");
+const { getUserPolicyBundle, normalizeMembershipTier } = require("../services/profilePolicy");
 
 const router = express.Router();
 
@@ -105,12 +105,14 @@ router.get("/me", authRequired, (req, res) => {
   if (!user) {
     return res.status(404).json({ message: "user not found" });
   }
+  const bundle = getUserPolicyBundle(req.user.id);
   return res.json({
     user: {
       ...user,
       membershipTier: normalizeMembershipTier(user.membershipTier),
     },
-    profilePolicy: getUserProfilePolicy(req.user.id),
+    profilePolicy: bundle?.profilePolicy || null,
+    featurePolicy: bundle?.featurePolicy || null,
   });
 });
 

@@ -20,6 +20,14 @@ const LOCAL_AVATAR_POOL = [
   "/assets/scene/avatar-d.svg",
 ];
 
+const BASE_WINDOW_OPTIONS = [
+  { label: "近2小时", value: 120 },
+  { label: "近6小时", value: 360 },
+  { label: "近24小时", value: 1440 },
+  { label: "近3天", value: 4320 },
+  { label: "近7天", value: 10080 },
+];
+
 function resolveMediaUrl(url) {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -94,6 +102,11 @@ function normalizeTrack(track) {
   };
 }
 
+function buildWindowOptions(maxWindowMinutes) {
+  const maxWindow = Math.max(30, Number(maxWindowMinutes || 1440));
+  return BASE_WINDOW_OPTIONS.filter((item) => item.value <= maxWindow);
+}
+
 Page({
   data: {
     loading: false,
@@ -106,14 +119,13 @@ Page({
       { label: "景点剧场", value: "scenic" },
     ],
     windowMinutes: 120,
-    windowOptions: [
-      { label: "近2小时", value: 120 },
-      { label: "近6小时", value: 360 },
-      { label: "近24小时", value: 1440 },
-    ],
+    windowOptions: buildWindowOptions(1440),
+    maxWindowMinutes: 1440,
     tracks: [],
     activeSceneIndex: 0,
     mockDataEnabled: false,
+    membershipTier: "normal",
+    featurePolicy: null,
   },
 
   onLoad() {
@@ -180,6 +192,10 @@ Page({
   async onWindowChange(e) {
     const windowMinutes = Number(e.currentTarget.dataset.value || 120);
     if (Number.isNaN(windowMinutes)) return;
+    if (windowMinutes > Number(this.data.maxWindowMinutes || 1440)) {
+      wx.showToast({ title: "该时间窗需VIP权限", icon: "none" });
+      return;
+    }
     this.setData({ windowMinutes, activeSceneIndex: 0 });
     await this.loadSceneTracks();
   },
@@ -209,11 +225,26 @@ Page({
       });
       this.clearSceneTimers();
       const tracks = (res.items || []).map(normalizeTrack);
+      const maxWindowMinutes = Number(res.maxWindowMinutes || 1440);
+      const windowOptions = buildWindowOptions(maxWindowMinutes);
+      const currentWindowMinutes = Number(res.windowMinutes || this.data.windowMinutes || 120);
+      const hasCurrentWindow = windowOptions.some((item) => item.value === currentWindowMinutes);
+      const windowMinutes = hasCurrentWindow
+        ? currentWindowMinutes
+        : windowOptions.length
+        ? windowOptions[0].value
+        : 120;
+      const featurePolicy = res.featurePolicy || null;
       this.setData(
         {
           tracks,
           activeSceneIndex: tracks.length ? Math.min(this.data.activeSceneIndex, tracks.length - 1) : 0,
           mockDataEnabled: Boolean(res.mockDataEnabled),
+          maxWindowMinutes,
+          windowOptions,
+          windowMinutes,
+          membershipTier: featurePolicy && featurePolicy.membershipTier ? featurePolicy.membershipTier : "normal",
+          featurePolicy,
         },
         () => {
           const active = this.getActiveScene();

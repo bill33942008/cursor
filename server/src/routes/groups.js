@@ -9,6 +9,7 @@ const { moderateText } = require("../services/moderation");
 const { broadcastGroupMessage } = require("../realtime/hub");
 const { isMockDataEnabled } = require("../services/appSettings");
 const { getMockGroups } = require("../services/mockData");
+const { getUserFeaturePolicy } = require("../services/profilePolicy");
 
 const router = express.Router();
 
@@ -89,6 +90,17 @@ router.post("/", authRequired, async (req, res, next) => {
   }
   try {
     const data = parsed.data;
+    const featurePolicy = getUserFeaturePolicy(req.user.id);
+    if (!featurePolicy) {
+      return res.status(404).json({ message: "user not found" });
+    }
+    if (featurePolicy.remainingGroupsToday <= 0) {
+      return res.status(429).json({
+        message: `今日创建群组次数已达上限（${featurePolicy.dailyGroupCreateLimit}次），可升级VIP或联系管理员调整`,
+        featurePolicy,
+      });
+    }
+
     const groupId = uuidv4();
     const moderation = await moderateText({
       content: `${data.name}\n${data.description || ""}`,

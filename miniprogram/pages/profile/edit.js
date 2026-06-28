@@ -26,6 +26,7 @@ Page({
     avatarUrl: "",
     avatarPreviewUrl: "",
     profilePolicy: null,
+    featurePolicy: null,
   },
 
   onLoad() {
@@ -48,6 +49,7 @@ Page({
         avatarUrl,
         avatarPreviewUrl: resolveMediaUrl(avatarUrl),
         profilePolicy: policyRes.profilePolicy || meRes.profilePolicy || null,
+        featurePolicy: policyRes.featurePolicy || meRes.featurePolicy || null,
       });
     } catch (err) {
       wx.showToast({ title: err.message || "加载失败", icon: "none" });
@@ -117,6 +119,7 @@ Page({
       });
       const user = res.user || {};
       const profilePolicy = res.profilePolicy || null;
+      const featurePolicy = res.featurePolicy || null;
       const syncedProfile = {
         nickname: user.nickname || nickname,
         avatarUrl: user.avatarUrl || "",
@@ -133,6 +136,7 @@ Page({
         avatarUrl: syncedProfile.avatarUrl,
         avatarPreviewUrl: resolveMediaUrl(syncedProfile.avatarUrl),
         profilePolicy,
+        featurePolicy,
       });
       wx.showToast({ title: "资料已更新", icon: "success" });
       setTimeout(() => {

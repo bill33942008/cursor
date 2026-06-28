@@ -17,8 +17,13 @@ const { getRealtimePresenceStats } = require("../realtime/hub");
 const { parsePagination } = require("../utils");
 const { isMockDataEnabled, setMockDataEnabled } = require("../services/appSettings");
 const {
+  clampFeatureValue,
+  formatFeaturePolicy,
   getCurrentCycleYear,
   getDefaultProfileChangeLimit,
+  getTierFeatureDefaults,
+  getUserFeaturePolicy,
+  getUserPolicyBundle,
   getUserProfilePolicy,
   normalizeMembershipTier,
 } = require("../services/profilePolicy");
@@ -61,6 +66,7 @@ function mapAdminUser(row) {
   const cycleYear = Number(row.profileChangeCycleYear || currentYear);
   const rawUsed = Math.max(0, Number(row.profileChangeUsedThisYear || 0));
   const profileChangeUsedThisYear = cycleYear === currentYear ? rawUsed : 0;
+  const featurePolicy = formatFeaturePolicy(row);
   return {
     ...row,
     isBanned: Boolean(Number(row.isBanned || 0)),
@@ -69,6 +75,7 @@ function mapAdminUser(row) {
     profileChangeUsedThisYear,
     profileChangeCycleYear: cycleYear === currentYear ? cycleYear : currentYear,
     profileChangeRemaining: Math.max(profileChangeLimitPerYear - profileChangeUsedThisYear, 0),
+    featurePolicy,
   };
 }
 
@@ -308,6 +315,9 @@ router.get("/users", (req, res) => {
       profile_change_limit_per_year AS profileChangeLimitPerYear,
       profile_change_used_this_year AS profileChangeUsedThisYear,
       profile_change_cycle_year AS profileChangeCycleYear,
+      daily_post_limit_override AS dailyPostLimitOverride,
+      daily_group_create_limit_override AS dailyGroupCreateLimitOverride,
+      scene_window_max_minutes_override AS sceneWindowMaxMinutesOverride,
       created_at AS createdAt,
       updated_at AS updatedAt
     FROM users
@@ -338,12 +348,20 @@ router.post("/users/:id/profile-policy", (req, res) => {
       membershipTier: z.enum(["normal", "vip"]).optional(),
       profileChangeLimitPerYear: z.number().int().min(0).max(100).optional(),
       resetUsage: z.boolean().optional(),
+      dailyPostLimit: z.number().int().min(1).max(500).optional(),
+      dailyGroupCreateLimit: z.number().int().min(1).max(100).optional(),
+      sceneWindowMaxMinutes: z.number().int().min(30).max(10080).optional(),
+      clearFeatureOverrides: z.boolean().optional(),
     })
     .refine(
       (value) =>
         value.membershipTier !== undefined ||
         value.profileChangeLimitPerYear !== undefined ||
-        value.resetUsage !== undefined,
+        value.resetUsage !== undefined ||
+        value.dailyPostLimit !== undefined ||
+        value.dailyGroupCreateLimit !== undefined ||
+        value.sceneWindowMaxMinutes !== undefined ||
+        value.clearFeatureOverrides !== undefined,
       {
         message: "at least one field is required",
         path: ["membershipTier"],
@@ -363,7 +381,10 @@ router.post("/users/:id/profile-policy", (req, res) => {
         membership_tier AS membershipTier,
         profile_change_limit_per_year AS profileChangeLimitPerYear,
         profile_change_used_this_year AS profileChangeUsedThisYear,
-        profile_change_cycle_year AS profileChangeCycleYear
+        profile_change_cycle_year AS profileChangeCycleYear,
+        daily_post_limit_override AS dailyPostLimitOverride,
+        daily_group_create_limit_override AS dailyGroupCreateLimitOverride,
+        scene_window_max_minutes_override AS sceneWindowMaxMinutesOverride
       FROM users
       WHERE id = ?
       `
@@ -387,6 +408,36 @@ router.post("/users/:id/profile-policy", (req, res) => {
   const oldCycleYear = Number(current.profileChangeCycleYear || 0);
   const oldUsed = Math.max(0, Number(current.profileChangeUsedThisYear || 0));
   const nextUsed = shouldResetUsage ? 0 : oldCycleYear === currentYear ? oldUsed : 0;
+  const tierDefaults = getTierFeatureDefaults(nextTier);
+  let nextDailyPostLimitOverride = current.dailyPostLimitOverride;
+  let nextDailyGroupCreateLimitOverride = current.dailyGroupCreateLimitOverride;
+  let nextSceneWindowMaxMinutesOverride = current.sceneWindowMaxMinutesOverride;
+  if (parsed.data.clearFeatureOverrides) {
+    nextDailyPostLimitOverride = null;
+    nextDailyGroupCreateLimitOverride = null;
+    nextSceneWindowMaxMinutesOverride = null;
+  }
+  if (parsed.data.dailyPostLimit !== undefined) {
+    nextDailyPostLimitOverride = clampFeatureValue(
+      "dailyPostLimit",
+      parsed.data.dailyPostLimit,
+      tierDefaults.dailyPostLimit
+    );
+  }
+  if (parsed.data.dailyGroupCreateLimit !== undefined) {
+    nextDailyGroupCreateLimitOverride = clampFeatureValue(
+      "dailyGroupCreateLimit",
+      parsed.data.dailyGroupCreateLimit,
+      tierDefaults.dailyGroupCreateLimit
+    );
+  }
+  if (parsed.data.sceneWindowMaxMinutes !== undefined) {
+    nextSceneWindowMaxMinutesOverride = clampFeatureValue(
+      "sceneWindowMaxMinutes",
+      parsed.data.sceneWindowMaxMinutes,
+      tierDefaults.sceneWindowMaxMinutes
+    );
+  }
 
   db.prepare(
     `
@@ -395,10 +446,22 @@ router.post("/users/:id/profile-policy", (req, res) => {
         profile_change_limit_per_year = ?,
         profile_change_used_this_year = ?,
         profile_change_cycle_year = ?,
+        daily_post_limit_override = ?,
+        daily_group_create_limit_override = ?,
+        scene_window_max_minutes_override = ?,
         updated_at = datetime('now')
     WHERE id = ?
     `
-  ).run(nextTier, nextLimit, nextUsed, currentYear, userId);
+  ).run(
+    nextTier,
+    nextLimit,
+    nextUsed,
+    currentYear,
+    nextDailyPostLimitOverride,
+    nextDailyGroupCreateLimitOverride,
+    nextSceneWindowMaxMinutesOverride,
+    userId
+  );
 
   logAdminAction({
     actionType: "update_user_profile_policy",
@@ -411,6 +474,8 @@ router.post("/users/:id/profile-policy", (req, res) => {
   return res.json({
     success: true,
     profilePolicy: getUserProfilePolicy(userId),
+    featurePolicy: getUserFeaturePolicy(userId),
+    policyBundle: getUserPolicyBundle(userId),
   });
 });
 

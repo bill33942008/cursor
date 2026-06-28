@@ -3,6 +3,7 @@ const { optionalAuth } = require("../middleware/optionalAuth");
 const { db } = require("../db");
 const { isMockDataEnabled } = require("../services/appSettings");
 const { getMockSceneTracks } = require("../services/mockData");
+const { getTierFeatureDefaults, getUserFeaturePolicy } = require("../services/profilePolicy");
 
 const router = express.Router();
 
@@ -151,7 +152,11 @@ router.get("/vertical-feed", optionalAuth, (req, res) => {
   const sceneType = String(req.query.sceneType || "all").trim();
   const keyword = String(req.query.keyword || "").trim();
   const limit = Math.min(Math.max(Number(req.query.limit) || 120, 10), 300);
-  const windowMinutes = Math.min(Math.max(Number(req.query.windowMinutes) || 120, 30), 2880);
+  const requestedWindowMinutes = Math.min(Math.max(Number(req.query.windowMinutes) || 120, 30), 10080);
+  const defaultFeaturePolicy = getTierFeatureDefaults("normal");
+  const featurePolicy = req.user?.id ? getUserFeaturePolicy(req.user.id) : null;
+  const maxWindowMinutes = featurePolicy?.sceneWindowMaxMinutes || defaultFeaturePolicy.sceneWindowMaxMinutes;
+  const windowMinutes = Math.min(requestedWindowMinutes, maxWindowMinutes);
 
   let sql = `
     SELECT
@@ -213,6 +218,9 @@ router.get("/vertical-feed", optionalAuth, (req, res) => {
     items: tracks,
     sceneType,
     windowMinutes,
+    requestedWindowMinutes,
+    maxWindowMinutes,
+    featurePolicy,
     mockDataEnabled: isMockDataEnabled(),
     keyword,
   });

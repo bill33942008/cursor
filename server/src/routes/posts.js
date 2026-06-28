@@ -8,6 +8,7 @@ const { parsePagination } = require("../utils");
 const { moderateText } = require("../services/moderation");
 const { isMockDataEnabled } = require("../services/appSettings");
 const { getMockSquarePosts } = require("../services/mockData");
+const { getUserFeaturePolicy } = require("../services/profilePolicy");
 
 const router = express.Router();
 
@@ -75,6 +76,17 @@ router.post("/", authRequired, async (req, res, next) => {
 
   try {
     const data = parsed.data;
+    const featurePolicy = getUserFeaturePolicy(req.user.id);
+    if (!featurePolicy) {
+      return res.status(404).json({ message: "user not found" });
+    }
+    if (featurePolicy.remainingPostsToday <= 0) {
+      return res.status(429).json({
+        message: `今日发动态次数已达上限（${featurePolicy.dailyPostLimit}次），可升级VIP或联系管理员调整`,
+        featurePolicy,
+      });
+    }
+
     const postId = uuidv4();
     const moderation = await moderateText({
       content: data.content,
