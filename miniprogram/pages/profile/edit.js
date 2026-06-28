@@ -17,6 +17,22 @@ function canUseStorage() {
   }
 }
 
+function formatVipExpiryText(featurePolicy) {
+  const policy = featurePolicy || null;
+  if (!policy) return "";
+  const rawTier = String(policy.rawMembershipTier || policy.membershipTier || "normal");
+  if (rawTier !== "vip") return "当前为普通用户";
+  const vipExpiresAt = String(policy.vipExpiresAt || "").trim();
+  if (!vipExpiresAt) {
+    return "VIP有效期：永久";
+  }
+  const text = vipExpiresAt.replace("T", " ").slice(0, 16);
+  if (policy.membershipTier === "vip") {
+    return `VIP到期时间：${text}`;
+  }
+  return `VIP已过期：${text}`;
+}
+
 Page({
   data: {
     loading: true,
@@ -27,6 +43,7 @@ Page({
     avatarPreviewUrl: "",
     profilePolicy: null,
     featurePolicy: null,
+    vipExpiryText: "",
   },
 
   onLoad() {
@@ -50,6 +67,7 @@ Page({
         avatarPreviewUrl: resolveMediaUrl(avatarUrl),
         profilePolicy: policyRes.profilePolicy || meRes.profilePolicy || null,
         featurePolicy: policyRes.featurePolicy || meRes.featurePolicy || null,
+        vipExpiryText: formatVipExpiryText(policyRes.featurePolicy || meRes.featurePolicy || null),
       });
     } catch (err) {
       wx.showToast({ title: err.message || "加载失败", icon: "none" });
@@ -137,6 +155,7 @@ Page({
         avatarPreviewUrl: resolveMediaUrl(syncedProfile.avatarUrl),
         profilePolicy,
         featurePolicy,
+        vipExpiryText: formatVipExpiryText(featurePolicy),
       });
       wx.showToast({ title: "资料已更新", icon: "success" });
       setTimeout(() => {

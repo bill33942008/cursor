@@ -66,6 +66,22 @@
     return `<span class="badge ${badSet.has(status) ? "bad" : ""}">${escapeHtml(status)}</span>`;
   }
 
+  function formatVipExpiryLabel(item) {
+    const rawTier = String(item.rawMembershipTier || item.membershipTier || "normal");
+    if (rawTier !== "vip") {
+      return "非VIP";
+    }
+    const expiresAt = String(item.vipExpiresAt || "");
+    if (!expiresAt) {
+      return "永久VIP";
+    }
+    const text = expiresAt.replace("T", " ").slice(0, 16);
+    if (item.membershipTier === "vip") {
+      return `到期：${text}`;
+    }
+    return `已过期：${text}`;
+  }
+
   function opButton(label, action, payload) {
     const encoded = encodeURIComponent(JSON.stringify(payload || {}));
     return `<button data-action="${action}" data-payload="${encoded}">${escapeHtml(label)}</button>`;
@@ -119,6 +135,7 @@
                 <span class="badge ${item.membershipTier === "vip" ? "vip" : ""}">${escapeHtml(
                   item.membershipTier === "vip" ? "VIP" : "普通"
                 )}</span>
+                <div class="muted">${escapeHtml(formatVipExpiryLabel(item))}</div>
                 <div class="muted">年度资料修改：${escapeHtml(
                   `${item.profileChangeUsedThisYear}/${item.profileChangeLimitPerYear}`
                 )}</div>
@@ -170,6 +187,19 @@
                   membershipTier: "vip",
                   clearFeatureOverrides: true,
                 })}
+                ${opButton("VIP+30天", "user_policy", {
+                  userId: item.id,
+                  grantVipDays: 30,
+                })}
+                ${opButton("VIP+90天", "user_policy", {
+                  userId: item.id,
+                  grantVipDays: 90,
+                })}
+                ${opButton("永久VIP", "user_policy", {
+                  userId: item.id,
+                  membershipTier: "vip",
+                  makeVipPermanent: true,
+                })}
                 ${opButton("普通默认权益", "user_policy", {
                   userId: item.id,
                   membershipTier: "normal",
@@ -204,6 +234,15 @@
         }
         if (payload.resetUsage) {
           body.resetUsage = true;
+        }
+        if (typeof payload.grantVipDays === "number") {
+          body.grantVipDays = payload.grantVipDays;
+        }
+        if (payload.makeVipPermanent) {
+          body.makeVipPermanent = true;
+        }
+        if (payload.clearFeatureOverrides) {
+          body.clearFeatureOverrides = true;
         }
         await api(`/users/${payload.userId}/profile-policy`, {
           method: "POST",

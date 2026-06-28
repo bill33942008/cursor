@@ -40,6 +40,7 @@
 
     <view wx:if="{{featurePolicy}}" class="card policy-card">
       <view class="section-title">功能权限额度</view>
+      <text class="subtitle">{{vipExpiryText}}</text>
       <text class="subtitle">每日发动态上限：{{featurePolicy.dailyPostLimit}}（今日剩余 {{featurePolicy.remainingPostsToday}}）</text>
       <text class="subtitle">每日创建群组上限：{{featurePolicy.dailyGroupCreateLimit}}（今日剩余 {{featurePolicy.remainingGroupsToday}}）</text>
       <text class="subtitle">剧场聚合最大时间窗：{{featurePolicy.sceneWindowMaxMinutes}} 分钟</text>

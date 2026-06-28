@@ -5,7 +5,11 @@ const { db } = require("../db");
 const { authRequired } = require("../middleware/auth");
 const { exchangeCodeForOpenId, isRealLoginMode } = require("../services/wechat");
 const { trackUserActivity } = require("../services/activity");
-const { getUserPolicyBundle, normalizeMembershipTier } = require("../services/profilePolicy");
+const {
+  getUserPolicyBundle,
+  normalizeMembershipTier,
+  resolveEffectiveMembershipTier,
+} = require("../services/profilePolicy");
 
 const router = express.Router();
 
@@ -61,20 +65,26 @@ router.post("/wx-login", async (req, res, next) => {
           avatar_url AS avatarUrl,
           bio,
           membership_tier AS membershipTier,
+          vip_expires_at AS vipExpiresAt,
           created_at AS createdAt
         FROM users
         WHERE id = ?
         `
       )
       .get(resolvedUser.id);
+    const bundle = getUserPolicyBundle(resolvedUser.id);
+    const effectiveTier = bundle?.featurePolicy?.membershipTier || resolveEffectiveMembershipTier(user);
 
     return res.json({
       accessToken: token,
       expiresAt,
       user: {
         ...user,
-        membershipTier: normalizeMembershipTier(user?.membershipTier),
+        membershipTier: effectiveTier || normalizeMembershipTier(user?.membershipTier),
+        vipExpiresAt: String(user?.vipExpiresAt || ""),
       },
+      profilePolicy: bundle?.profilePolicy || null,
+      featurePolicy: bundle?.featurePolicy || null,
       loginMode: isRealLoginMode() ? "real" : "mock",
     });
   } catch (err) {
@@ -96,6 +106,7 @@ router.get("/me", authRequired, (req, res) => {
         avatar_url AS avatarUrl,
         bio,
         membership_tier AS membershipTier,
+        vip_expires_at AS vipExpiresAt,
         created_at AS createdAt
       FROM users
       WHERE id = ?
@@ -109,7 +120,9 @@ router.get("/me", authRequired, (req, res) => {
   return res.json({
     user: {
       ...user,
-      membershipTier: normalizeMembershipTier(user.membershipTier),
+      membershipTier:
+        bundle?.featurePolicy?.membershipTier || resolveEffectiveMembershipTier(user) || normalizeMembershipTier(user.membershipTier),
+      vipExpiresAt: String(user.vipExpiresAt || ""),
     },
     profilePolicy: bundle?.profilePolicy || null,
     featurePolicy: bundle?.featurePolicy || null,

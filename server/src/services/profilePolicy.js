@@ -11,9 +11,25 @@ function getCurrentCycleYear() {
   return new Date().getFullYear();
 }
 
+function toTimeMs(value) {
+  if (!value) return 0;
+  const ms = Date.parse(String(value));
+  return Number.isFinite(ms) ? ms : 0;
+}
+
 function normalizeMembershipTier(value) {
   const tier = String(value || "").trim().toLowerCase();
   return MEMBERSHIP_TIERS.has(tier) ? tier : "normal";
+}
+
+function resolveEffectiveMembershipTier(row) {
+  const rawTier = normalizeMembershipTier(row?.membershipTier);
+  if (rawTier !== "vip") return "normal";
+  const vipExpiresAt = String(row?.vipExpiresAt || "").trim();
+  if (!vipExpiresAt) return "vip";
+  const expiresAtMs = toTimeMs(vipExpiresAt);
+  if (!expiresAtMs) return "vip";
+  return expiresAtMs > Date.now() ? "vip" : "normal";
 }
 
 function getDefaultProfileChangeLimit(tier) {
@@ -56,6 +72,7 @@ function loadPolicyRow(userId) {
       SELECT
         id,
         membership_tier AS membershipTier,
+        vip_expires_at AS vipExpiresAt,
         profile_change_limit_per_year AS profileChangeLimitPerYear,
         profile_change_used_this_year AS profileChangeUsedThisYear,
         profile_change_cycle_year AS profileChangeCycleYear,
@@ -69,9 +86,29 @@ function loadPolicyRow(userId) {
     .get(userId);
 }
 
+function syncVipState(row, userId) {
+  if (!row) return null;
+  if (normalizeMembershipTier(row.membershipTier) !== "vip") return row;
+  const vipExpiresAt = String(row.vipExpiresAt || "").trim();
+  if (!vipExpiresAt) return row;
+  const expiresAtMs = toTimeMs(vipExpiresAt);
+  if (!expiresAtMs || expiresAtMs > Date.now()) return row;
+
+  db.prepare(
+    `
+    UPDATE users
+    SET membership_tier = 'normal',
+        vip_expires_at = NULL,
+        updated_at = datetime('now')
+    WHERE id = ?
+    `
+  ).run(userId);
+  return loadPolicyRow(userId);
+}
+
 function syncProfileChangeCycle(userId) {
   const currentYear = getCurrentCycleYear();
-  const current = loadPolicyRow(userId);
+  const current = syncVipState(loadPolicyRow(userId), userId);
   if (!current) {
     return null;
   }
@@ -92,14 +129,21 @@ function syncProfileChangeCycle(userId) {
 
 function formatProfilePolicy(row) {
   if (!row) return null;
-  const membershipTier = normalizeMembershipTier(row.membershipTier);
+  const membershipTier = resolveEffectiveMembershipTier(row);
   const profileChangeLimitPerYear = Math.max(
     0,
     Number(row.profileChangeLimitPerYear || getDefaultProfileChangeLimit(membershipTier))
   );
   const profileChangeUsedThisYear = Math.max(0, Number(row.profileChangeUsedThisYear || 0));
+  const vipExpiresAt = String(row.vipExpiresAt || "").trim();
+  const vipExpiresAtMs = toTimeMs(vipExpiresAt);
   return {
     membershipTier,
+    rawMembershipTier: normalizeMembershipTier(row.membershipTier),
+    vipExpiresAt: vipExpiresAt || "",
+    vipIsActive:
+      membershipTier === "vip" &&
+      (!vipExpiresAtMs || vipExpiresAtMs > Date.now()),
     profileChangeLimitPerYear,
     profileChangeUsedThisYear,
     remainingChanges: Math.max(profileChangeLimitPerYear - profileChangeUsedThisYear, 0),
@@ -109,7 +153,7 @@ function formatProfilePolicy(row) {
 
 function formatFeaturePolicy(row) {
   if (!row) return null;
-  const membershipTier = normalizeMembershipTier(row.membershipTier);
+  const membershipTier = resolveEffectiveMembershipTier(row);
   const defaults = getTierFeatureDefaults(membershipTier);
   const dailyPostLimit = clampFeatureValue(
     "dailyPostLimit",
@@ -128,6 +172,8 @@ function formatFeaturePolicy(row) {
   );
   return {
     membershipTier,
+    rawMembershipTier: normalizeMembershipTier(row.membershipTier),
+    vipExpiresAt: String(row.vipExpiresAt || "").trim(),
     dailyPostLimit,
     dailyGroupCreateLimit,
     sceneWindowMaxMinutes,
@@ -184,6 +230,13 @@ function withFeatureUsage(featurePolicy, usage) {
   };
 }
 
+function buildVipExpiresAt(currentVipExpiresAt, grantVipDays) {
+  const days = Math.max(1, Math.floor(Number(grantVipDays || 0)));
+  const currentMs = toTimeMs(currentVipExpiresAt);
+  const startMs = currentMs > Date.now() ? currentMs : Date.now();
+  return new Date(startMs + days * 24 * 60 * 60 * 1000).toISOString();
+}
+
 function getUserProfilePolicy(userId) {
   const row = syncProfileChangeCycle(userId);
   return formatProfilePolicy(row);
@@ -213,10 +266,13 @@ module.exports = {
   MEMBERSHIP_TIERS,
   FEATURE_POLICY_LIMITS,
   getCurrentCycleYear,
+  toTimeMs,
   normalizeMembershipTier,
+  resolveEffectiveMembershipTier,
   getDefaultProfileChangeLimit,
   getTierFeatureDefaults,
   clampFeatureValue,
+  buildVipExpiresAt,
   formatProfilePolicy,
   formatFeaturePolicy,
   getUserFeatureUsage,

@@ -26,6 +26,7 @@
         <text wx:if="{{profilePolicy}}" class="profile-policy-tip">
           {{profilePolicy.membershipTier === 'vip' ? 'VIP' : '普通'}} · 本年可改 {{profilePolicy.profileChangeLimitPerYear}} 次 · 剩余 {{profilePolicy.remainingChanges}} 次
         </text>
+        <text wx:if="{{featurePolicy}}" class="profile-policy-tip">{{vipExpiryTip}}</text>
       </view>
     </view>
     <view class="profile-id">

@@ -17,6 +17,7 @@ const { getRealtimePresenceStats } = require("../realtime/hub");
 const { parsePagination } = require("../utils");
 const { isMockDataEnabled, setMockDataEnabled } = require("../services/appSettings");
 const {
+  buildVipExpiresAt,
   clampFeatureValue,
   formatFeaturePolicy,
   getCurrentCycleYear,
@@ -26,6 +27,7 @@ const {
   getUserPolicyBundle,
   getUserProfilePolicy,
   normalizeMembershipTier,
+  resolveEffectiveMembershipTier,
 } = require("../services/profilePolicy");
 
 const router = express.Router();
@@ -58,10 +60,12 @@ function logAdminAction({ actionType, targetType, targetId, payload, adminId }) 
 
 function mapAdminUser(row) {
   const currentYear = getCurrentCycleYear();
-  const membershipTier = normalizeMembershipTier(row.membershipTier);
+  const rawMembershipTier = normalizeMembershipTier(row.membershipTier);
+  const membershipTier = resolveEffectiveMembershipTier(row);
+  const vipExpiresAt = String(row.vipExpiresAt || "").trim();
   const profileChangeLimitPerYear = Math.max(
     0,
-    Number(row.profileChangeLimitPerYear || getDefaultProfileChangeLimit(membershipTier))
+    Number(row.profileChangeLimitPerYear || getDefaultProfileChangeLimit(rawMembershipTier))
   );
   const cycleYear = Number(row.profileChangeCycleYear || currentYear);
   const rawUsed = Math.max(0, Number(row.profileChangeUsedThisYear || 0));
@@ -71,6 +75,8 @@ function mapAdminUser(row) {
     ...row,
     isBanned: Boolean(Number(row.isBanned || 0)),
     membershipTier,
+    rawMembershipTier,
+    vipExpiresAt,
     profileChangeLimitPerYear,
     profileChangeUsedThisYear,
     profileChangeCycleYear: cycleYear === currentYear ? cycleYear : currentYear,
@@ -312,6 +318,7 @@ router.get("/users", (req, res) => {
       is_banned AS isBanned,
       last_active_at AS lastActiveAt,
       membership_tier AS membershipTier,
+      vip_expires_at AS vipExpiresAt,
       profile_change_limit_per_year AS profileChangeLimitPerYear,
       profile_change_used_this_year AS profileChangeUsedThisYear,
       profile_change_cycle_year AS profileChangeCycleYear,
@@ -352,6 +359,8 @@ router.post("/users/:id/profile-policy", (req, res) => {
       dailyGroupCreateLimit: z.number().int().min(1).max(100).optional(),
       sceneWindowMaxMinutes: z.number().int().min(30).max(10080).optional(),
       clearFeatureOverrides: z.boolean().optional(),
+      grantVipDays: z.number().int().min(1).max(3650).optional(),
+      makeVipPermanent: z.boolean().optional(),
     })
     .refine(
       (value) =>
@@ -361,7 +370,9 @@ router.post("/users/:id/profile-policy", (req, res) => {
         value.dailyPostLimit !== undefined ||
         value.dailyGroupCreateLimit !== undefined ||
         value.sceneWindowMaxMinutes !== undefined ||
-        value.clearFeatureOverrides !== undefined,
+        value.clearFeatureOverrides !== undefined ||
+        value.grantVipDays !== undefined ||
+        value.makeVipPermanent !== undefined,
       {
         message: "at least one field is required",
         path: ["membershipTier"],
@@ -379,6 +390,7 @@ router.post("/users/:id/profile-policy", (req, res) => {
       SELECT
         id,
         membership_tier AS membershipTier,
+        vip_expires_at AS vipExpiresAt,
         profile_change_limit_per_year AS profileChangeLimitPerYear,
         profile_change_used_this_year AS profileChangeUsedThisYear,
         profile_change_cycle_year AS profileChangeCycleYear,
@@ -395,10 +407,10 @@ router.post("/users/:id/profile-policy", (req, res) => {
   }
 
   const currentYear = getCurrentCycleYear();
-  const nextTier = parsed.data.membershipTier
+  let nextTier = parsed.data.membershipTier
     ? normalizeMembershipTier(parsed.data.membershipTier)
     : normalizeMembershipTier(current.membershipTier);
-  const nextLimit =
+  let nextLimit =
     parsed.data.profileChangeLimitPerYear !== undefined
       ? parsed.data.profileChangeLimitPerYear
       : parsed.data.membershipTier !== undefined
@@ -412,10 +424,29 @@ router.post("/users/:id/profile-policy", (req, res) => {
   let nextDailyPostLimitOverride = current.dailyPostLimitOverride;
   let nextDailyGroupCreateLimitOverride = current.dailyGroupCreateLimitOverride;
   let nextSceneWindowMaxMinutesOverride = current.sceneWindowMaxMinutesOverride;
+  let nextVipExpiresAt = current.vipExpiresAt || null;
   if (parsed.data.clearFeatureOverrides) {
     nextDailyPostLimitOverride = null;
     nextDailyGroupCreateLimitOverride = null;
     nextSceneWindowMaxMinutesOverride = null;
+  }
+  if (parsed.data.membershipTier === "normal") {
+    nextVipExpiresAt = null;
+  }
+  if (parsed.data.makeVipPermanent) {
+    nextTier = "vip";
+    nextVipExpiresAt = null;
+  }
+  if (parsed.data.grantVipDays !== undefined) {
+    nextTier = "vip";
+    nextVipExpiresAt = buildVipExpiresAt(current.vipExpiresAt, parsed.data.grantVipDays);
+  }
+  if (
+    parsed.data.profileChangeLimitPerYear === undefined &&
+    nextTier === "vip" &&
+    normalizeMembershipTier(current.membershipTier) !== "vip"
+  ) {
+    nextLimit = Math.max(nextLimit, getDefaultProfileChangeLimit("vip"));
   }
   if (parsed.data.dailyPostLimit !== undefined) {
     nextDailyPostLimitOverride = clampFeatureValue(
@@ -446,6 +477,7 @@ router.post("/users/:id/profile-policy", (req, res) => {
         profile_change_limit_per_year = ?,
         profile_change_used_this_year = ?,
         profile_change_cycle_year = ?,
+        vip_expires_at = ?,
         daily_post_limit_override = ?,
         daily_group_create_limit_override = ?,
         scene_window_max_minutes_override = ?,
@@ -457,6 +489,7 @@ router.post("/users/:id/profile-policy", (req, res) => {
     nextLimit,
     nextUsed,
     currentYear,
+    nextVipExpiresAt,
     nextDailyPostLimitOverride,
     nextDailyGroupCreateLimitOverride,
     nextSceneWindowMaxMinutesOverride,

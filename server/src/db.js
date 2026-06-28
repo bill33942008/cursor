@@ -136,6 +136,7 @@ function initSchema() {
       timeline_is_public INTEGER NOT NULL DEFAULT 0,
       current_group_id TEXT,
       membership_tier TEXT NOT NULL DEFAULT 'normal',
+      vip_expires_at TEXT,
       profile_change_limit_per_year INTEGER NOT NULL DEFAULT 2,
       profile_change_used_this_year INTEGER NOT NULL DEFAULT 0,
       profile_change_cycle_year INTEGER NOT NULL DEFAULT (CAST(strftime('%Y', 'now') AS INTEGER)),
@@ -369,6 +370,7 @@ function initSchema() {
   addColumnIfMissing("users", "timeline_is_public", "timeline_is_public INTEGER NOT NULL DEFAULT 0");
   addColumnIfMissing("users", "current_group_id", "current_group_id TEXT");
   addColumnIfMissing("users", "membership_tier", "membership_tier TEXT NOT NULL DEFAULT 'normal'");
+  addColumnIfMissing("users", "vip_expires_at", "vip_expires_at TEXT");
   addColumnIfMissing(
     "users",
     "profile_change_limit_per_year",
@@ -419,6 +421,7 @@ function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_users_timeline_public ON users (timeline_is_public);
     CREATE INDEX IF NOT EXISTS idx_users_current_group_id ON users (current_group_id);
     CREATE INDEX IF NOT EXISTS idx_users_membership_tier ON users (membership_tier);
+    CREATE INDEX IF NOT EXISTS idx_users_vip_expires_at ON users (vip_expires_at);
     CREATE INDEX IF NOT EXISTS idx_daily_active_users_date ON daily_active_users (activity_date DESC);
     CREATE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users (username);
     CREATE INDEX IF NOT EXISTS idx_app_settings_key ON app_settings (setting_key);

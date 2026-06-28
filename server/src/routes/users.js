@@ -181,6 +181,7 @@ router.put("/me/profile", authRequired, (req, res) => {
         id,
         nickname,
         avatar_url AS avatarUrl,
+        vip_expires_at AS vipExpiresAt,
         membership_tier AS membershipTier
       FROM users
       WHERE id = ?
@@ -205,14 +206,18 @@ router.put("/me/profile", authRequired, (req, res) => {
     return res.status(404).json({ message: "user not found" });
   }
   if (!hasChanged) {
+    const bundle = getUserPolicyBundle(req.user.id);
     return res.json({
       user: {
         ...currentUser,
         nickname: nextNickname,
         avatarUrl: nextAvatarUrl,
-        membershipTier: normalizeMembershipTier(currentUser.membershipTier),
+        membershipTier:
+          bundle?.featurePolicy?.membershipTier || normalizeMembershipTier(currentUser.membershipTier),
+        vipExpiresAt: String(currentUser.vipExpiresAt || ""),
       },
       profilePolicy,
+      featurePolicy: bundle?.featurePolicy || null,
       unchanged: true,
     });
   }
@@ -248,19 +253,22 @@ router.put("/me/profile", authRequired, (req, res) => {
         avatar_url AS avatarUrl,
         bio,
         membership_tier AS membershipTier,
+        vip_expires_at AS vipExpiresAt,
         created_at AS createdAt
       FROM users
       WHERE id = ?
       `
     )
     .get(req.user.id);
+  const updatedBundle = getUserPolicyBundle(req.user.id);
   return res.json({
     user: {
       ...updatedUser,
-      membershipTier: normalizeMembershipTier(updatedUser.membershipTier),
+      membershipTier: updatedBundle?.featurePolicy?.membershipTier || normalizeMembershipTier(updatedUser.membershipTier),
+      vipExpiresAt: String(updatedUser.vipExpiresAt || ""),
     },
     profilePolicy: getUserProfilePolicy(req.user.id),
-    featurePolicy: getUserPolicyBundle(req.user.id)?.featurePolicy || null,
+    featurePolicy: updatedBundle?.featurePolicy || null,
   });
 });
 

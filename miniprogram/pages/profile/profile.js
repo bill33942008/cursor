@@ -9,12 +9,28 @@ function canUseStorage() {
   }
 }
 
+function formatVipExpiryTip(featurePolicy) {
+  const policy = featurePolicy || null;
+  if (!policy) return "";
+  const rawTier = String(policy.rawMembershipTier || policy.membershipTier || "normal");
+  if (rawTier !== "vip") return "当前为普通用户";
+  const vipExpiresAt = String(policy.vipExpiresAt || "").trim();
+  if (!vipExpiresAt) return "VIP有效期：永久";
+  const text = vipExpiresAt.replace("T", " ").slice(0, 16);
+  if (policy.membershipTier === "vip") {
+    return `VIP到期：${text}`;
+  }
+  return `VIP已过期：${text}`;
+}
+
 Page({
   data: {
     loading: true,
     user: null,
     userInitial: "U",
     profilePolicy: null,
+    featurePolicy: null,
+    vipExpiryTip: "",
     friends: [],
     incomingRequests: [],
     outgoingRequests: [],
@@ -28,6 +44,8 @@ Page({
         loading: false,
         user: null,
         profilePolicy: null,
+        featurePolicy: null,
+        vipExpiryTip: "",
         friends: [],
         incomingRequests: [],
         outgoingRequests: [],
@@ -68,6 +86,8 @@ Page({
         user: mergedUser,
         userInitial: String(mergedUser.nickname || "U").charAt(0) || "U",
         profilePolicy: meRes.profilePolicy || null,
+        featurePolicy: meRes.featurePolicy || null,
+        vipExpiryTip: formatVipExpiryTip(meRes.featurePolicy),
         friends: friendRes.friends || [],
         incomingRequests: friendRes.incomingRequests || [],
         outgoingRequests: friendRes.outgoingRequests || [],
@@ -78,6 +98,8 @@ Page({
         this.setData({
           user: null,
           profilePolicy: null,
+          featurePolicy: null,
+          vipExpiryTip: "",
           friends: [],
           incomingRequests: [],
           outgoingRequests: [],
