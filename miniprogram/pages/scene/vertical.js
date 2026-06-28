@@ -13,12 +13,48 @@ const SCENE_COVER_MAP = {
   },
 };
 
+const LOCAL_AVATAR_POOL = [
+  "/assets/scene/avatar-a.svg",
+  "/assets/scene/avatar-b.svg",
+  "/assets/scene/avatar-c.svg",
+  "/assets/scene/avatar-d.svg",
+];
+
 function resolveMediaUrl(url) {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) {
     return url;
   }
   return `${app.globalData.baseUrl}${url}`;
+}
+
+function getSeedHash(seed) {
+  const text = String(seed || "scene-user");
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) % 1000000;
+  }
+  return hash;
+}
+
+function pickLocalAvatar(seed) {
+  const index = getSeedHash(seed) % LOCAL_AVATAR_POOL.length;
+  return LOCAL_AVATAR_POOL[index];
+}
+
+function resolveAvatarUrl(url, seed) {
+  const value = String(url || "").trim();
+  const baseUrl = String(app.globalData.baseUrl || "");
+  if (!value) return pickLocalAvatar(seed);
+  if (value.startsWith("/assets/")) return value;
+  if (baseUrl && value.startsWith(baseUrl)) return value;
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return pickLocalAvatar(seed);
+  }
+  if (value.startsWith("/")) {
+    return `${baseUrl}${value}`;
+  }
+  return `${baseUrl}/${value}`.replace(/([^:]\/)\/+/g, "$1");
 }
 
 function isVideoUrl(url) {
@@ -33,10 +69,14 @@ function getSceneCoverImage(sceneType, transportType) {
 }
 
 function normalizeTrack(track) {
-  const posts = (track.posts || []).map((item) => ({
-    ...item,
-    media: (item.media || []).map((url) => resolveMediaUrl(url)).filter((url) => !isVideoUrl(url)),
-  }));
+  const posts = (track.posts || []).map((item, idx) => {
+    const seed = `${item.userId || "u"}-${item.nickname || "n"}-${idx}`;
+    return {
+      ...item,
+      avatarUrl: resolveAvatarUrl(item.avatarUrl, seed),
+      media: (item.media || []).map((url) => resolveMediaUrl(url)).filter((url) => !isVideoUrl(url)),
+    };
+  });
   const firstPost = posts[0] || null;
   return {
     ...track,

@@ -57,9 +57,7 @@ function mapPostRowToSceneItem(row) {
     id: row.id,
     userId: row.userId,
     nickname: isAnonymous ? "匿名旅友" : row.nickname,
-    avatarUrl: isAnonymous
-      ? "https://api.dicebear.com/9.x/thumbs/svg?seed=anon-traveler"
-      : row.avatarUrl || "https://api.dicebear.com/9.x/thumbs/svg?seed=tongxing-user",
+    avatarUrl: isAnonymous ? "" : row.avatarUrl || "",
     content: row.content,
     media: safeParseMedia(row.mediaJson),
     createdAt: row.createdAt,
