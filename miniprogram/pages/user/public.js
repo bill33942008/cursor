@@ -207,6 +207,30 @@ Page({
     this.setData({ posts: nextPosts });
   },
 
+  removePost(e) {
+    const postId = e.currentTarget.dataset.postid;
+    if (!postId || !this.data.relation?.isSelf) return;
+    wx.showModal({
+      title: "删除动态",
+      content: "删除后将不可恢复，确定删除这条动态吗？",
+      success: async (res) => {
+        if (!res.confirm) return;
+        try {
+          await request({
+            url: `/api/posts/${postId}`,
+            method: "DELETE",
+          });
+          wx.showToast({ title: "已删除", icon: "success" });
+          this.setData({
+            posts: this.data.posts.filter((item) => item.id !== postId),
+          });
+        } catch (err) {
+          wx.showToast({ title: err.message || "删除失败", icon: "none" });
+        }
+      },
+    });
+  },
+
   goTimelineManage() {
     wx.navigateTo({ url: "/pages/timeline/manage" });
   },

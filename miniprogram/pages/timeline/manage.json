@@ -1,3 +1,4 @@
 {
-  "navigationBarTitleText": "我的时间线"
+  "navigationBarTitleText": "我的时间线",
+  "enablePullDownRefresh": true
 }

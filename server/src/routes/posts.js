@@ -220,6 +220,19 @@ router.get("/square", optionalAuth, (req, res) => {
   res.json({ items: mergedItems, pagination: { limit, offset }, mockDataEnabled: isMockDataEnabled() });
 });
 
+router.delete("/:id", authRequired, (req, res) => {
+  const postId = req.params.id;
+  const post = db.prepare("SELECT id, user_id AS userId FROM posts WHERE id = ?").get(postId);
+  if (!post) {
+    return res.status(404).json({ message: "post not found" });
+  }
+  if (post.userId !== req.user.id) {
+    return res.status(403).json({ message: "only owner can delete this post" });
+  }
+  db.prepare("DELETE FROM posts WHERE id = ?").run(postId);
+  return res.json({ success: true, deletedPostId: postId });
+});
+
 router.get("/:id/comments", authRequired, (req, res) => {
   const postId = req.params.id;
   const { limit, offset } = parsePagination(req.query);

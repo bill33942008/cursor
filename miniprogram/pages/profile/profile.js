@@ -29,18 +29,18 @@ function buildMemberVisual(featurePolicy) {
   if (tier === "svip") {
     return {
       label: "SVIP",
-      icon: "/assets/membership/member-svip.svg",
+      icon: "/assets/membership/member-svip.png",
     };
   }
   if (tier === "vip") {
     return {
       label: "VIP",
-      icon: "/assets/membership/member-vip.svg",
+      icon: "/assets/membership/member-vip.png",
     };
   }
   return {
     label: "普通",
-    icon: "/assets/membership/member-normal.svg",
+    icon: "/assets/membership/member-normal.png",
   };
 }
 
@@ -53,7 +53,7 @@ Page({
     featurePolicy: null,
     vipExpiryTip: "",
     memberTierLabel: "普通",
-    memberTierIcon: "/assets/membership/member-normal.svg",
+    memberTierIcon: "/assets/membership/member-normal.png",
     friends: [],
     incomingRequests: [],
     outgoingRequests: [],
@@ -70,7 +70,7 @@ Page({
         featurePolicy: null,
         vipExpiryTip: "",
         memberTierLabel: "普通",
-        memberTierIcon: "/assets/membership/member-normal.svg",
+        memberTierIcon: "/assets/membership/member-normal.png",
         friends: [],
         incomingRequests: [],
         outgoingRequests: [],
@@ -129,7 +129,7 @@ Page({
           featurePolicy: null,
           vipExpiryTip: "",
           memberTierLabel: "普通",
-          memberTierIcon: "/assets/membership/member-normal.svg",
+          memberTierIcon: "/assets/membership/member-normal.png",
           friends: [],
           incomingRequests: [],
           outgoingRequests: [],

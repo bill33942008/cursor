@@ -76,6 +76,24 @@
     </button>
   </view>
 
+  <view class="card">
+    <view class="row-between">
+      <view class="section-title">记录筛选</view>
+      <text class="muted">{{displayedEvents.length}} / {{events.length}}</text>
+    </view>
+    <view class="filter-row">
+      <block wx:for="{{filterOptions}}" wx:key="value">
+        <view
+          class="filter-chip {{filterType === item.value ? 'active' : ''}}"
+          data-value="{{item.value}}"
+          bindtap="onFilterChange"
+        >
+          {{item.label}}
+        </view>
+      </block>
+    </view>
+  </view>
+
   <view wx:if="{{loading}}" class="card">
     <view class="skeleton skeleton-line lg"></view>
     <view class="skeleton skeleton-line"></view>
@@ -88,8 +106,14 @@
     <text class="subtitle">添加第一条记录，开始你的旅程故事</text>
   </view>
 
-  <view wx:if="{{!loading && events.length > 0}}" class="timeline-list">
-    <block wx:for="{{events}}" wx:key="id">
+  <view wx:if="{{!loading && events.length > 0 && displayedEvents.length === 0}}" class="card state-card">
+    <text class="state-icon">🗂️</text>
+    <text class="section-title">当前筛选下暂无记录</text>
+    <text class="subtitle">试试切换全部/公开/私密筛选</text>
+  </view>
+
+  <view wx:if="{{!loading && displayedEvents.length > 0}}" class="timeline-list">
+    <block wx:for="{{displayedEvents}}" wx:key="id">
       <view class="timeline-item list-appear">
         <view class="timeline-dot"></view>
         <view class="timeline-card">

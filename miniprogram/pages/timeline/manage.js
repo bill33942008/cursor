@@ -79,12 +79,44 @@ Page({
     savingVisibility: false,
     timelineIsPublic: false,
     events: [],
+    displayedEvents: [],
+    filterType: "all",
+    filterOptions: [
+      { label: "全部", value: "all" },
+      { label: "公开", value: "public" },
+      { label: "私密", value: "private" },
+    ],
     editingEventId: "",
     form: createDefaultForm(),
   },
 
   onShow() {
     this.loadTimelineData();
+  },
+
+  async onPullDownRefresh() {
+    try {
+      await this.loadTimelineData();
+    } finally {
+      wx.stopPullDownRefresh();
+    }
+  },
+
+  syncDisplayedEvents(nextEvents) {
+    const source = Array.isArray(nextEvents) ? nextEvents : this.data.events;
+    const filterType = this.data.filterType || "all";
+    let displayedEvents = source;
+    if (filterType === "public") {
+      displayedEvents = source.filter((item) => Boolean(item.isPublic));
+    } else if (filterType === "private") {
+      displayedEvents = source.filter((item) => !Boolean(item.isPublic));
+    }
+    this.setData({ displayedEvents });
+  },
+
+  onFilterChange(e) {
+    const filterType = e.currentTarget.dataset.value || "all";
+    this.setData({ filterType }, () => this.syncDisplayedEvents());
   },
 
   async loadTimelineData() {
@@ -94,10 +126,12 @@ Page({
         request({ url: "/api/users/me/timeline/visibility", method: "GET" }),
         request({ url: "/api/users/me/timeline?limit=50&offset=0", method: "GET" }),
       ]);
+      const events = (timelineRes.items || []).map(mapTimelineEvent);
       this.setData({
         timelineIsPublic: Boolean(visibilityRes.timelineIsPublic),
-        events: (timelineRes.items || []).map(mapTimelineEvent),
+        events,
       });
+      this.syncDisplayedEvents(events);
     } catch (err) {
       wx.showToast({ title: err.message || "加载时间线失败", icon: "none" });
     } finally {
@@ -281,6 +315,9 @@ Page({
         })),
       },
     });
+    if (typeof wx.pageScrollTo === "function") {
+      wx.pageScrollTo({ scrollTop: 0, duration: 220 });
+    }
   },
 
   cancelEdit() {

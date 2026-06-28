@@ -9,6 +9,31 @@
   padding: 0 18rpx;
 }
 
+.filter-row {
+  margin-top: 10rpx;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  height: 56rpx;
+  line-height: 56rpx;
+  padding: 0 18rpx;
+  border-radius: 999rpx;
+  border: 2rpx solid #e4e7ec;
+  background: #f8fafc;
+  color: #667085;
+  font-size: 23rpx;
+}
+
+.filter-chip.active {
+  border-color: #ffc7d1;
+  background: #fff1f4;
+  color: #ff2442;
+}
+
 .input-box,
 .picker-box,
 .textarea-box {

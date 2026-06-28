@@ -210,6 +210,19 @@
   gap: 10rpx;
 }
 
+.post-foot-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.post-del-btn {
+  height: 50rpx;
+  line-height: 50rpx;
+  padding: 0 14rpx;
+  font-size: 22rpx;
+}
+
 .skeleton-line {
   height: 20rpx;
   border-radius: 10rpx;

@@ -129,6 +129,7 @@
         <text class="section-title">公开动态列表</text>
         <text class="muted">{{posts.length}} 条</text>
       </view>
+      <text wx:if="{{relation && relation.isSelf}}" class="subtitle">支持删除动态，当前版本不提供动态编辑</text>
       <view wx:if="{{!postsLoading && posts.length === 0}}" class="empty-posts">
         <text class="subtitle">暂无公开动态</text>
       </view>
@@ -153,7 +154,19 @@
           <view class="post-foot">
             <text class="chip">{{item.visibility === 'public' ? '公开' : '好友可见'}}</text>
             <text class="muted">{{item.createdAt}}</text>
-            <text class="muted">❤️ {{item.likeCount}} · 💬 {{item.commentCount}}</text>
+            <view class="post-foot-right">
+              <text class="muted">❤️ {{item.likeCount}} · 💬 {{item.commentCount}}</text>
+              <button
+                wx:if="{{relation && relation.isSelf}}"
+                class="btn-ghost post-del-btn"
+                size="mini"
+                hover-class="pressable-hover"
+                data-postid="{{item.id}}"
+                bindtap="removePost"
+              >
+                删除
+              </button>
+            </view>
           </view>
         </view>
       </block>
