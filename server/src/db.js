@@ -2,6 +2,14 @@ const fs = require("fs");
 const path = require("path");
 const initSqlJs = require("sql.js");
 
+const selectedDbClient = String(
+  process.env.DB_CLIENT || process.env.DB_DIALECT || (process.env.DATABASE_URL ? "postgres" : "sqljs")
+)
+  .trim()
+  .toLowerCase();
+const usePostgres =
+  selectedDbClient === "postgres" || selectedDbClient === "postgresql" || selectedDbClient === "pg";
+
 const dbPath = process.env.DB_PATH || "./data/tongxing.db";
 const absoluteDbPath = path.isAbsolute(dbPath) ? dbPath : path.join(process.cwd(), dbPath);
 fs.mkdirSync(path.dirname(absoluteDbPath), { recursive: true });
@@ -436,9 +444,11 @@ function checkConnection() {
   db.prepare("SELECT 1").get();
 }
 
-module.exports = {
-  db,
-  initializeDatabase,
-  initSchema,
-  checkConnection,
-};
+module.exports = usePostgres
+  ? require("./db-postgres")
+  : {
+      db,
+      initializeDatabase,
+      initSchema,
+      checkConnection,
+    };
