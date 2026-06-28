@@ -146,7 +146,8 @@ function splitSqlStatements(sql) {
 
 function quoteCamelAliases(sql) {
   return sql.replace(/\bAS\s+([A-Za-z_][A-Za-z0-9_]*)/gi, (match, alias) => {
-    if (/[A-Z]/.test(alias)) {
+    // Quote only camelCase-like aliases. Do not touch SQL type names such as INTEGER.
+    if (/[a-z]/.test(alias) && /[A-Z]/.test(alias)) {
       return `AS "${alias}"`;
     }
     return match;
@@ -244,12 +245,67 @@ function transformSql(sql, { forWrite = false } = {}) {
   return output;
 }
 
+function isDuplicateObjectError(err) {
+  const message = String(err?.message || "");
+  return /already exists/i.test(message) || /duplicate key value violates unique constraint/i.test(message);
+}
+
+function stripOnConflictClause(sql) {
+  return sql.replace(/\s+ON\s+CONFLICT[\s\S]*$/i, "");
+}
+
+function handleLegacyUpsert(sql, params) {
+  const normalized = sql.replace(/\s+/g, " ").trim().toLowerCase();
+  const isAppSettingUpsert =
+    normalized.startsWith("insert into app_settings") && normalized.includes("on conflict(setting_key) do update");
+  if (!isAppSettingUpsert) {
+    return null;
+  }
+  const [settingKey, settingValue] = params;
+  const updated = pgClient.querySync(
+    "UPDATE app_settings SET setting_value = $2, updated_at = CURRENT_TIMESTAMP WHERE setting_key = $1 RETURNING 1 AS __changed__",
+    [settingKey, settingValue]
+  );
+  if (Array.isArray(updated) && updated.length > 0) {
+    return updated.map(normalizeRow);
+  }
+  const inserted = pgClient.querySync(
+    "INSERT INTO app_settings (setting_key, setting_value, updated_at) VALUES ($1, $2, CURRENT_TIMESTAMP) RETURNING 1 AS __changed__",
+    [settingKey, settingValue]
+  );
+  return (inserted || []).map(normalizeRow);
+}
+
 function executeQuery(sql, params = [], options = {}) {
   assertReady();
   const transformedSql = transformSql(sql, options);
   const normalizedParams = params.map(normalizeWriteParam);
-  const rows = pgClient.querySync(transformedSql, normalizedParams);
-  return Array.isArray(rows) ? rows.map(normalizeRow) : [];
+  try {
+    const rows = pgClient.querySync(transformedSql, normalizedParams);
+    return Array.isArray(rows) ? rows.map(normalizeRow) : [];
+  } catch (err) {
+    const message = String(err?.message || "");
+    if (/syntax error at or near "ON"/i.test(message) && /\bON\s+CONFLICT\b/i.test(transformedSql)) {
+      const legacyUpsert = handleLegacyUpsert(transformedSql, normalizedParams);
+      if (legacyUpsert) {
+        return legacyUpsert;
+      }
+      try {
+        const withoutConflict = stripOnConflictClause(transformedSql);
+        const rows = pgClient.querySync(withoutConflict, normalizedParams);
+        return Array.isArray(rows) ? rows.map(normalizeRow) : [];
+      } catch (fallbackErr) {
+        if (isDuplicateObjectError(fallbackErr)) {
+          return [];
+        }
+        throw fallbackErr;
+      }
+    }
+    if (isDuplicateObjectError(err)) {
+      return [];
+    }
+    throw err;
+  }
 }
 
 class StatementWrapper {
@@ -280,7 +336,20 @@ const db = {
     assertReady();
     const statements = splitSqlStatements(String(sql || ""));
     statements.forEach((statement) => {
-      executeQuery(statement, []);
+      const trimmed = String(statement || "").trim();
+      if (!trimmed) return;
+      if (/^CREATE\s+INDEX\s+IF\s+NOT\s+EXISTS\b/i.test(trimmed)) {
+        const legacyIndexSql = trimmed.replace(/\bIF\s+NOT\s+EXISTS\b/i, "");
+        try {
+          executeQuery(legacyIndexSql, []);
+        } catch (err) {
+          if (!isDuplicateObjectError(err)) {
+            throw err;
+          }
+        }
+        return;
+      }
+      executeQuery(trimmed, []);
     });
   },
   prepare(sql) {
