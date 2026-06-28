@@ -114,6 +114,17 @@
               <div class="muted">${escapeHtml(item.id)}</div>
             </td>
             <td>${statusBadge(item.isBanned ? "banned" : "active")}</td>
+            <td>
+              <div class="user-policy">
+                <span class="badge ${item.membershipTier === "vip" ? "vip" : ""}">${escapeHtml(
+                  item.membershipTier === "vip" ? "VIP" : "普通"
+                )}</span>
+                <div class="muted">年度资料修改：${escapeHtml(
+                  `${item.profileChangeUsedThisYear}/${item.profileChangeLimitPerYear}`
+                )}</div>
+                <div class="muted">剩余：${escapeHtml(item.profileChangeRemaining)}</div>
+              </div>
+            </td>
             <td>${escapeHtml(item.lastActiveAt || "-")}</td>
             <td>${escapeHtml(item.createdAt)}</td>
             <td>
@@ -123,6 +134,28 @@
                     ? opButton("解封", "user_status", { userId: item.id, ban: false })
                     : opButton("封禁", "user_status", { userId: item.id, ban: true })
                 }
+                ${opButton("设VIP", "user_policy", {
+                  userId: item.id,
+                  membershipTier: "vip",
+                })}
+                ${opButton("设普通", "user_policy", {
+                  userId: item.id,
+                  membershipTier: "normal",
+                })}
+              </div>
+              <div class="op-group">
+                ${opButton("额度+1", "user_policy", {
+                  userId: item.id,
+                  profileChangeLimitPerYear: Number(item.profileChangeLimitPerYear || 0) + 1,
+                })}
+                ${opButton("额度-1", "user_policy", {
+                  userId: item.id,
+                  profileChangeLimitPerYear: Math.max(Number(item.profileChangeLimitPerYear || 0) - 1, 0),
+                })}
+                ${opButton("重置已用", "user_policy", {
+                  userId: item.id,
+                  resetUsage: true,
+                })}
               </div>
             </td>
           </tr>
@@ -134,6 +167,22 @@
         await api(`/users/${payload.userId}/status`, {
           method: "POST",
           body: { ban: payload.ban, reason: payload.ban ? "manual moderation" : "manual restore" },
+        });
+      }
+      if (action === "user_policy") {
+        const body = {};
+        if (payload.membershipTier) {
+          body.membershipTier = payload.membershipTier;
+        }
+        if (typeof payload.profileChangeLimitPerYear === "number") {
+          body.profileChangeLimitPerYear = payload.profileChangeLimitPerYear;
+        }
+        if (payload.resetUsage) {
+          body.resetUsage = true;
+        }
+        await api(`/users/${payload.userId}/profile-policy`, {
+          method: "POST",
+          body,
         });
       }
     });

@@ -5,6 +5,7 @@ const { db } = require("../db");
 const { authRequired } = require("../middleware/auth");
 const { exchangeCodeForOpenId, isRealLoginMode } = require("../services/wechat");
 const { trackUserActivity } = require("../services/activity");
+const { getUserProfilePolicy, normalizeMembershipTier } = require("../services/profilePolicy");
 
 const router = express.Router();
 
@@ -52,13 +53,28 @@ router.post("/wx-login", async (req, res, next) => {
     trackUserActivity(resolvedUser.id, { force: true });
 
     const user = db
-      .prepare("SELECT id, nickname, avatar_url AS avatarUrl, bio, created_at AS createdAt FROM users WHERE id = ?")
+      .prepare(
+        `
+        SELECT
+          id,
+          nickname,
+          avatar_url AS avatarUrl,
+          bio,
+          membership_tier AS membershipTier,
+          created_at AS createdAt
+        FROM users
+        WHERE id = ?
+        `
+      )
       .get(resolvedUser.id);
 
     return res.json({
       accessToken: token,
       expiresAt,
-      user,
+      user: {
+        ...user,
+        membershipTier: normalizeMembershipTier(user?.membershipTier),
+      },
       loginMode: isRealLoginMode() ? "real" : "mock",
     });
   } catch (err) {
@@ -72,9 +88,30 @@ router.post("/wx-login", async (req, res, next) => {
 
 router.get("/me", authRequired, (req, res) => {
   const user = db
-    .prepare("SELECT id, nickname, avatar_url AS avatarUrl, bio, created_at AS createdAt FROM users WHERE id = ?")
+    .prepare(
+      `
+      SELECT
+        id,
+        nickname,
+        avatar_url AS avatarUrl,
+        bio,
+        membership_tier AS membershipTier,
+        created_at AS createdAt
+      FROM users
+      WHERE id = ?
+      `
+    )
     .get(req.user.id);
-  return res.json({ user });
+  if (!user) {
+    return res.status(404).json({ message: "user not found" });
+  }
+  return res.json({
+    user: {
+      ...user,
+      membershipTier: normalizeMembershipTier(user.membershipTier),
+    },
+    profilePolicy: getUserProfilePolicy(req.user.id),
+  });
 });
 
 module.exports = router;

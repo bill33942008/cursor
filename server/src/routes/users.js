@@ -5,6 +5,11 @@ const { db } = require("../db");
 const { authRequired } = require("../middleware/auth");
 const { optionalAuth } = require("../middleware/optionalAuth");
 const { parsePagination } = require("../utils");
+const {
+  getCurrentCycleYear,
+  getUserProfilePolicy,
+  normalizeMembershipTier,
+} = require("../services/profilePolicy");
 
 const router = express.Router();
 
@@ -17,6 +22,21 @@ const timelineSchema = z.object({
   mediaAssetIds: z.array(z.string().uuid()).max(9).default([]),
   keepMediaUrls: z.array(z.string().min(1).max(2000)).max(9).optional().default([]),
 });
+
+const profileUpdateSchema = z
+  .object({
+    nickname: z.string().trim().min(1).max(32).optional(),
+    avatarUrl: z.string().trim().max(2000).optional(),
+  })
+  .refine((value) => value.nickname !== undefined || value.avatarUrl !== undefined, {
+    message: "nickname or avatarUrl is required",
+    path: ["nickname"],
+  });
+
+function isValidAvatarUrl(value) {
+  if (!value) return true;
+  return /^https?:\/\//i.test(value) || value.startsWith("/");
+}
 
 function mapTimelineEvent(item) {
   let media = [];
@@ -130,6 +150,114 @@ function getRelationship(viewerId, targetUserId) {
     incomingPendingRequestId: incomingPendingRequest?.id || "",
   };
 }
+
+router.get("/me/profile-policy", authRequired, (req, res) => {
+  const profilePolicy = getUserProfilePolicy(req.user.id);
+  if (!profilePolicy) {
+    return res.status(404).json({ message: "user not found" });
+  }
+  return res.json({ profilePolicy });
+});
+
+router.put("/me/profile", authRequired, (req, res) => {
+  const parsed = profileUpdateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: "invalid payload", errors: parsed.error.issues });
+  }
+  const incomingNickname = parsed.data.nickname;
+  const incomingAvatarUrl = parsed.data.avatarUrl;
+  if (incomingAvatarUrl !== undefined && !isValidAvatarUrl(incomingAvatarUrl)) {
+    return res.status(400).json({ message: "avatarUrl should be an http(s) url or local path" });
+  }
+
+  const currentUser = db
+    .prepare(
+      `
+      SELECT
+        id,
+        nickname,
+        avatar_url AS avatarUrl,
+        membership_tier AS membershipTier
+      FROM users
+      WHERE id = ?
+      `
+    )
+    .get(req.user.id);
+  if (!currentUser) {
+    return res.status(404).json({ message: "user not found" });
+  }
+
+  const nextNickname = incomingNickname !== undefined ? incomingNickname.trim() : currentUser.nickname;
+  const nextAvatarUrl = incomingAvatarUrl !== undefined ? incomingAvatarUrl.trim() : currentUser.avatarUrl || "";
+  if (!nextNickname) {
+    return res.status(400).json({ message: "nickname is required" });
+  }
+
+  const hasChanged =
+    nextNickname !== String(currentUser.nickname || "") ||
+    nextAvatarUrl !== String(currentUser.avatarUrl || "");
+  const profilePolicy = getUserProfilePolicy(req.user.id);
+  if (!profilePolicy) {
+    return res.status(404).json({ message: "user not found" });
+  }
+  if (!hasChanged) {
+    return res.json({
+      user: {
+        ...currentUser,
+        nickname: nextNickname,
+        avatarUrl: nextAvatarUrl,
+        membershipTier: normalizeMembershipTier(currentUser.membershipTier),
+      },
+      profilePolicy,
+      unchanged: true,
+    });
+  }
+  if (profilePolicy.remainingChanges <= 0) {
+    return res.status(429).json({ message: "本年度资料修改次数已用完，请联系管理员调整额度" });
+  }
+
+  const currentYear = getCurrentCycleYear();
+  const result = db
+    .prepare(
+      `
+      UPDATE users
+      SET nickname = ?,
+          avatar_url = ?,
+          profile_change_used_this_year = profile_change_used_this_year + 1,
+          updated_at = datetime('now')
+      WHERE id = ?
+        AND profile_change_cycle_year = ?
+        AND profile_change_used_this_year < profile_change_limit_per_year
+      `
+    )
+    .run(nextNickname, nextAvatarUrl || null, req.user.id, currentYear);
+  if (!result.changes) {
+    return res.status(429).json({ message: "资料修改次数不足，请稍后重试或联系管理员" });
+  }
+
+  const updatedUser = db
+    .prepare(
+      `
+      SELECT
+        id,
+        nickname,
+        avatar_url AS avatarUrl,
+        bio,
+        membership_tier AS membershipTier,
+        created_at AS createdAt
+      FROM users
+      WHERE id = ?
+      `
+    )
+    .get(req.user.id);
+  return res.json({
+    user: {
+      ...updatedUser,
+      membershipTier: normalizeMembershipTier(updatedUser.membershipTier),
+    },
+    profilePolicy: getUserProfilePolicy(req.user.id),
+  });
+});
 
 router.get("/me/timeline/visibility", authRequired, (req, res) => {
   const row = db

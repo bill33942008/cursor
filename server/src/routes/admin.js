@@ -16,6 +16,12 @@ const { getActivityStats } = require("../services/activity");
 const { getRealtimePresenceStats } = require("../realtime/hub");
 const { parsePagination } = require("../utils");
 const { isMockDataEnabled, setMockDataEnabled } = require("../services/appSettings");
+const {
+  getCurrentCycleYear,
+  getDefaultProfileChangeLimit,
+  getUserProfilePolicy,
+  normalizeMembershipTier,
+} = require("../services/profilePolicy");
 
 const router = express.Router();
 
@@ -43,6 +49,27 @@ function logAdminAction({ actionType, targetType, targetId, payload, adminId }) 
       payload: payload || null,
     })
   );
+}
+
+function mapAdminUser(row) {
+  const currentYear = getCurrentCycleYear();
+  const membershipTier = normalizeMembershipTier(row.membershipTier);
+  const profileChangeLimitPerYear = Math.max(
+    0,
+    Number(row.profileChangeLimitPerYear || getDefaultProfileChangeLimit(membershipTier))
+  );
+  const cycleYear = Number(row.profileChangeCycleYear || currentYear);
+  const rawUsed = Math.max(0, Number(row.profileChangeUsedThisYear || 0));
+  const profileChangeUsedThisYear = cycleYear === currentYear ? rawUsed : 0;
+  return {
+    ...row,
+    isBanned: Boolean(Number(row.isBanned || 0)),
+    membershipTier,
+    profileChangeLimitPerYear,
+    profileChangeUsedThisYear,
+    profileChangeCycleYear: cycleYear === currentYear ? cycleYear : currentYear,
+    profileChangeRemaining: Math.max(profileChangeLimitPerYear - profileChangeUsedThisYear, 0),
+  };
 }
 
 router.post("/auth/login", loginLimiter, async (req, res) => {
@@ -270,8 +297,19 @@ router.get("/users", (req, res) => {
   const status = req.query.status || "all";
 
   let sql = `
-    SELECT id, nickname, avatar_url AS avatarUrl, bio, is_banned AS isBanned,
-           last_active_at AS lastActiveAt, created_at AS createdAt, updated_at AS updatedAt
+    SELECT
+      id,
+      nickname,
+      avatar_url AS avatarUrl,
+      bio,
+      is_banned AS isBanned,
+      last_active_at AS lastActiveAt,
+      membership_tier AS membershipTier,
+      profile_change_limit_per_year AS profileChangeLimitPerYear,
+      profile_change_used_this_year AS profileChangeUsedThisYear,
+      profile_change_cycle_year AS profileChangeCycleYear,
+      created_at AS createdAt,
+      updated_at AS updatedAt
     FROM users
     WHERE 1 = 1
   `;
@@ -289,12 +327,91 @@ router.get("/users", (req, res) => {
   sql += " ORDER BY created_at DESC LIMIT ? OFFSET ?";
   params.push(limit, offset);
 
-  const items = db.prepare(sql).all(...params).map((row) => ({
-    ...row,
-    isBanned: Boolean(Number(row.isBanned || 0)),
-  }));
+  const items = db.prepare(sql).all(...params).map(mapAdminUser);
 
   res.json({ items, pagination: { limit, offset } });
+});
+
+router.post("/users/:id/profile-policy", (req, res) => {
+  const schema = z
+    .object({
+      membershipTier: z.enum(["normal", "vip"]).optional(),
+      profileChangeLimitPerYear: z.number().int().min(0).max(100).optional(),
+      resetUsage: z.boolean().optional(),
+    })
+    .refine(
+      (value) =>
+        value.membershipTier !== undefined ||
+        value.profileChangeLimitPerYear !== undefined ||
+        value.resetUsage !== undefined,
+      {
+        message: "at least one field is required",
+        path: ["membershipTier"],
+      }
+    );
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: "invalid payload", errors: parsed.error.issues });
+  }
+
+  const userId = req.params.id;
+  const current = db
+    .prepare(
+      `
+      SELECT
+        id,
+        membership_tier AS membershipTier,
+        profile_change_limit_per_year AS profileChangeLimitPerYear,
+        profile_change_used_this_year AS profileChangeUsedThisYear,
+        profile_change_cycle_year AS profileChangeCycleYear
+      FROM users
+      WHERE id = ?
+      `
+    )
+    .get(userId);
+  if (!current) {
+    return res.status(404).json({ message: "user not found" });
+  }
+
+  const currentYear = getCurrentCycleYear();
+  const nextTier = parsed.data.membershipTier
+    ? normalizeMembershipTier(parsed.data.membershipTier)
+    : normalizeMembershipTier(current.membershipTier);
+  const nextLimit =
+    parsed.data.profileChangeLimitPerYear !== undefined
+      ? parsed.data.profileChangeLimitPerYear
+      : parsed.data.membershipTier !== undefined
+      ? getDefaultProfileChangeLimit(nextTier)
+      : Math.max(0, Number(current.profileChangeLimitPerYear || getDefaultProfileChangeLimit(nextTier)));
+  const shouldResetUsage = Boolean(parsed.data.resetUsage);
+  const oldCycleYear = Number(current.profileChangeCycleYear || 0);
+  const oldUsed = Math.max(0, Number(current.profileChangeUsedThisYear || 0));
+  const nextUsed = shouldResetUsage ? 0 : oldCycleYear === currentYear ? oldUsed : 0;
+
+  db.prepare(
+    `
+    UPDATE users
+    SET membership_tier = ?,
+        profile_change_limit_per_year = ?,
+        profile_change_used_this_year = ?,
+        profile_change_cycle_year = ?,
+        updated_at = datetime('now')
+    WHERE id = ?
+    `
+  ).run(nextTier, nextLimit, nextUsed, currentYear, userId);
+
+  logAdminAction({
+    actionType: "update_user_profile_policy",
+    targetType: "user",
+    targetId: userId,
+    payload: parsed.data,
+    adminId: req.admin.id,
+  });
+
+  return res.json({
+    success: true,
+    profilePolicy: getUserProfilePolicy(userId),
+  });
 });
 
 function handleUserStatus(req, res, parsedData) {

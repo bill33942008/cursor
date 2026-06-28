@@ -23,6 +23,9 @@
       <view class="profile-main">
         <text class="name">{{user.nickname}}</text>
         <text class="subtitle">同行账号</text>
+        <text wx:if="{{profilePolicy}}" class="profile-policy-tip">
+          {{profilePolicy.membershipTier === 'vip' ? 'VIP' : '普通'}} · 本年可改 {{profilePolicy.profileChangeLimitPerYear}} 次 · 剩余 {{profilePolicy.remainingChanges}} 次
+        </text>
       </view>
     </view>
     <view class="profile-id">
@@ -42,6 +45,11 @@
 
   <view class="card">
     <view class="section-title">设置与安全</view>
+    <view class="menu-item pressable" hover-class="pressable-hover" bindtap="goProfileEdit">
+      <text class="menu-icon">🪪</text>
+      <text class="menu-text">编辑昵称与头像</text>
+      <text class="menu-arrow">›</text>
+    </view>
     <view class="menu-item pressable" hover-class="pressable-hover" bindtap="goTimelineManage">
       <text class="menu-icon">🗺️</text>
       <text class="menu-text">我的时间线</text>

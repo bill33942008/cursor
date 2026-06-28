@@ -57,6 +57,13 @@
   display: block;
 }
 
+.profile-policy-tip {
+  margin-top: 6rpx;
+  display: block;
+  font-size: 22rpx;
+  color: #475467;
+}
+
 .name {
   display: block;
   font-size: 34rpx;

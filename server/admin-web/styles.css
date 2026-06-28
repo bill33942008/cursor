@@ -196,7 +196,18 @@ td .badge.bad {
   color: #991b1b;
 }
 
+td .badge.vip {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.user-policy {
+  display: grid;
+  gap: 4px;
+}
+
 td .op-group {
   display: flex;
   gap: 6px;
+  margin-bottom: 6px;
 }

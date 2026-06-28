@@ -135,6 +135,10 @@ function initSchema() {
       last_active_at TEXT,
       timeline_is_public INTEGER NOT NULL DEFAULT 0,
       current_group_id TEXT,
+      membership_tier TEXT NOT NULL DEFAULT 'normal',
+      profile_change_limit_per_year INTEGER NOT NULL DEFAULT 2,
+      profile_change_used_this_year INTEGER NOT NULL DEFAULT 0,
+      profile_change_cycle_year INTEGER NOT NULL DEFAULT (CAST(strftime('%Y', 'now') AS INTEGER)),
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -361,9 +365,28 @@ function initSchema() {
   addColumnIfMissing("users", "last_active_at", "last_active_at TEXT");
   addColumnIfMissing("users", "timeline_is_public", "timeline_is_public INTEGER NOT NULL DEFAULT 0");
   addColumnIfMissing("users", "current_group_id", "current_group_id TEXT");
+  addColumnIfMissing("users", "membership_tier", "membership_tier TEXT NOT NULL DEFAULT 'normal'");
+  addColumnIfMissing(
+    "users",
+    "profile_change_limit_per_year",
+    "profile_change_limit_per_year INTEGER NOT NULL DEFAULT 2"
+  );
+  addColumnIfMissing(
+    "users",
+    "profile_change_used_this_year",
+    "profile_change_used_this_year INTEGER NOT NULL DEFAULT 0"
+  );
+  addColumnIfMissing(
+    "users",
+    "profile_change_cycle_year",
+    "profile_change_cycle_year INTEGER NOT NULL DEFAULT 1970"
+  );
   addColumnIfMissing("post_comments", "parent_comment_id", "parent_comment_id TEXT");
   addColumnIfMissing("post_comments", "reply_to_user_id", "reply_to_user_id TEXT");
   addColumnIfMissing("user_timeline_events", "media_json", "media_json TEXT NOT NULL DEFAULT '[]'");
+  db.exec(
+    "UPDATE users SET profile_change_cycle_year = CAST(strftime('%Y', 'now') AS INTEGER) WHERE profile_change_cycle_year IS NULL OR profile_change_cycle_year < 1970"
+  );
 
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts (created_at DESC);
@@ -381,6 +404,7 @@ function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_users_timeline_public ON users (timeline_is_public);
     CREATE INDEX IF NOT EXISTS idx_users_current_group_id ON users (current_group_id);
+    CREATE INDEX IF NOT EXISTS idx_users_membership_tier ON users (membership_tier);
     CREATE INDEX IF NOT EXISTS idx_daily_active_users_date ON daily_active_users (activity_date DESC);
     CREATE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users (username);
     CREATE INDEX IF NOT EXISTS idx_app_settings_key ON app_settings (setting_key);

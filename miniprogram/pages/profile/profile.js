@@ -14,6 +14,7 @@ Page({
     loading: true,
     user: null,
     userInitial: "U",
+    profilePolicy: null,
     friends: [],
     incomingRequests: [],
     outgoingRequests: [],
@@ -26,6 +27,7 @@ Page({
       this.setData({
         loading: false,
         user: null,
+        profilePolicy: null,
         friends: [],
         incomingRequests: [],
         outgoingRequests: [],
@@ -65,6 +67,7 @@ Page({
       this.setData({
         user: mergedUser,
         userInitial: String(mergedUser.nickname || "U").charAt(0) || "U",
+        profilePolicy: meRes.profilePolicy || null,
         friends: friendRes.friends || [],
         incomingRequests: friendRes.incomingRequests || [],
         outgoingRequests: friendRes.outgoingRequests || [],
@@ -74,6 +77,7 @@ Page({
       if (err?.statusCode === 401 || err?.code === "UNAUTHORIZED") {
         this.setData({
           user: null,
+          profilePolicy: null,
           friends: [],
           incomingRequests: [],
           outgoingRequests: [],
@@ -138,6 +142,10 @@ Page({
 
   goTimelineManage() {
     wx.navigateTo({ url: "/pages/timeline/manage" });
+  },
+
+  goProfileEdit() {
+    wx.navigateTo({ url: "/pages/profile/edit" });
   },
 
   goPrivacy() {

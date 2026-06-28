@@ -5,6 +5,7 @@
     "pages/publish/publish",
     "pages/groups/groups",
     "pages/profile/profile",
+    "pages/profile/edit",
     "pages/chat/chat",
     "pages/timeline/manage",
     "pages/scene/vertical",

@@ -1,0 +1,45 @@
+<view class="page-wrap profile-edit-page">
+  <view wx:if="{{loading}}" class="card state-card">
+    <text class="subtitle">资料加载中...</text>
+  </view>
+
+  <block wx:if="{{!loading}}">
+    <view class="card">
+      <view class="avatar-edit-wrap">
+        <view class="avatar-box">
+          <image wx:if="{{avatarPreviewUrl}}" class="avatar-image" src="{{avatarPreviewUrl}}" mode="aspectFill"></image>
+          <text wx:else class="avatar-fallback">{{nicknameInitial}}</text>
+        </view>
+        <button class="btn-ghost avatar-btn" bindtap="chooseAvatar" loading="{{saving}}">更换头像</button>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section-title">昵称</view>
+      <input
+        class="input-box"
+        placeholder="请输入昵称"
+        maxlength="32"
+        value="{{nickname}}"
+        bindinput="onNicknameInput"
+      />
+      <text class="subtitle">最多 32 个字符</text>
+    </view>
+
+    <view wx:if="{{profilePolicy}}" class="card policy-card">
+      <view class="section-title">年度修改额度</view>
+      <text class="subtitle">
+        当前身份：{{profilePolicy.membershipTier === 'vip' ? 'VIP' : '普通用户'}}
+      </text>
+      <text class="subtitle">
+        本年已用 {{profilePolicy.profileChangeUsedThisYear}} / {{profilePolicy.profileChangeLimitPerYear}} 次，剩余
+        {{profilePolicy.remainingChanges}} 次
+      </text>
+      <text class="subtitle muted">额度由后台可单独调整，后续可结合 VIP 做分级权限</text>
+    </view>
+
+    <button class="btn-primary save-btn" bindtap="submitProfile" loading="{{saving}}" disabled="{{saving}}">
+      保存资料
+    </button>
+  </block>
+</view>
