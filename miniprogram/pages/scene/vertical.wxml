@@ -68,7 +68,7 @@
             bindtap="onSelectScene"
           >
             <text class="scene-pill-title">{{item.title}}</text>
-            <text class="scene-pill-meta">{{item.postCount}} 条</text>
+            <text class="scene-pill-meta">{{item.posts.length}} 条</text>
           </view>
         </block>
       </view>

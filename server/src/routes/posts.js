@@ -192,6 +192,7 @@ router.get("/square", optionalAuth, (req, res) => {
         p.created_at AS createdAt,
         u.id AS userId,
         u.nickname,
+        u.avatar_url AS avatarUrl,
         j.transport_type AS transportType,
         j.route_code AS routeCode,
         j.origin,
@@ -206,14 +207,19 @@ router.get("/square", optionalAuth, (req, res) => {
       `
     )
     .all(viewerUserId, limit, offset)
-    .map((item) => ({
-      ...item,
-      displayName: item.isAnonymous ? "匿名旅友" : item.nickname,
-      media: JSON.parse(item.mediaJson || "[]"),
-      likedByMe: Boolean(Number(item.likedByMe || 0)),
-      mediaJson: undefined,
-      nickname: undefined,
-    }));
+    .map((item) => {
+      const isAnonymous = Boolean(Number(item.isAnonymous || 0));
+      return {
+        ...item,
+        isAnonymous,
+        displayName: isAnonymous ? "匿名旅友" : item.nickname,
+        avatarUrl: isAnonymous ? "" : item.avatarUrl || "",
+        media: JSON.parse(item.mediaJson || "[]"),
+        likedByMe: Boolean(Number(item.likedByMe || 0)),
+        mediaJson: undefined,
+        nickname: undefined,
+      };
+    });
 
   const mergedItems = isMockDataEnabled() ? [...items, ...getMockSquarePosts()] : items;
 

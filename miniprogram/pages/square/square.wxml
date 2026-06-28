@@ -54,7 +54,10 @@
         <view class="feed-card pressable list-appear" hover-class="pressable-hover">
           <view class="feed-head">
             <view class="feed-author pressable" hover-class="pressable-hover" data-userid="{{item.userId}}" data-postid="{{item.id}}" bindtap="openUserProfile">
-              <view class="avatar-dot"></view>
+              <view class="avatar-wrap">
+                <image wx:if="{{item.avatarUrl}}" class="avatar-image" src="{{item.avatarUrl}}" mode="aspectFill" />
+                <view wx:else class="avatar-fallback">{{item.authorInitial}}</view>
+              </view>
               <view>
                 <text class="feed-user">{{item.displayName}}</text>
                 <text class="feed-time">{{item.createdAt}}</text>
@@ -161,7 +164,10 @@
         <view class="feed-card pressable list-appear" hover-class="pressable-hover">
           <view class="feed-head">
             <view class="feed-author pressable" hover-class="pressable-hover" data-userid="{{item.userId}}" data-postid="{{item.id}}" bindtap="openUserProfile">
-              <view class="avatar-dot"></view>
+              <view class="avatar-wrap">
+                <image wx:if="{{item.avatarUrl}}" class="avatar-image" src="{{item.avatarUrl}}" mode="aspectFill" />
+                <view wx:else class="avatar-fallback">{{item.authorInitial}}</view>
+              </view>
               <view>
                 <text class="feed-user">{{item.displayName}}</text>
                 <text class="feed-time">{{item.createdAt}}</text>

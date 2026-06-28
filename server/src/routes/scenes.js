@@ -135,11 +135,13 @@ function buildSceneTracks(rows) {
 
   const transportTracks = Array.from(transportMap.values()).map((scene) => ({
     ...scene,
-    posts: scene.posts.slice(0, 12),
+    posts: scene.posts,
+    postCount: scene.posts.length,
   }));
   const scenicTracks = Array.from(scenicMap.values()).map((scene) => ({
     ...scene,
-    posts: scene.posts.slice(0, 12),
+    posts: scene.posts,
+    postCount: scene.posts.length,
   }));
 
   return {

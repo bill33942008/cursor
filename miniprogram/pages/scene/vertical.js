@@ -86,9 +86,11 @@ function normalizeTrack(track) {
     };
   });
   const firstPost = posts[0] || null;
+  const totalPostCount = Number(track.postCount || posts.length);
   return {
     ...track,
-    postCount: Number(track.postCount || posts.length),
+    postCount: posts.length,
+    totalPostCount,
     posts,
     currentPostIndex: 0,
     currentPost: firstPost,

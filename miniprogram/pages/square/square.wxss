@@ -56,13 +56,33 @@
   align-items: center;
 }
 
-.avatar-dot {
+.avatar-wrap,
+.avatar-image,
+.avatar-fallback {
   width: 62rpx;
   height: 62rpx;
   border-radius: 50%;
+}
+
+.avatar-wrap {
   margin-right: 14rpx;
+  overflow: hidden;
+}
+
+.avatar-image {
+  display: block;
+  background: #eef2f7;
+}
+
+.avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: linear-gradient(135deg, #ff6a61 0%, #ff2442 100%);
   box-shadow: 0 8rpx 16rpx rgba(255, 68, 95, 0.3);
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: 700;
 }
 
 .feed-user {

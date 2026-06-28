@@ -24,6 +24,20 @@ function resolveMediaUrl(url) {
   return `${app.globalData.baseUrl}${url}`;
 }
 
+function resolveAvatarUrl(url) {
+  const value = String(url || "").trim();
+  if (!value) return "";
+  if (value.startsWith("http://") || value.startsWith("https://")) return value;
+  if (value.startsWith("/")) return `${app.globalData.baseUrl}${value}`;
+  return `${app.globalData.baseUrl}/${value}`.replace(/([^:]\/)\/+/g, "$1");
+}
+
+function getUserInitial(name) {
+  const text = String(name || "").trim();
+  if (!text) return "U";
+  return text.slice(0, 1).toUpperCase();
+}
+
 function resolveMediaItems(mediaList) {
   let previewIndex = 0;
   return (mediaList || []).map((mediaUrl) => {
@@ -159,8 +173,12 @@ Page({
     });
     const posts = (res.items || []).map((item) => {
       const mediaItems = resolveMediaItems(item.media || []);
+      const displayName = item.displayName || "旅友";
       return {
         ...item,
+        displayName,
+        avatarUrl: resolveAvatarUrl(item.avatarUrl),
+        authorInitial: getUserInitial(displayName),
         transportLabel: mapTransportTypeLabel(item.transportType),
         likeCount: Number(item.likeCount || 0),
         likedByMe: Boolean(Number(item.likedByMe || 0)),
