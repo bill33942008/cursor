@@ -6,7 +6,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10rpx;
-  margin-bottom: 12rpx;
+  margin-bottom: 10rpx;
 }
 
 .scene-type-chip {
@@ -24,6 +24,30 @@
   background: #fff1f4;
   border-color: #ffc7d1;
   color: #ff2442;
+}
+
+.window-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-bottom: 12rpx;
+}
+
+.window-chip {
+  height: 54rpx;
+  line-height: 54rpx;
+  padding: 0 18rpx;
+  border-radius: 999rpx;
+  background: #f5f7fa;
+  color: #667085;
+  border: 2rpx solid #e4e7ec;
+  font-size: 23rpx;
+}
+
+.window-chip.active {
+  background: #e9f5ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
 }
 
 .search-row {
@@ -105,23 +129,52 @@
   padding: 12rpx 14rpx;
   font-size: 23rpx;
   line-height: 1.55;
+  transition: all 280ms ease;
+}
+
+.prompt-bubble.hidden {
+  opacity: 0;
+  transform: translateY(12rpx);
+}
+
+.prompt-bubble.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.stage-cover-wrap {
+  height: 154rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.stage-cover-image {
+  display: block;
+}
+
+.train-cover {
+  width: 320rpx;
+  height: 130rpx;
+  filter: drop-shadow(0 10rpx 18rpx rgba(15, 23, 42, 0.14));
 }
 
 .train-track {
-  margin-top: 10rpx;
-  padding: 8rpx 0;
+  margin-top: 6rpx;
+  padding: 8rpx 0 10rpx;
   overflow: hidden;
 }
 
 .train-body {
   height: 92rpx;
-  border-radius: 999rpx;
-  background: linear-gradient(90deg, #ff6b7d 0%, #ff2442 100%);
+  border-radius: 20rpx;
+  background: linear-gradient(90deg, #ff8092 0%, #ff4965 100%);
   display: flex;
   align-items: center;
   gap: 8rpx;
-  padding: 0 14rpx;
+  padding: 0 14rpx 0 16rpx;
   animation: trainMove 3s ease-in-out infinite alternate;
+  box-shadow: 0 10rpx 22rpx rgba(255, 36, 66, 0.25);
 }
 
 .train-window {
@@ -142,23 +195,25 @@
 
 .scenic-stage {
   position: relative;
-  min-height: 210rpx;
+  min-height: 246rpx;
   border-radius: 18rpx;
   background: linear-gradient(180deg, #f7fbff 0%, #eff7ff 100%);
   padding: 16rpx;
 }
 
 .scenic-illustration {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 50%;
-  margin: 0 auto;
-  background: #fff;
+  width: 230rpx;
+  height: 136rpx;
+  margin: 0 auto 4rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 56rpx;
-  box-shadow: 0 8rpx 18rpx rgba(15, 23, 42, 0.12);
+}
+
+.scenic-cover {
+  width: 220rpx;
+  height: 130rpx;
+  filter: drop-shadow(0 8rpx 14rpx rgba(15, 23, 42, 0.14));
 }
 
 .scenic-avatar-orbit {
@@ -181,6 +236,7 @@
   background: #fff;
   border: 2rpx solid #f1f5f9;
   box-shadow: 0 8rpx 20rpx rgba(15, 23, 42, 0.07);
+  animation: postReveal 360ms ease;
 }
 
 .post-user {
@@ -249,9 +305,20 @@
 
 @keyframes trainMove {
   0% {
-    transform: translateX(-8rpx);
+    transform: translateX(-10rpx);
   }
   100% {
-    transform: translateX(8rpx);
+    transform: translateX(10rpx);
+  }
+}
+
+@keyframes postReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(10rpx) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }

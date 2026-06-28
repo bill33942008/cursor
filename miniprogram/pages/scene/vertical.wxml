@@ -17,6 +17,17 @@
         </view>
       </block>
     </view>
+    <view class="window-row">
+      <block wx:for="{{windowOptions}}" wx:key="value">
+        <view
+          class="window-chip {{windowMinutes === item.value ? 'active' : ''}}"
+          data-value="{{item.value}}"
+          bindtap="onWindowChange"
+        >
+          {{item.label}}
+        </view>
+      </block>
+    </view>
     <view class="search-row">
       <input
         class="search-input"
@@ -72,7 +83,9 @@
         </view>
 
         <view wx:if="{{item.sceneType === 'transport'}}" class="transport-stage">
-          <view class="prompt-bubble">{{item.promptText}}</view>
+          <view class="stage-cover-wrap">
+            <image class="stage-cover-image train-cover" src="{{item.coverImage}}" mode="aspectFit" />
+          </view>
           <view class="train-track">
             <view class="train-body">
               <block wx:for="{{item.avatarWindows}}" wx:key="index" wx:for-item="windowAvatar">
@@ -82,19 +95,22 @@
               </block>
             </view>
           </view>
+          <view class="prompt-bubble {{item.stagePhase === 'post' ? 'visible' : 'hidden'}}">{{item.promptText}}</view>
         </view>
 
         <view wx:else class="scenic-stage">
-          <view class="scenic-illustration">{{item.coverEmoji}}</view>
+          <view class="scenic-illustration">
+            <image class="stage-cover-image scenic-cover" src="{{item.coverImage}}" mode="aspectFit" />
+          </view>
           <view class="scenic-avatar-orbit">
             <block wx:for="{{item.avatarWindows}}" wx:key="index" wx:for-item="orbitAvatar">
               <image class="orbit-avatar avatar-bob" src="{{orbitAvatar.avatarUrl}}" mode="aspectFill" />
             </block>
           </view>
-          <view class="prompt-bubble">{{item.promptText}}</view>
+          <view class="prompt-bubble {{item.stagePhase === 'post' ? 'visible' : 'hidden'}}">{{item.promptText}}</view>
         </view>
 
-        <view wx:if="{{item.currentPost}}" class="scene-post-card list-appear" id="scene-post-{{item.postAnimateToken}}">
+        <view wx:if="{{item.stagePhase === 'post' && item.currentPost}}" class="scene-post-card list-appear" id="scene-post-{{item.postAnimateToken}}">
           <view class="post-user">
             <image class="post-avatar avatar-bob" src="{{item.currentPost.avatarUrl}}" mode="aspectFill" />
             <view>

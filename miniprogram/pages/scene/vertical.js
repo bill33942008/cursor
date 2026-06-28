@@ -1,6 +1,18 @@
 const { request } = require("../../utils/request");
 const app = getApp();
 
+const SCENE_COVER_MAP = {
+  scenic: "/assets/scene/scenic-q.svg",
+  transport: {
+    high_speed_rail: "/assets/scene/train-q.svg",
+    train: "/assets/scene/train-q.svg",
+    flight: "/assets/scene/plane-q.svg",
+    bus: "/assets/scene/bus-q.svg",
+    road_trip: "/assets/scene/car-q.svg",
+    other: "/assets/scene/train-q.svg",
+  },
+};
+
 function resolveMediaUrl(url) {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -9,22 +21,36 @@ function resolveMediaUrl(url) {
   return `${app.globalData.baseUrl}${url}`;
 }
 
+function isVideoUrl(url) {
+  return /\.(mp4|mov|m4v|webm)(\?|$)/i.test(String(url || ""));
+}
+
+function getSceneCoverImage(sceneType, transportType) {
+  if (sceneType === "scenic") {
+    return SCENE_COVER_MAP.scenic;
+  }
+  return SCENE_COVER_MAP.transport[transportType] || SCENE_COVER_MAP.transport.other;
+}
+
 function normalizeTrack(track) {
   const posts = (track.posts || []).map((item) => ({
     ...item,
-    media: (item.media || []).map((url) => resolveMediaUrl(url)),
+    media: (item.media || []).map((url) => resolveMediaUrl(url)).filter((url) => !isVideoUrl(url)),
   }));
   const firstPost = posts[0] || null;
   return {
     ...track,
+    postCount: Number(track.postCount || posts.length),
     posts,
     currentPostIndex: 0,
     currentPost: firstPost,
-    avatarWindows: posts.slice(0, 6).map((item) => ({
+    avatarWindows: posts.slice(0, 8).map((item) => ({
       avatarUrl: item.avatarUrl,
       nickname: item.nickname,
     })),
     postAnimateToken: Date.now(),
+    stagePhase: "avatars",
+    coverImage: getSceneCoverImage(track.sceneType, track.transportType),
   };
 }
 
@@ -39,13 +65,54 @@ Page({
       { label: "交通剧场", value: "transport" },
       { label: "景点剧场", value: "scenic" },
     ],
+    windowMinutes: 120,
+    windowOptions: [
+      { label: "近2小时", value: 120 },
+      { label: "近6小时", value: 360 },
+      { label: "近24小时", value: 1440 },
+    ],
     tracks: [],
     activeSceneIndex: 0,
     mockDataEnabled: false,
   },
 
   onLoad() {
+    this.sceneTimers = {};
     this.loadSceneTracks();
+  },
+
+  onUnload() {
+    this.clearSceneTimers();
+  },
+
+  clearSceneTimers() {
+    Object.keys(this.sceneTimers || {}).forEach((key) => {
+      clearTimeout(this.sceneTimers[key]);
+    });
+    this.sceneTimers = {};
+  },
+
+  clearSceneTimer(sceneId) {
+    if (!sceneId || !this.sceneTimers || !this.sceneTimers[sceneId]) return;
+    clearTimeout(this.sceneTimers[sceneId]);
+    delete this.sceneTimers[sceneId];
+  },
+
+  startSceneAnimation(sceneId) {
+    if (!sceneId) return;
+    this.clearSceneTimer(sceneId);
+    this.updateScene(sceneId, (scene) => ({
+      ...scene,
+      stagePhase: "avatars",
+    }));
+    this.sceneTimers[sceneId] = setTimeout(() => {
+      this.updateScene(sceneId, (scene) => ({
+        ...scene,
+        stagePhase: "post",
+        postAnimateToken: Date.now(),
+      }));
+      this.clearSceneTimer(sceneId);
+    }, 900);
   },
 
   async onPullDownRefresh() {
@@ -70,6 +137,13 @@ Page({
     await this.loadSceneTracks();
   },
 
+  async onWindowChange(e) {
+    const windowMinutes = Number(e.currentTarget.dataset.value || 120);
+    if (Number.isNaN(windowMinutes)) return;
+    this.setData({ windowMinutes, activeSceneIndex: 0 });
+    await this.loadSceneTracks();
+  },
+
   getActiveScene() {
     const list = this.data.tracks || [];
     return list[this.data.activeSceneIndex] || null;
@@ -88,17 +162,26 @@ Page({
     try {
       const query = encodeURIComponent((this.data.keyword || "").trim());
       const res = await request({
-        url: `/api/scenes/vertical-feed?sceneType=${encodeURIComponent(this.data.sceneType)}${
-          query ? `&keyword=${query}` : ""
-        }`,
+        url: `/api/scenes/vertical-feed?sceneType=${encodeURIComponent(this.data.sceneType)}&windowMinutes=${
+          this.data.windowMinutes
+        }${query ? `&keyword=${query}` : ""}`,
         method: "GET",
       });
+      this.clearSceneTimers();
       const tracks = (res.items || []).map(normalizeTrack);
-      this.setData({
-        tracks,
-        activeSceneIndex: tracks.length ? Math.min(this.data.activeSceneIndex, tracks.length - 1) : 0,
-        mockDataEnabled: Boolean(res.mockDataEnabled),
-      });
+      this.setData(
+        {
+          tracks,
+          activeSceneIndex: tracks.length ? Math.min(this.data.activeSceneIndex, tracks.length - 1) : 0,
+          mockDataEnabled: Boolean(res.mockDataEnabled),
+        },
+        () => {
+          const active = this.getActiveScene();
+          if (active) {
+            this.startSceneAnimation(active.sceneId);
+          }
+        }
+      );
     } catch (err) {
       this.setData({ error: err.message || "加载聚合剧场失败" });
     } finally {
@@ -109,7 +192,12 @@ Page({
   onSelectScene(e) {
     const index = Number(e.currentTarget.dataset.index);
     if (Number.isNaN(index)) return;
-    this.setData({ activeSceneIndex: index });
+    this.setData({ activeSceneIndex: index }, () => {
+      const active = this.getActiveScene();
+      if (active) {
+        this.startSceneAnimation(active.sceneId);
+      }
+    });
   },
 
   onContinueJourney() {
@@ -124,14 +212,20 @@ Page({
         ...current,
         currentPostIndex: nextIndex,
         currentPost: current.posts[nextIndex] || null,
-        postAnimateToken: Date.now(),
+        stagePhase: "avatars",
       }));
+      this.startSceneAnimation(scene.sceneId);
       return;
     }
 
     const nextSceneIndex = this.data.activeSceneIndex + 1;
     if (nextSceneIndex < this.data.tracks.length) {
-      this.setData({ activeSceneIndex: nextSceneIndex });
+      this.setData({ activeSceneIndex: nextSceneIndex }, () => {
+        const active = this.getActiveScene();
+        if (active) {
+          this.startSceneAnimation(active.sceneId);
+        }
+      });
       return;
     }
     wx.showToast({ title: "已到达终点站", icon: "none" });
@@ -140,7 +234,7 @@ Page({
   previewCurrentMedia(e) {
     const sceneId = e.currentTarget.dataset.sceneid;
     const scene = (this.data.tracks || []).find((item) => item.sceneId === sceneId);
-    const post = scene?.currentPost;
+    const post = scene && scene.currentPost ? scene.currentPost : null;
     if (!post || !post.media || post.media.length === 0) {
       return;
     }

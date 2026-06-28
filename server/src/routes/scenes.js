@@ -24,6 +24,11 @@ const SCENE_EMOJI_MAP = {
   other: "📍",
 };
 
+function toTimeMs(value) {
+  const ms = Date.parse(String(value || ""));
+  return Number.isFinite(ms) ? ms : 0;
+}
+
 function safeParseMedia(mediaJson) {
   try {
     const parsed = JSON.parse(mediaJson || "[]");
@@ -148,6 +153,7 @@ router.get("/vertical-feed", optionalAuth, (req, res) => {
   const sceneType = String(req.query.sceneType || "all").trim();
   const keyword = String(req.query.keyword || "").trim();
   const limit = Math.min(Math.max(Number(req.query.limit) || 120, 10), 300);
+  const windowMinutes = Math.min(Math.max(Number(req.query.windowMinutes) || 120, 30), 2880);
 
   let sql = `
     SELECT
@@ -169,8 +175,9 @@ router.get("/vertical-feed", optionalAuth, (req, res) => {
     WHERE p.visibility = 'public'
       AND p.moderation_status = 'approved'
       AND j.id IS NOT NULL
+      AND p.created_at >= datetime('now', ?)
   `;
-  const params = [];
+  const params = [`-${windowMinutes} minutes`];
   if (keyword) {
     sql += " AND (j.route_code LIKE ? OR j.destination LIKE ? OR p.content LIKE ?)";
     const like = `%${keyword}%`;
@@ -201,12 +208,13 @@ router.get("/vertical-feed", optionalAuth, (req, res) => {
   tracks.sort((a, b) => {
     const diff = Number(b.postCount || 0) - Number(a.postCount || 0);
     if (diff !== 0) return diff;
-    return String(b.lastUpdatedAt || "").localeCompare(String(a.lastUpdatedAt || ""));
+    return toTimeMs(b.lastUpdatedAt) - toTimeMs(a.lastUpdatedAt);
   });
 
   res.json({
     items: tracks,
     sceneType,
+    windowMinutes,
     mockDataEnabled: isMockDataEnabled(),
     keyword,
   });

@@ -95,7 +95,7 @@ function getMockGroups() {
 }
 
 function getMockSceneTracks() {
-  return [
+  const tracks = [
     {
       sceneId: "mock-scene-train-g102",
       sceneType: "transport",
@@ -178,6 +178,11 @@ function getMockSceneTracks() {
       ],
     },
   ];
+  return tracks.map((item) => ({
+    ...item,
+    postCount: (item.posts || []).length,
+    lastUpdatedAt: item.posts?.[0]?.createdAt || makeIso(5),
+  }));
 }
 
 module.exports = {
