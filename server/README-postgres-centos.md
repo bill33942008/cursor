@@ -5,6 +5,21 @@ This backend now supports two DB modes:
 - `DB_CLIENT=sqljs` (default, local file database)
 - `DB_CLIENT=postgres` (PostgreSQL)
 
+## Quick env templates
+
+- Local development template: `server/.env.local.example`
+- Production template: `server/.env.prod.example`
+
+Common usage:
+
+```bash
+# local
+cp .env.local.example .env
+
+# production
+cp .env.prod.example .env
+```
+
 ## 1) Install PostgreSQL on CentOS
 
 Example for CentOS Stream / RHEL-compatible systems:
