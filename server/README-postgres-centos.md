@@ -8,6 +8,7 @@ This backend now supports two DB modes:
 ## Quick env templates
 
 - Local development template: `server/.env.local.example`
+- Local Windows + PostgreSQL template: `server/.env.windows-postgres.example`
 - Production template: `server/.env.prod.example`
 
 Common usage:
