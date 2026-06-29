@@ -11,6 +11,7 @@ const {
   getUserProfilePolicy,
   normalizeMembershipTier,
 } = require("../services/profilePolicy");
+const { isFeatureEnabled } = require("../services/featureFlags");
 
 const router = express.Router();
 
@@ -454,6 +455,14 @@ router.delete("/me/timeline/:eventId", authRequired, (req, res) => {
 
 router.get("/:id/public-profile", optionalAuth, (req, res) => {
   const targetUserId = req.params.id;
+  const viewerUserId = req.user?.id || "";
+  if (!isFeatureEnabled("social_profile_view_enabled", true) && viewerUserId !== targetUserId) {
+    return res.status(403).json({
+      code: "FEATURE_DISABLED",
+      featureKey: "social_profile_view_enabled",
+      message: "查看他人主页当前阶段未开放",
+    });
+  }
   const user = db
     .prepare(
       `
@@ -501,6 +510,14 @@ router.get("/:id/public-profile", optionalAuth, (req, res) => {
 
 router.get("/:id/timeline", optionalAuth, (req, res) => {
   const targetUserId = req.params.id;
+  const viewerUserId = req.user?.id || "";
+  if (!isFeatureEnabled("social_profile_view_enabled", true) && viewerUserId !== targetUserId) {
+    return res.status(403).json({
+      code: "FEATURE_DISABLED",
+      featureKey: "social_profile_view_enabled",
+      message: "查看他人主页当前阶段未开放",
+    });
+  }
   const { limit, offset } = parsePagination(req.query);
   const user = db
     .prepare("SELECT id, timeline_is_public AS timelineIsPublic FROM users WHERE id = ?")
@@ -544,6 +561,14 @@ router.get("/:id/timeline", optionalAuth, (req, res) => {
 
 router.get("/:id/public-posts", optionalAuth, (req, res) => {
   const targetUserId = req.params.id;
+  const viewerUserId = req.user?.id || "";
+  if (!isFeatureEnabled("social_profile_view_enabled", true) && viewerUserId !== targetUserId) {
+    return res.status(403).json({
+      code: "FEATURE_DISABLED",
+      featureKey: "social_profile_view_enabled",
+      message: "查看他人主页当前阶段未开放",
+    });
+  }
   const { limit, offset } = parsePagination(req.query);
   const user = db.prepare("SELECT id FROM users WHERE id = ?").get(targetUserId);
   if (!user) {

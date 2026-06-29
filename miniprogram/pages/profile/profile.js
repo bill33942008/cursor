@@ -58,10 +58,21 @@ Page({
     incomingRequests: [],
     outgoingRequests: [],
     guestMode: false,
+    profileEntryVisible: true,
+    profileSocialEnabled: true,
+    timelineManageEnabled: true,
+    socialProfileViewEnabled: true,
   },
 
-  onShow() {
+  async onShow() {
+    await app.loadFeatureFlags();
+    this.applyFeatureFlags();
     this.syncTabBar();
+    if (!this.data.profileEntryVisible) {
+      wx.showToast({ title: "当前阶段未开放个人中心", icon: "none" });
+      wx.switchTab({ url: "/pages/square/square" });
+      return;
+    }
     if (!app.globalData.token) {
       this.setData({
         loading: false,
@@ -83,11 +94,21 @@ Page({
 
   syncTabBar() {
     app.globalData.currentTabIndex = 3;
+    app.globalData.currentTabPath = "/pages/profile/profile";
     if (typeof this.getTabBar !== "function") return;
     const tabBar = this.getTabBar();
     if (tabBar && typeof tabBar.setData === "function") {
       tabBar.setData({ selected: 3 });
     }
+  },
+
+  applyFeatureFlags() {
+    this.setData({
+      profileEntryVisible: app.isFeatureEnabled("profile_entry_visible", true),
+      profileSocialEnabled: app.isFeatureEnabled("profile_social_enabled", true),
+      timelineManageEnabled: app.isFeatureEnabled("timeline_manage_enabled", true),
+      socialProfileViewEnabled: app.isFeatureEnabled("social_profile_view_enabled", true),
+    });
   },
 
   async loadProfileData() {
@@ -183,6 +204,10 @@ Page({
   },
 
   openUserProfile(e) {
+    if (!this.data.socialProfileViewEnabled) {
+      wx.showToast({ title: "当前阶段未开放他人主页", icon: "none" });
+      return;
+    }
     const userId = e.currentTarget.dataset.id;
     if (!userId) return;
     wx.navigateTo({ url: `/pages/user/public?userId=${userId}` });
@@ -193,6 +218,10 @@ Page({
   },
 
   goTimelineManage() {
+    if (!this.data.timelineManageEnabled) {
+      wx.showToast({ title: "当前阶段未开放时间线管理", icon: "none" });
+      return;
+    }
     wx.navigateTo({ url: "/pages/timeline/manage" });
   },
 

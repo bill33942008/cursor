@@ -14,7 +14,7 @@
     <input class="input-box" placeholder="输入目的地，如 北京 / 上海" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{destinationKeyword}}" bindinput="onDestinationKeywordInput" />
     <view class="actions-inline">
       <button class="icon-btn" size="mini" hover-class="pressable-hover" bindtap="loadGroups">搜索</button>
-      <button class="btn-ghost create-toggle" size="mini" hover-class="pressable-hover" bindtap="toggleCreate">{{creating ? "收起建群" : "我要建群"}}</button>
+      <button wx:if="{{groupsCreateEnabled}}" class="btn-ghost create-toggle" size="mini" hover-class="pressable-hover" bindtap="toggleCreate">{{creating ? "收起建群" : "我要建群"}}</button>
     </view>
   </view>
 
@@ -58,12 +58,13 @@
       </view>
       <text class="subtitle owner">群主：{{item.ownerNickname}}</text>
       <view class="group-actions">
-        <button class="btn-primary chat-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="enterChat">进入群聊（即加入）</button>
+        <button wx:if="{{groupsJoinEnabled && groupsChatEnabled}}" class="btn-primary chat-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="enterChat">进入群聊（即加入）</button>
+        <button wx:else class="btn-ghost chat-btn" size="mini" hover-class="pressable-hover">当前阶段未开放</button>
       </view>
     </view>
   </block>
 
-  <view wx:if="{{currentGroup}}" class="current-group-fab pressable" hover-class="pressable-hover" bindtap="openCurrentGroup">
+  <view wx:if="{{groupsChatEnabled && currentGroup}}" class="current-group-fab pressable" hover-class="pressable-hover" bindtap="openCurrentGroup">
     <view class="current-group-bars">
       <text class="bar b1"></text>
       <text class="bar b2"></text>

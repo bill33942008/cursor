@@ -2,7 +2,7 @@
   <view class="hero-card">
     <view class="hero-title">📍 在路上广场</view>
     <view class="hero-subtitle">记录这一程，遇见同路的人</view>
-    <view class="scene-entry pressable" hover-class="pressable-hover" bindtap="openSceneTheater">
+    <view wx:if="{{squareSceneVisible}}" class="scene-entry pressable" hover-class="pressable-hover" bindtap="openSceneTheater">
       <text class="scene-entry-title">🎬 同程聚合剧场</text>
       <text class="scene-entry-subtitle">同车次 / 同航班 / 同景点，沉浸式浏览</text>
     </view>
@@ -13,7 +13,13 @@
     </view>
   </view>
 
-  <view wx:if="{{loading}}" class="waterfall">
+  <view wx:if="{{!squareFeedVisible}}" class="card state-card">
+    <text class="state-icon">🧰</text>
+    <text class="section-title">广场内容在当前阶段已隐藏</text>
+    <text class="subtitle">请在后台开关中心开启“广场内容流可见”</text>
+  </view>
+
+  <view wx:if="{{squareFeedVisible && loading}}" class="waterfall">
     <view class="wf-col">
       <block wx:for="{{skeletonRows}}" wx:key="*this">
         <view class="feed-card skeleton-card">
@@ -42,13 +48,13 @@
     <text class="subtitle">{{error}}</text>
   </view>
 
-  <view wx:if="{{!loading && !error && posts.length === 0}}" class="card state-card">
+  <view wx:if="{{squareFeedVisible && !loading && !error && posts.length === 0}}" class="card state-card">
     <text class="state-icon">🗂️</text>
     <text class="section-title">还没有动态</text>
     <text class="subtitle">去发布页发第一条路上分享吧</text>
   </view>
 
-  <view wx:if="{{!loading && !error && posts.length > 0}}" class="waterfall">
+  <view wx:if="{{squareFeedVisible && !loading && !error && posts.length > 0}}" class="waterfall">
     <view class="wf-col">
       <block wx:for="{{leftPosts}}" wx:key="id">
         <view class="feed-card pressable list-appear" hover-class="pressable-hover">
@@ -93,12 +99,12 @@
           </view>
 
           <view class="feed-actions">
-            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="likePost">{{item.likedByMe ? "❤️" : "🤍"}} {{item.likeCount}}</view>
-            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="toggleComments">💬 {{item.commentCount}}</view>
-            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="onShareTap">🔁</view>
+            <view wx:if="{{squareLikeEnabled}}" class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="likePost">{{item.likedByMe ? "❤️" : "🤍"}} {{item.likeCount}}</view>
+            <view wx:if="{{squareCommentEnabled}}" class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="toggleComments">💬 {{item.commentCount}}</view>
+            <view wx:if="{{squareShareEnabled}}" class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="onShareTap">🔁</view>
           </view>
 
-          <view wx:if="{{item.commentsVisible}}" class="comments-box">
+          <view wx:if="{{squareCommentEnabled && item.commentsVisible}}" class="comments-box">
             <view wx:if="{{item.commentsLoading}}" class="comments-loading">评论加载中...</view>
             <view wx:if="{{!item.commentsLoading && item.comments.length === 0}}" class="comments-empty">暂无评论，来抢沙发</view>
             <block wx:for="{{item.comments}}" wx:key="id" wx:for-item="comment">
@@ -203,12 +209,12 @@
           </view>
 
           <view class="feed-actions">
-            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="likePost">{{item.likedByMe ? "❤️" : "🤍"}} {{item.likeCount}}</view>
-            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="toggleComments">💬 {{item.commentCount}}</view>
-            <view class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="onShareTap">🔁</view>
+            <view wx:if="{{squareLikeEnabled}}" class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="likePost">{{item.likedByMe ? "❤️" : "🤍"}} {{item.likeCount}}</view>
+            <view wx:if="{{squareCommentEnabled}}" class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="toggleComments">💬 {{item.commentCount}}</view>
+            <view wx:if="{{squareShareEnabled}}" class="action-item pressable" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="onShareTap">🔁</view>
           </view>
 
-          <view wx:if="{{item.commentsVisible}}" class="comments-box">
+          <view wx:if="{{squareCommentEnabled && item.commentsVisible}}" class="comments-box">
             <view wx:if="{{item.commentsLoading}}" class="comments-loading">评论加载中...</view>
             <view wx:if="{{!item.commentsLoading && item.comments.length === 0}}" class="comments-empty">暂无评论，来抢沙发</view>
             <block wx:for="{{item.comments}}" wx:key="id" wx:for-item="comment">

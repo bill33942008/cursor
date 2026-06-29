@@ -125,10 +125,18 @@ Page({
     rightPosts: [],
     skeletonRows: [1, 2, 3, 4],
     error: "",
+    squareFeedVisible: true,
+    squareSceneVisible: true,
+    squareLikeEnabled: true,
+    squareCommentEnabled: true,
+    squareShareEnabled: true,
+    socialProfileViewEnabled: true,
   },
 
-  onShow() {
+  async onShow() {
     this.syncTabBar();
+    await app.loadFeatureFlags();
+    this.applyFeatureFlags();
     this.bootstrap();
   },
 
@@ -148,11 +156,23 @@ Page({
 
   syncTabBar() {
     app.globalData.currentTabIndex = 0;
+    app.globalData.currentTabPath = "/pages/square/square";
     if (typeof this.getTabBar !== "function") return;
     const tabBar = this.getTabBar();
     if (tabBar && typeof tabBar.setData === "function") {
       tabBar.setData({ selected: 0 });
     }
+  },
+
+  applyFeatureFlags() {
+    this.setData({
+      squareFeedVisible: app.isFeatureEnabled("square_feed_visible", true),
+      squareSceneVisible: app.isFeatureEnabled("square_scene_theater_visible", true),
+      squareLikeEnabled: app.isFeatureEnabled("square_like_enabled", true),
+      squareCommentEnabled: app.isFeatureEnabled("square_comment_enabled", true),
+      squareShareEnabled: app.isFeatureEnabled("square_share_enabled", true),
+      socialProfileViewEnabled: app.isFeatureEnabled("social_profile_view_enabled", true),
+    });
   },
 
   async bootstrap() {
@@ -167,6 +187,10 @@ Page({
   },
 
   async loadSquare() {
+    if (!this.data.squareFeedVisible) {
+      this.applyPosts([]);
+      return;
+    }
     const res = await request({
       url: "/api/posts/square?limit=20&offset=0",
       method: "GET",
@@ -218,6 +242,10 @@ Page({
   },
 
   openUserProfile(e) {
+    if (!this.data.socialProfileViewEnabled) {
+      wx.showToast({ title: "当前阶段未开放他人主页", icon: "none" });
+      return;
+    }
     const userId = e.currentTarget.dataset.userid;
     const postId = e.currentTarget.dataset.postid;
     const post = this.data.posts.find((item) => item.id === postId);
@@ -256,6 +284,10 @@ Page({
   },
 
   async toggleComments(e) {
+    if (!this.data.squareCommentEnabled) {
+      wx.showToast({ title: "评论功能当前阶段未开放", icon: "none" });
+      return;
+    }
     const postId = e.currentTarget.dataset.id;
     if (!postId) return;
     const target = this.data.posts.find((post) => post.id === postId);
@@ -322,6 +354,10 @@ Page({
   },
 
   async submitComment(e) {
+    if (!this.data.squareCommentEnabled) {
+      wx.showToast({ title: "评论功能当前阶段未开放", icon: "none" });
+      return;
+    }
     const postId = e.currentTarget.dataset.id;
     const allowed = await this.ensureFeatureAccess("发表评论");
     if (!allowed) {
@@ -373,6 +409,10 @@ Page({
   },
 
   async likePost(e) {
+    if (!this.data.squareLikeEnabled) {
+      wx.showToast({ title: "点赞功能当前阶段未开放", icon: "none" });
+      return;
+    }
     const postId = e.currentTarget.dataset.id;
     if (!postId) return;
     const allowed = await this.ensureFeatureAccess("点赞");
@@ -396,6 +436,10 @@ Page({
   },
 
   async onShareTap(e) {
+    if (!this.data.squareShareEnabled) {
+      wx.showToast({ title: "分享功能当前阶段未开放", icon: "none" });
+      return;
+    }
     const postId = e.currentTarget.dataset.id;
     const allowed = await this.ensureFeatureAccess("复制动态内容");
     if (!allowed) {
@@ -411,6 +455,10 @@ Page({
   },
 
   openSceneTheater() {
+    if (!this.data.squareSceneVisible) {
+      wx.showToast({ title: "聚合剧场当前阶段未开放", icon: "none" });
+      return;
+    }
     wx.navigateTo({
       url: "/pages/scene/vertical",
     });

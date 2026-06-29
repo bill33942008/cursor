@@ -1,3 +1,23 @@
+const FEATURE_DEFAULTS = {
+  square_feed_visible: true,
+  square_scene_theater_visible: true,
+  square_like_enabled: true,
+  square_comment_enabled: true,
+  square_share_enabled: true,
+  publish_entry_visible: true,
+  publish_submit_enabled: true,
+  groups_entry_visible: true,
+  groups_join_enabled: true,
+  groups_create_enabled: true,
+  groups_chat_enabled: true,
+  groups_anonymous_chat_enabled: true,
+  profile_entry_visible: true,
+  profile_social_enabled: true,
+  timeline_manage_enabled: true,
+  social_profile_view_enabled: true,
+  mock_data_enabled: false,
+};
+
 App({
   globalData: {
     baseUrl: "http://127.0.0.1:3000",
@@ -8,6 +28,11 @@ App({
     wxUserProfile: null,
     splashShownThisLaunch: false,
     currentTabIndex: 0,
+    currentTabPath: "/pages/square/square",
+    featureFlags: { ...FEATURE_DEFAULTS },
+    featureFlagCatalog: [],
+    featureStageKey: "custom",
+    featureFlagsFetchedAt: 0,
   },
 
   onLaunch() {
@@ -42,6 +67,9 @@ App({
 
     const wsBase = this.globalData.baseUrl.replace(/^http/, "ws").replace(/\/$/, "");
     this.globalData.wsUrl = `${wsBase}/ws`;
+    this.loadFeatureFlags().catch(() => {
+      // Ignore flag preload errors.
+    });
   },
 
   onShow() {
@@ -195,6 +223,78 @@ App({
             reject(new Error(err?.errMsg || "网络异常，登录失败"));
           },
         });
+      });
+    });
+  },
+
+  isFeatureEnabled(key, fallbackValue) {
+    const featureKey = String(key || "").trim();
+    if (!featureKey) return Boolean(fallbackValue);
+    const flags = this.globalData.featureFlags || {};
+    if (Object.prototype.hasOwnProperty.call(flags, featureKey)) {
+      return Boolean(flags[featureKey]);
+    }
+    if (Object.prototype.hasOwnProperty.call(FEATURE_DEFAULTS, featureKey)) {
+      return Boolean(FEATURE_DEFAULTS[featureKey]);
+    }
+    return Boolean(fallbackValue);
+  },
+
+  getVisibleTabKeys() {
+    return {
+      publish: this.isFeatureEnabled("publish_entry_visible", true),
+      groups: this.isFeatureEnabled("groups_entry_visible", true),
+      profile: this.isFeatureEnabled("profile_entry_visible", true),
+    };
+  },
+
+  loadFeatureFlags(options = {}) {
+    const forceRefresh = Boolean(options.forceRefresh);
+    const shouldReuseCache =
+      !forceRefresh &&
+      this.globalData.featureFlagsFetchedAt &&
+      Date.now() - this.globalData.featureFlagsFetchedAt < 60 * 1000;
+    if (shouldReuseCache) {
+      return Promise.resolve({
+        flags: this.globalData.featureFlags,
+        stageKey: this.globalData.featureStageKey,
+        catalog: this.globalData.featureFlagCatalog,
+      });
+    }
+    return new Promise((resolve) => {
+      wx.request({
+        url: `${this.globalData.baseUrl}/api/system/feature-flags`,
+        method: "GET",
+        success: (res) => {
+          if (res.statusCode < 200 || res.statusCode >= 300) {
+            resolve({
+              flags: this.globalData.featureFlags,
+              stageKey: this.globalData.featureStageKey,
+              catalog: this.globalData.featureFlagCatalog,
+            });
+            return;
+          }
+          const data = res.data || {};
+          const nextFlags = {
+            ...FEATURE_DEFAULTS,
+            ...(data.flags || {}),
+          };
+          this.globalData.featureFlags = nextFlags;
+          this.globalData.featureFlagCatalog = data.catalog || [];
+          this.globalData.featureStageKey = data.stage?.stageKey || "custom";
+          this.globalData.featureFlagsFetchedAt = Date.now();
+          resolve({
+            flags: nextFlags,
+            stageKey: this.globalData.featureStageKey,
+            catalog: this.globalData.featureFlagCatalog,
+          });
+        },
+        fail: () =>
+          resolve({
+            flags: this.globalData.featureFlags,
+            stageKey: this.globalData.featureStageKey,
+            catalog: this.globalData.featureFlagCatalog,
+          }),
       });
     });
   },

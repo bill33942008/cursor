@@ -21,13 +21,25 @@ Page({
     wsConnected: false,
     currentUserId: "",
     scrollIntoView: "",
+    groupsChatEnabled: true,
+    groupsAnonymousEnabled: true,
   },
 
-  onLoad(options) {
+  async onLoad(options) {
+    await app.loadFeatureFlags();
+    const groupsChatEnabled = app.isFeatureEnabled("groups_chat_enabled", true);
+    const groupsAnonymousEnabled = app.isFeatureEnabled("groups_anonymous_chat_enabled", true);
+    if (!groupsChatEnabled) {
+      wx.showToast({ title: "当前阶段未开放群聊能力", icon: "none" });
+      wx.switchTab({ url: "/pages/groups/groups" });
+      return;
+    }
     this.setData({
       groupId: options.groupId || "",
       groupName: decodeURIComponent(options.groupName || "群聊"),
       currentUserId: app.globalData.user?.id || "",
+      groupsChatEnabled,
+      groupsAnonymousEnabled,
     });
     wx.setNavigationBarTitle({ title: this.data.groupName });
     this.loadMessages();
@@ -107,16 +119,22 @@ Page({
   },
 
   openGroupSettings() {
+    const actions = [];
+    if (this.data.groupsAnonymousEnabled) {
+      actions.push(this.data.isAnonymous ? "关闭匿名发送" : "开启匿名发送");
+    }
+    actions.push("离开该群组");
     wx.showActionSheet({
-      itemList: [this.data.isAnonymous ? "关闭匿名发送" : "开启匿名发送", "离开该群组"],
+      itemList: actions,
       success: async (res) => {
-        if (res.tapIndex === 0) {
+        const leaveIndex = actions.length - 1;
+        if (this.data.groupsAnonymousEnabled && res.tapIndex === 0) {
           const next = !this.data.isAnonymous;
           this.setData({ isAnonymous: next });
           wx.showToast({ title: next ? "已开启匿名发送" : "已关闭匿名发送", icon: "none" });
           return;
         }
-        if (res.tapIndex === 1) {
+        if (res.tapIndex === leaveIndex) {
           await this.leaveCurrentGroup();
         }
       },
@@ -156,6 +174,10 @@ Page({
   },
 
   async sendMessage() {
+    if (!this.data.groupsChatEnabled) {
+      wx.showToast({ title: "当前阶段未开放群聊能力", icon: "none" });
+      return;
+    }
     const content = this.data.inputText.trim();
     if (!content) {
       return;

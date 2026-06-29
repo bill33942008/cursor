@@ -3,10 +3,22 @@ const { z } = require("zod");
 const { v4: uuidv4 } = require("uuid");
 const { db } = require("../db");
 const { authRequired } = require("../middleware/auth");
+const { isFeatureEnabled } = require("../services/featureFlags");
 
 const router = express.Router();
 
+function rejectFeatureDisabled(res) {
+  return res.status(403).json({
+    code: "FEATURE_DISABLED",
+    featureKey: "profile_social_enabled",
+    message: "社交功能当前阶段未开放",
+  });
+}
+
 router.post("/request", authRequired, (req, res) => {
+  if (!isFeatureEnabled("profile_social_enabled", true)) {
+    return rejectFeatureDisabled(res);
+  }
   const schema = z.object({
     toUserId: z.string().uuid(),
     message: z.string().max(120).optional(),
@@ -58,6 +70,9 @@ router.post("/request", authRequired, (req, res) => {
 });
 
 router.delete("/request/:id", authRequired, (req, res) => {
+  if (!isFeatureEnabled("profile_social_enabled", true)) {
+    return rejectFeatureDisabled(res);
+  }
   const requestId = req.params.id;
   const target = db
     .prepare(
@@ -83,6 +98,9 @@ router.delete("/request/:id", authRequired, (req, res) => {
 });
 
 router.post("/request/:id/respond", authRequired, (req, res) => {
+  if (!isFeatureEnabled("profile_social_enabled", true)) {
+    return rejectFeatureDisabled(res);
+  }
   const schema = z.object({
     action: z.enum(["accept", "reject"]),
   });
@@ -131,6 +149,15 @@ router.post("/request/:id/respond", authRequired, (req, res) => {
 });
 
 router.get("/", authRequired, (req, res) => {
+  if (!isFeatureEnabled("profile_social_enabled", true)) {
+    return res.json({
+      friends: [],
+      incomingRequests: [],
+      outgoingRequests: [],
+      featureDisabled: true,
+      featureKey: "profile_social_enabled",
+    });
+  }
   const friends = db
     .prepare(
       `

@@ -3,6 +3,11 @@
     token: sessionStorage.getItem("admin_access_token") || "",
     me: null,
     refreshTimer: null,
+    activePanel: "overview",
+    featureFlags: [],
+    featureModules: [],
+    featureStage: null,
+    featurePresets: [],
   };
 
   function $(id) {
@@ -47,8 +52,10 @@
       ["DAU", overview.dau],
       ["MAU", overview.mau],
       ["总用户", overview.totalUsers],
+      ["群组总量", overview.totalGroups],
+      ["动态总量", overview.totalPosts],
+      ["消息总量", overview.totalMessages],
       ["今日新增", overview.newUsersToday],
-      ["本月新增", overview.newUsersThisMonth],
       ["待审核动态", overview.pendingPosts],
       ["待审核媒体", overview.pendingMedia],
       ["待处理举报", overview.openReports],
@@ -89,26 +96,179 @@
     return "普通";
   }
 
-  function opButton(label, action, payload) {
+  function opButton(label, action, payload, className) {
     const encoded = encodeURIComponent(JSON.stringify(payload || {}));
-    return `<button data-action="${action}" data-payload="${encoded}">${escapeHtml(label)}</button>`;
+    return `<button class="${escapeHtml(className || "")}" data-action="${action}" data-payload="${encoded}">${escapeHtml(
+      label
+    )}</button>`;
   }
 
   function bindActionButtons(containerId, handler) {
     const container = $(containerId);
+    if (!container) return;
     container.querySelectorAll("button[data-action]").forEach((button) => {
       button.onclick = async () => {
         const action = button.dataset.action;
         const payload = JSON.parse(decodeURIComponent(button.dataset.payload || "%7B%7D"));
         try {
           await handler(action, payload, button);
-          await refreshActiveTab();
+          await refreshActivePanel();
           await loadOverview();
         } catch (err) {
           alert(`操作失败: ${err.message}`);
         }
       };
     });
+  }
+
+  function renderStageSummary() {
+    const stage = state.featureStage || {};
+    const text = `${stage.stageLabel || "未知阶段"} (${stage.stageKey || "n/a"})`;
+    $("feature-stage-meta").textContent = `当前策略：${text}`;
+    $("overview-stage").textContent = `开关阶段：${text}`;
+  }
+
+  function renderPresetButtons() {
+    $("preset-actions").innerHTML = (state.featurePresets || [])
+      .map((item) =>
+        opButton(
+          item.label,
+          "apply_preset",
+          { presetKey: item.key, presetLabel: item.label },
+          "stage-btn tiny-btn"
+        )
+      )
+      .join("");
+    bindActionButtons("preset-actions", async (action, payload) => {
+      if (action !== "apply_preset") return;
+      const ok = window.confirm(`确认应用预设：${payload.presetLabel} ?`);
+      if (!ok) return;
+      await api("/feature-flags/apply-preset", {
+        method: "POST",
+        body: { presetKey: payload.presetKey },
+      });
+      await loadFeatureFlags();
+      await loadFeatureAudit();
+      await loadMockDataSetting();
+    });
+  }
+
+  function renderFeatureFlagRows() {
+    const keyword = $("flag-keyword").value.trim().toLowerCase();
+    const moduleFilter = $("flag-module-filter").value;
+    const items = (state.featureFlags || []).filter((item) => {
+      if (moduleFilter !== "all" && item.module !== moduleFilter) {
+        return false;
+      }
+      if (!keyword) return true;
+      const fields = [
+        item.key,
+        item.label,
+        item.moduleLabel,
+        item.page,
+        item.control,
+        item.description,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return fields.includes(keyword);
+    });
+
+    $("feature-flags-body").innerHTML = items
+      .map((item) => {
+        const statusClass = item.enabled ? "on" : "off";
+        return `
+          <tr>
+            <td>${escapeHtml(item.moduleLabel)}</td>
+            <td>
+              <div>${escapeHtml(item.page)}</div>
+              <div class="muted">${escapeHtml(item.control)}</div>
+            </td>
+            <td><code>${escapeHtml(item.key)}</code></td>
+            <td>
+              <div>${escapeHtml(item.label)}</div>
+              <div class="cell-note">${escapeHtml(item.description)}</div>
+            </td>
+            <td><span class="flag-status ${statusClass}">${item.enabled ? "已开启" : "已关闭"}</span></td>
+            <td>
+              ${opButton(item.enabled ? "关闭" : "开启", "feature_toggle", {
+                key: item.key,
+                enabled: !item.enabled,
+              })}
+            </td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    bindActionButtons("feature-flags-body", async (action, payload) => {
+      if (action !== "feature_toggle") return;
+      await api(`/feature-flags/${encodeURIComponent(payload.key)}`, {
+        method: "POST",
+        body: {
+          enabled: Boolean(payload.enabled),
+        },
+      });
+      await loadFeatureFlags();
+      await loadFeatureAudit();
+      await loadMockDataSetting();
+    });
+  }
+
+  function renderFeatureModules() {
+    const moduleSelect = $("flag-module-filter");
+    const current = moduleSelect.value || "all";
+    moduleSelect.innerHTML = `<option value="all">全部模块</option>${(state.featureModules || [])
+      .map((item) => `<option value="${escapeHtml(item.module)}">${escapeHtml(item.moduleLabel)}</option>`)
+      .join("")}`;
+    if ([...moduleSelect.options].some((option) => option.value === current)) {
+      moduleSelect.value = current;
+    }
+  }
+
+  async function loadFeatureFlags() {
+    const data = await api("/feature-flags");
+    state.featureFlags = data.items || [];
+    state.featureModules = data.modules || [];
+    state.featureStage = data.stage || null;
+    state.featurePresets = data.presets || [];
+    renderFeatureModules();
+    renderStageSummary();
+    renderPresetButtons();
+    renderFeatureFlagRows();
+  }
+
+  function describeAuditAction(item) {
+    if (item.actionType === "apply_feature_preset") {
+      return "应用阶段预设";
+    }
+    if (item.actionType === "toggle_mock_data") {
+      return "切换Mock数据";
+    }
+    if (item.actionType === "update_feature_flag") {
+      return "更新功能开关";
+    }
+    return item.actionType || "unknown";
+  }
+
+  async function loadFeatureAudit() {
+    const data = await api("/feature-flags/audit?limit=50");
+    $("feature-audit-body").innerHTML = (data.items || [])
+      .map((item) => {
+        const payload = item.payload || {};
+        const adminId = payload.adminId || "-";
+        const details = escapeHtml(JSON.stringify(payload.payload || {}));
+        return `
+          <tr>
+            <td>${escapeHtml(item.createdAt)}</td>
+            <td>${escapeHtml(describeAuditAction(item))}</td>
+            <td>${escapeHtml(item.targetId || "-")}</td>
+            <td>${escapeHtml(adminId)}</td>
+            <td><code>${details}</code></td>
+          </tr>
+        `;
+      })
+      .join("");
   }
 
   async function loadOverview() {
@@ -402,17 +562,33 @@
     });
   }
 
-  function currentTab() {
-    const active = document.querySelector(".tab.active");
-    return active ? active.dataset.tab : "users";
+  function setActivePanel(panelKey) {
+    state.activePanel = panelKey;
+    document.querySelectorAll(".menu-item-btn").forEach((button) => {
+      button.classList.toggle("active", button.dataset.panelTarget === panelKey);
+    });
+    document.querySelectorAll(".content-panel").forEach((panel) => {
+      panel.classList.toggle("visible", panel.dataset.panel === panelKey);
+    });
   }
 
-  async function refreshActiveTab() {
-    const tab = currentTab();
-    if (tab === "users") return loadUsers();
-    if (tab === "media") return loadMedia();
-    if (tab === "posts") return loadPosts();
-    return loadReports();
+  async function refreshActivePanel() {
+    if (state.activePanel === "users") return loadUsers();
+    if (state.activePanel === "media") return loadMedia();
+    if (state.activePanel === "posts") return loadPosts();
+    if (state.activePanel === "reports") return loadReports();
+    if (state.activePanel === "feature-flags") {
+      await loadFeatureFlags();
+      return loadFeatureAudit();
+    }
+    if (state.activePanel === "overview") {
+      await loadMockDataSetting();
+      if (!state.featureStage) {
+        await loadFeatureFlags();
+      } else {
+        renderStageSummary();
+      }
+    }
   }
 
   async function bootstrapDashboard() {
@@ -421,7 +597,8 @@
     $("admin-meta").textContent = `当前登录: ${state.me.username} (${state.me.role})`;
     await loadOverview();
     await loadMockDataSetting();
-    await refreshActiveTab();
+    await loadFeatureFlags();
+    await refreshActivePanel();
 
     if (state.refreshTimer) {
       clearInterval(state.refreshTimer);
@@ -452,6 +629,10 @@
   function logout() {
     state.token = "";
     state.me = null;
+    state.featureFlags = [];
+    state.featureModules = [];
+    state.featureStage = null;
+    state.featurePresets = [];
     sessionStorage.removeItem("admin_access_token");
     if (state.refreshTimer) {
       clearInterval(state.refreshTimer);
@@ -460,16 +641,13 @@
     setPanel(false);
   }
 
-  function setupTabs() {
-    document.querySelectorAll(".tab").forEach((button) => {
+  function setupMenuNavigation() {
+    document.querySelectorAll(".menu-item-btn").forEach((button) => {
       button.addEventListener("click", async () => {
-        document.querySelectorAll(".tab").forEach((btn) => btn.classList.remove("active"));
-        button.classList.add("active");
-        const tab = button.dataset.tab;
-        document
-          .querySelectorAll(".tab-panel")
-          .forEach((panel) => panel.classList.toggle("visible", panel.dataset.panel === tab));
-        await refreshActiveTab();
+        const panelKey = button.dataset.panelTarget;
+        if (!panelKey) return;
+        setActivePanel(panelKey);
+        await refreshActivePanel();
       });
     });
   }
@@ -507,7 +685,7 @@
     $("refresh-btn").addEventListener("click", async () => {
       await loadOverview();
       await loadMockDataSetting();
-      await refreshActiveTab();
+      await refreshActivePanel();
     });
 
     $("mock-data-toggle").addEventListener("change", async (event) => {
@@ -519,6 +697,10 @@
         });
         $("mock-data-toggle").checked = Boolean(data.enabled);
         $("mock-data-label").textContent = data.enabled ? "开启" : "关闭";
+        await loadFeatureFlags();
+        if (state.activePanel === "feature-flags") {
+          await loadFeatureAudit();
+        }
       } catch (err) {
         event.target.checked = !enabled;
         $("mock-data-label").textContent = event.target.checked ? "开启" : "关闭";
@@ -530,11 +712,14 @@
     $("load-media-btn").addEventListener("click", loadMedia);
     $("load-posts-btn").addEventListener("click", loadPosts);
     $("load-reports-btn").addEventListener("click", loadReports);
+    $("load-flags-btn").addEventListener("click", renderFeatureFlagRows);
+    $("flag-module-filter").addEventListener("change", renderFeatureFlagRows);
   }
 
   async function init() {
-    setupTabs();
+    setupMenuNavigation();
     bindEvents();
+    setActivePanel(state.activePanel);
     if (!state.token) {
       setPanel(false);
       return;

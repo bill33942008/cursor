@@ -8,6 +8,7 @@ const { parsePagination } = require("../utils");
 const { moderateText } = require("../services/moderation");
 const { broadcastGroupMessage } = require("../realtime/hub");
 const { isMockDataEnabled } = require("../services/appSettings");
+const { isFeatureEnabled } = require("../services/featureFlags");
 const { getMockGroups } = require("../services/mockData");
 const { getUserFeaturePolicy } = require("../services/profilePolicy");
 
@@ -21,6 +22,14 @@ const groupSchema = z.object({
   description: z.string().max(240).optional(),
   expiresAt: z.string().datetime().optional(),
 });
+
+function rejectFeatureDisabled(res, featureKey, message) {
+  return res.status(403).json({
+    code: "FEATURE_DISABLED",
+    featureKey,
+    message: message || "feature is disabled",
+  });
+}
 
 function getUserOpenId(userId) {
   const user = db.prepare("SELECT wx_openid AS openid FROM users WHERE id = ?").get(userId);
@@ -84,6 +93,9 @@ function getCurrentGroupForUser(userId) {
 }
 
 router.post("/", authRequired, async (req, res, next) => {
+  if (!isFeatureEnabled("groups_create_enabled", true)) {
+    return rejectFeatureDisabled(res, "groups_create_enabled", "创建群组当前阶段未开放");
+  }
   const parsed = groupSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ message: "invalid payload", errors: parsed.error.issues });
@@ -155,6 +167,15 @@ router.post("/", authRequired, async (req, res, next) => {
 
 router.get("/discover", optionalAuth, (req, res) => {
   const { limit, offset } = parsePagination(req.query);
+  if (!isFeatureEnabled("groups_entry_visible", true)) {
+    return res.json({
+      items: [],
+      pagination: { limit, offset },
+      mockDataEnabled: false,
+      featureDisabled: true,
+      featureKey: "groups_entry_visible",
+    });
+  }
   const category = req.query.category;
   const destination = req.query.destination;
   const keyword = String(req.query.keyword || "").trim();
@@ -207,11 +228,20 @@ router.get("/discover", optionalAuth, (req, res) => {
 });
 
 router.get("/current", authRequired, (req, res) => {
+  if (!isFeatureEnabled("groups_entry_visible", true)) {
+    return res.json({ group: null, featureDisabled: true, featureKey: "groups_entry_visible" });
+  }
   const group = getCurrentGroupForUser(req.user.id);
   return res.json({ group });
 });
 
 router.post("/:id/join", authRequired, (req, res) => {
+  if (!isFeatureEnabled("groups_join_enabled", true)) {
+    return rejectFeatureDisabled(res, "groups_join_enabled", "加入群组当前阶段未开放");
+  }
+  if (!isFeatureEnabled("groups_chat_enabled", true)) {
+    return rejectFeatureDisabled(res, "groups_chat_enabled", "群聊功能当前阶段未开放");
+  }
   const groupId = req.params.id;
   const group = db
     .prepare("SELECT id, status, moderation_status AS moderationStatus FROM groups_table WHERE id = ?")
@@ -293,6 +323,9 @@ router.post("/:id/disband", authRequired, (req, res) => {
 });
 
 router.get("/:id/messages", authRequired, (req, res) => {
+  if (!isFeatureEnabled("groups_chat_enabled", true)) {
+    return rejectFeatureDisabled(res, "groups_chat_enabled", "群聊功能当前阶段未开放");
+  }
   const groupId = req.params.id;
   const membership = db
     .prepare("SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?")
@@ -333,6 +366,9 @@ router.get("/:id/messages", authRequired, (req, res) => {
 });
 
 router.post("/:id/messages", authRequired, async (req, res, next) => {
+  if (!isFeatureEnabled("groups_chat_enabled", true)) {
+    return rejectFeatureDisabled(res, "groups_chat_enabled", "群聊功能当前阶段未开放");
+  }
   const groupId = req.params.id;
   const schema = z.object({
     content: z.string().min(1).max(500),
@@ -341,6 +377,9 @@ router.post("/:id/messages", authRequired, async (req, res, next) => {
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ message: "invalid payload", errors: parsed.error.issues });
+  }
+  if (parsed.data.isAnonymous && !isFeatureEnabled("groups_anonymous_chat_enabled", true)) {
+    return rejectFeatureDisabled(res, "groups_anonymous_chat_enabled", "群聊匿名发送当前阶段未开放");
   }
 
   const membership = db

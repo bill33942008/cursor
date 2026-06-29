@@ -24,10 +24,21 @@ Page({
       routeCode: "",
       description: "",
     },
+    groupsEntryVisible: true,
+    groupsJoinEnabled: true,
+    groupsCreateEnabled: true,
+    groupsChatEnabled: true,
   },
 
-  onShow() {
+  async onShow() {
+    await app.loadFeatureFlags();
+    this.applyFeatureFlags();
     this.syncTabBar();
+    if (!this.data.groupsEntryVisible) {
+      wx.showToast({ title: "当前阶段未开放群组入口", icon: "none" });
+      wx.switchTab({ url: "/pages/square/square" });
+      return;
+    }
     this.loadGroups();
     this.loadCurrentGroup();
   },
@@ -42,11 +53,21 @@ Page({
 
   syncTabBar() {
     app.globalData.currentTabIndex = 2;
+    app.globalData.currentTabPath = "/pages/groups/groups";
     if (typeof this.getTabBar !== "function") return;
     const tabBar = this.getTabBar();
     if (tabBar && typeof tabBar.setData === "function") {
       tabBar.setData({ selected: 2 });
     }
+  },
+
+  applyFeatureFlags() {
+    this.setData({
+      groupsEntryVisible: app.isFeatureEnabled("groups_entry_visible", true),
+      groupsJoinEnabled: app.isFeatureEnabled("groups_join_enabled", true),
+      groupsCreateEnabled: app.isFeatureEnabled("groups_create_enabled", true),
+      groupsChatEnabled: app.isFeatureEnabled("groups_chat_enabled", true),
+    });
   },
 
   onDestinationKeywordInput(e) {
@@ -77,6 +98,10 @@ Page({
   },
 
   async loadGroups() {
+    if (!this.data.groupsEntryVisible) {
+      this.setData({ groups: [] });
+      return;
+    }
     this.setData({ loading: true });
     try {
       const kw = encodeURIComponent(this.data.destinationKeyword.trim());
@@ -137,6 +162,10 @@ Page({
   },
 
   async enterChat(e) {
+    if (!this.data.groupsJoinEnabled || !this.data.groupsChatEnabled) {
+      wx.showToast({ title: "当前阶段未开放群聊能力", icon: "none" });
+      return;
+    }
     const groupId = e.currentTarget.dataset.id;
     const groupName = e.currentTarget.dataset.name || "群聊";
     const allowed = await this.ensureFeatureAccess("进入群组聊天");
@@ -161,10 +190,18 @@ Page({
   },
 
   toggleCreate() {
+    if (!this.data.groupsCreateEnabled) {
+      wx.showToast({ title: "当前阶段未开放建群能力", icon: "none" });
+      return;
+    }
     this.setData({ creating: !this.data.creating });
   },
 
   async createGroup() {
+    if (!this.data.groupsCreateEnabled) {
+      wx.showToast({ title: "当前阶段未开放建群能力", icon: "none" });
+      return;
+    }
     const allowed = await this.ensureFeatureAccess("创建群组");
     if (!allowed) {
       return;

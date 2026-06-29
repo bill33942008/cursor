@@ -39,7 +39,8 @@
     <view class="composer-actions">
       <view class="left-actions">
         <button class="emoji-btn" size="mini" bindtap="toggleEmojiPanel">{{emojiPanelVisible ? "收起表情" : "😀 表情"}}</button>
-        <text class="anon-tag">{{isAnonymous ? "🕶️ 匿名发送中" : "实名发送"}}</text>
+        <text wx:if="{{groupsAnonymousEnabled}}" class="anon-tag">{{isAnonymous ? "🕶️ 匿名发送中" : "实名发送"}}</text>
+        <text wx:else class="anon-tag">实名发送</text>
       </view>
       <button size="mini" class="btn-primary send-btn" bindtap="sendMessage">发送</button>
     </view>

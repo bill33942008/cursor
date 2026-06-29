@@ -15,7 +15,16 @@ const {
 const { getActivityStats } = require("../services/activity");
 const { getRealtimePresenceStats } = require("../realtime/hub");
 const { parsePagination } = require("../utils");
-const { isMockDataEnabled, setMockDataEnabled } = require("../services/appSettings");
+const { isMockDataEnabled } = require("../services/appSettings");
+const {
+  applyFeatureStagePreset,
+  getFeatureFlagCatalog,
+  getFeatureFlagDefinition,
+  getFeatureModules,
+  getFeatureStagePresets,
+  getFeatureStageSummary,
+  setFeatureFlagValue,
+} = require("../services/featureFlags");
 const {
   buildVipExpiresAt,
   clampFeatureValue,
@@ -256,7 +265,7 @@ router.post("/settings/mock-data", (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ message: "invalid payload", errors: parsed.error.issues });
   }
-  setMockDataEnabled(parsed.data.enabled);
+  setFeatureFlagValue("mock_data_enabled", parsed.data.enabled);
   logAdminAction({
     actionType: "toggle_mock_data",
     targetType: "app_setting",
@@ -265,6 +274,104 @@ router.post("/settings/mock-data", (req, res) => {
     adminId: req.admin.id,
   });
   return res.json({ success: true, enabled: isMockDataEnabled() });
+});
+
+router.get("/feature-flags", (_req, res) => {
+  const catalog = getFeatureFlagCatalog();
+  res.json({
+    items: catalog,
+    modules: getFeatureModules(),
+    stage: getFeatureStageSummary(),
+    presets: getFeatureStagePresets(),
+  });
+});
+
+router.post("/feature-flags/:key", (req, res) => {
+  const schema = z.object({
+    enabled: z.boolean(),
+  });
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: "invalid payload", errors: parsed.error.issues });
+  }
+  const key = String(req.params.key || "").trim();
+  const definition = getFeatureFlagDefinition(key);
+  if (!definition) {
+    return res.status(404).json({ message: "feature flag not found" });
+  }
+  const enabled = setFeatureFlagValue(key, parsed.data.enabled);
+  logAdminAction({
+    actionType: "update_feature_flag",
+    targetType: "feature_flag",
+    targetId: key,
+    payload: {
+      enabled,
+      module: definition.module,
+    },
+    adminId: req.admin.id,
+  });
+  const updated = getFeatureFlagCatalog().find((item) => item.key === key) || null;
+  return res.json({ success: true, item: updated, stage: getFeatureStageSummary() });
+});
+
+router.post("/feature-flags/apply-preset", (req, res) => {
+  const schema = z.object({
+    presetKey: z.string().min(1).max(64),
+  });
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: "invalid payload", errors: parsed.error.issues });
+  }
+  try {
+    const result = applyFeatureStagePreset(parsed.data.presetKey);
+    logAdminAction({
+      actionType: "apply_feature_preset",
+      targetType: "feature_stage",
+      targetId: result.stageKey,
+      payload: {
+        stageLabel: result.stageLabel,
+      },
+      adminId: req.admin.id,
+    });
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    return res.status(400).json({ message: err.message || "apply preset failed" });
+  }
+});
+
+router.get("/feature-flags/audit", (req, res) => {
+  const limit = Math.min(Math.max(Number(req.query.limit) || 40, 1), 200);
+  const rows = db
+    .prepare(
+      `
+      SELECT
+        id,
+        action_type AS actionType,
+        target_type AS targetType,
+        target_id AS targetId,
+        payload_json AS payloadJson,
+        created_at AS createdAt
+      FROM admin_actions
+      WHERE action_type IN ('update_feature_flag', 'apply_feature_preset', 'toggle_mock_data')
+      ORDER BY created_at DESC
+      LIMIT ?
+      `
+    )
+    .all(limit)
+    .map((item) => {
+      let payload = null;
+      try {
+        payload = JSON.parse(item.payloadJson || "{}");
+      } catch (_err) {
+        payload = null;
+      }
+      return {
+        ...item,
+        payload,
+        payloadJson: undefined,
+      };
+    });
+  return res.json({ items: rows, limit });
 });
 
 router.get("/trends", (req, res) => {

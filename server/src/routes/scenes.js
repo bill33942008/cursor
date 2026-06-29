@@ -2,6 +2,7 @@ const express = require("express");
 const { optionalAuth } = require("../middleware/optionalAuth");
 const { db } = require("../db");
 const { isMockDataEnabled } = require("../services/appSettings");
+const { isFeatureEnabled } = require("../services/featureFlags");
 const { getMockSceneTracks } = require("../services/mockData");
 const { getTierFeatureDefaults, getUserFeaturePolicy } = require("../services/profilePolicy");
 
@@ -151,6 +152,13 @@ function buildSceneTracks(rows) {
 }
 
 router.get("/vertical-feed", optionalAuth, (req, res) => {
+  if (!isFeatureEnabled("square_scene_theater_visible", true)) {
+    return res.status(403).json({
+      code: "FEATURE_DISABLED",
+      featureKey: "square_scene_theater_visible",
+      message: "聚合剧场当前阶段未开放",
+    });
+  }
   const sceneType = String(req.query.sceneType || "all").trim();
   const keyword = String(req.query.keyword || "").trim();
   const limit = Math.min(Math.max(Number(req.query.limit) || 120, 10), 300);

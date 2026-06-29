@@ -90,7 +90,16 @@ Page({
     form: createDefaultForm(),
   },
 
-  onShow() {
+  async onShow() {
+    await app.loadFeatureFlags();
+    if (!app.isFeatureEnabled("timeline_manage_enabled", true)) {
+      wx.showToast({ title: "当前阶段未开放时间线管理", icon: "none" });
+      wx.navigateBack({
+        delta: 1,
+        fail: () => wx.switchTab({ url: "/pages/profile/profile" }),
+      });
+      return;
+    }
     this.loadTimelineData();
   },
 

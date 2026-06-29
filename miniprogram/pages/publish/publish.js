@@ -191,19 +191,35 @@ Page({
     departureWindow: "",
     mediaAssets: [],
     uploading: false,
+    publishEntryVisible: true,
+    publishSubmitEnabled: true,
   },
 
-  onShow() {
+  async onShow() {
+    await app.loadFeatureFlags();
+    this.applyFeatureFlags();
     this.syncTabBar();
+    if (!this.data.publishEntryVisible) {
+      wx.showToast({ title: "当前阶段未开放发布入口", icon: "none" });
+      wx.switchTab({ url: "/pages/square/square" });
+    }
   },
 
   syncTabBar() {
     app.globalData.currentTabIndex = 1;
+    app.globalData.currentTabPath = "/pages/publish/publish";
     if (typeof this.getTabBar !== "function") return;
     const tabBar = this.getTabBar();
     if (tabBar && typeof tabBar.setData === "function") {
       tabBar.setData({ selected: 1 });
     }
+  },
+
+  applyFeatureFlags() {
+    this.setData({
+      publishEntryVisible: app.isFeatureEnabled("publish_entry_visible", true),
+      publishSubmitEnabled: app.isFeatureEnabled("publish_submit_enabled", true),
+    });
   },
 
   onContentInput(e) {
@@ -283,6 +299,10 @@ Page({
   },
 
   async chooseMedia() {
+    if (!this.data.publishSubmitEnabled) {
+      wx.showToast({ title: "当前阶段未开放发布功能", icon: "none" });
+      return;
+    }
     if (this.data.uploading) return;
     if (this.data.mediaAssets.length >= 9) {
       wx.showToast({ title: "最多上传9个媒体文件", icon: "none" });
@@ -335,6 +355,10 @@ Page({
   },
 
   async submit() {
+    if (!this.data.publishSubmitEnabled) {
+      wx.showToast({ title: "当前阶段未开放发布功能", icon: "none" });
+      return;
+    }
     const allowed = await this.ensureFeatureAccess("发布动态");
     if (!allowed) {
       return;

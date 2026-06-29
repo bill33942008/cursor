@@ -7,6 +7,7 @@ const { optionalAuth } = require("../middleware/optionalAuth");
 const { parsePagination } = require("../utils");
 const { moderateText } = require("../services/moderation");
 const { isMockDataEnabled } = require("../services/appSettings");
+const { isFeatureEnabled } = require("../services/featureFlags");
 const { getMockSquarePosts } = require("../services/mockData");
 const { getUserFeaturePolicy } = require("../services/profilePolicy");
 
@@ -26,6 +27,14 @@ const commentSchema = z.object({
   parentCommentId: z.string().uuid().optional(),
   replyToUserId: z.string().uuid().optional(),
 });
+
+function rejectFeatureDisabled(res, featureKey, message) {
+  return res.status(403).json({
+    code: "FEATURE_DISABLED",
+    featureKey,
+    message: message || "feature is disabled",
+  });
+}
 
 function getUserOpenId(userId) {
   const user = db.prepare("SELECT wx_openid AS openid FROM users WHERE id = ?").get(userId);
@@ -69,6 +78,9 @@ function buildCommentTree(rows) {
 }
 
 router.post("/", authRequired, async (req, res, next) => {
+  if (!isFeatureEnabled("publish_submit_enabled", true)) {
+    return rejectFeatureDisabled(res, "publish_submit_enabled", "发布功能当前阶段未开放");
+  }
   const parsed = postSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ message: "invalid post payload", errors: parsed.error.issues });
@@ -169,6 +181,15 @@ router.post("/", authRequired, async (req, res, next) => {
 
 router.get("/square", optionalAuth, (req, res) => {
   const { limit, offset } = parsePagination(req.query);
+  if (!isFeatureEnabled("square_feed_visible", true)) {
+    return res.json({
+      items: [],
+      pagination: { limit, offset },
+      mockDataEnabled: false,
+      featureDisabled: true,
+      featureKey: "square_feed_visible",
+    });
+  }
   const viewerUserId = req.user?.id || "";
 
   const items = db
@@ -240,6 +261,9 @@ router.delete("/:id", authRequired, (req, res) => {
 });
 
 router.get("/:id/comments", authRequired, (req, res) => {
+  if (!isFeatureEnabled("square_comment_enabled", true)) {
+    return rejectFeatureDisabled(res, "square_comment_enabled", "评论功能当前阶段未开放");
+  }
   const postId = req.params.id;
   const { limit, offset } = parsePagination(req.query);
   const post = db.prepare("SELECT id FROM posts WHERE id = ?").get(postId);
@@ -280,6 +304,9 @@ router.get("/:id/comments", authRequired, (req, res) => {
 });
 
 router.post("/:id/comments", authRequired, async (req, res, next) => {
+  if (!isFeatureEnabled("square_comment_enabled", true)) {
+    return rejectFeatureDisabled(res, "square_comment_enabled", "评论功能当前阶段未开放");
+  }
   const postId = req.params.id;
   const parsed = commentSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -390,6 +417,9 @@ router.post("/:id/comments", authRequired, async (req, res, next) => {
 });
 
 router.post("/:id/like", authRequired, (req, res) => {
+  if (!isFeatureEnabled("square_like_enabled", true)) {
+    return rejectFeatureDisabled(res, "square_like_enabled", "点赞功能当前阶段未开放");
+  }
   const postId = req.params.id;
   const post = db.prepare("SELECT id FROM posts WHERE id = ?").get(postId);
   if (!post) {

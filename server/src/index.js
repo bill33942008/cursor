@@ -18,6 +18,7 @@ const mediaRoutes = require("./routes/media");
 const adminRoutes = require("./routes/admin");
 const userRoutes = require("./routes/users");
 const sceneRoutes = require("./routes/scenes");
+const systemRoutes = require("./routes/system");
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -78,6 +79,7 @@ async function bootstrap() {
   app.use("/api/media", mediaRoutes);
   app.use("/api/users", userRoutes);
   app.use("/api/scenes", sceneRoutes);
+  app.use("/api/system", systemRoutes);
   app.use("/api/admin", adminRoutes);
 
   app.use((err, _req, res, _next) => {
