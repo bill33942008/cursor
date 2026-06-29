@@ -286,6 +286,31 @@ router.get("/feature-flags", (_req, res) => {
   });
 });
 
+router.post("/feature-flags/apply-preset", (req, res) => {
+  const schema = z.object({
+    presetKey: z.string().min(1).max(64),
+  });
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: "invalid payload", errors: parsed.error.issues });
+  }
+  try {
+    const result = applyFeatureStagePreset(parsed.data.presetKey);
+    logAdminAction({
+      actionType: "apply_feature_preset",
+      targetType: "feature_stage",
+      targetId: result.stageKey,
+      payload: {
+        stageLabel: result.stageLabel,
+      },
+      adminId: req.admin.id,
+    });
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    return res.status(400).json({ message: err.message || "apply preset failed" });
+  }
+});
+
 router.post("/feature-flags/:key", (req, res) => {
   const schema = z.object({
     enabled: z.boolean(),
@@ -312,31 +337,6 @@ router.post("/feature-flags/:key", (req, res) => {
   });
   const updated = getFeatureFlagCatalog().find((item) => item.key === key) || null;
   return res.json({ success: true, item: updated, stage: getFeatureStageSummary() });
-});
-
-router.post("/feature-flags/apply-preset", (req, res) => {
-  const schema = z.object({
-    presetKey: z.string().min(1).max(64),
-  });
-  const parsed = schema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ message: "invalid payload", errors: parsed.error.issues });
-  }
-  try {
-    const result = applyFeatureStagePreset(parsed.data.presetKey);
-    logAdminAction({
-      actionType: "apply_feature_preset",
-      targetType: "feature_stage",
-      targetId: result.stageKey,
-      payload: {
-        stageLabel: result.stageLabel,
-      },
-      adminId: req.admin.id,
-    });
-    return res.json({ success: true, ...result });
-  } catch (err) {
-    return res.status(400).json({ message: err.message || "apply preset failed" });
-  }
 });
 
 router.get("/feature-flags/audit", (req, res) => {
