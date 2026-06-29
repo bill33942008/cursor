@@ -1,0 +1,12 @@
+<view class="splash-page" bindtap="retryAuthorization">
+  <image class="splash-bg" src="/assets/launch/splash-cover.png" mode="aspectFill" />
+  <view class="splash-mask"></view>
+
+  <view class="startup-bottom">
+    <view class="loading-row">
+      <view class="loading-dot"></view>
+      <text class="loading-text">系统启动中</text>
+    </view>
+    <text wx:if="{{authHint}}" class="hint-text">{{authHint}}</text>
+  </view>
+</view>

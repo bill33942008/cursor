@@ -1,0 +1,79 @@
+<view class="page-wrap">
+  <view class="hero-card">
+    <view class="hero-title">同行群组</view>
+    <view class="hero-subtitle">按目的地/交通方式快速找到同路旅友</view>
+    <view class="hero-pill-row">
+      <text class="hero-pill">高铁</text>
+      <text class="hero-pill">航班</text>
+      <text class="hero-pill">自驾</text>
+    </view>
+  </view>
+
+  <view class="card filter-card">
+    <view class="section-title">搜索群组</view>
+    <input class="input-box" placeholder="输入目的地，如 北京 / 上海" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{destinationKeyword}}" bindinput="onDestinationKeywordInput" />
+    <view class="actions-inline">
+      <button class="icon-btn" size="mini" hover-class="pressable-hover" bindtap="loadGroups">搜索</button>
+      <button wx:if="{{groupsCreateEnabled}}" class="btn-ghost create-toggle" size="mini" hover-class="pressable-hover" bindtap="toggleCreate">{{creating ? "收起建群" : "我要建群"}}</button>
+    </view>
+  </view>
+
+  <view class="card create-card" wx:if="{{creating}}">
+    <view class="section-title">创建群组</view>
+    <input class="input-box" placeholder="群名称（必填）" placeholder-style="color:#98a2b3;font-size:27rpx;" data-key="name" value="{{createForm.name}}" bindinput="onCreateFieldInput" />
+    <picker mode="selector" range="{{categoryOptions}}" range-key="label" value="{{categoryIndex}}" bindchange="onCategoryChange">
+      <view class="picker-box">群分类：{{categoryOptions[categoryIndex].label}}</view>
+    </picker>
+    <input class="input-box" placeholder="目的地（可选）" placeholder-style="color:#98a2b3;font-size:27rpx;" data-key="destination" value="{{createForm.destination}}" bindinput="onCreateFieldInput" />
+    <input class="input-box" placeholder="航班/车次（可选）" placeholder-style="color:#98a2b3;font-size:27rpx;" data-key="routeCode" value="{{createForm.routeCode}}" bindinput="onCreateFieldInput" />
+    <input class="input-box" placeholder="群描述（可选）" placeholder-style="color:#98a2b3;font-size:27rpx;" data-key="description" value="{{createForm.description}}" bindinput="onCreateFieldInput" />
+    <button class="btn-primary submit-btn" bindtap="createGroup">发布群组</button>
+  </view>
+
+  <view wx:if="{{loading}}" class="card group-skeleton-card">
+    <block wx:for="{{skeletonRows}}" wx:key="*this">
+      <view class="group-skeleton-item">
+        <view class="skeleton skeleton-row lg"></view>
+        <view class="skeleton skeleton-row"></view>
+        <view class="skeleton skeleton-row sm"></view>
+      </view>
+    </block>
+  </view>
+
+  <view wx:if="{{!loading && groups.length === 0}}" class="card state-card">
+    <text class="state-icon">暂无</text>
+    <text class="section-title">没有找到匹配群组</text>
+    <text class="subtitle">试试切换目的地关键词，或自己创建一个</text>
+  </view>
+
+  <block wx:for="{{groups}}" wx:key="id">
+    <view class="group-card pressable list-appear" hover-class="pressable-hover">
+      <view class="row-between">
+        <text class="group-name">{{item.name}}</text>
+        <text class="member-count">{{item.memberCount}} 人</text>
+      </view>
+      <view class="group-tags">
+        <text class="chip">{{item.categoryLabel}}</text>
+        <text class="chip">{{item.destinationDisplay}}</text>
+      </view>
+      <text class="subtitle owner">群主：{{item.ownerNickname}}</text>
+      <view class="group-actions">
+        <button wx:if="{{groupsJoinEnabled && groupsChatEnabled}}" class="btn-primary chat-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="enterChat">进入群聊（即加入）</button>
+        <button wx:else class="btn-ghost chat-btn" size="mini" hover-class="pressable-hover">当前阶段未开放</button>
+      </view>
+    </view>
+  </block>
+
+  <view wx:if="{{groupsChatEnabled && currentGroup}}" class="current-group-fab pressable" hover-class="pressable-hover" bindtap="openCurrentGroup">
+    <view class="current-group-bars">
+      <text class="bar b1"></text>
+      <text class="bar b2"></text>
+      <text class="bar b3"></text>
+    </view>
+    <view class="current-group-main">
+      <text class="fab-title">当前群组</text>
+      <text class="fab-name">{{currentGroup.name}}</text>
+      <text class="fab-meta">24h {{currentGroup.messageCount24hDisplay}} 条消息</text>
+    </view>
+  </view>
+</view>

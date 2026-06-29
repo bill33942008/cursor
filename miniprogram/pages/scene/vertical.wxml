@@ -1,0 +1,144 @@
+<view class="page-wrap scene-page">
+  <view class="hero-card">
+    <view class="hero-title">🎬 同程聚合剧场</view>
+    <view class="hero-subtitle">同车次 / 同航班 / 同景点，沉浸式浏览广场信息</view>
+    <text wx:if="{{mockDataEnabled}}" class="hero-pill">测试数据模式已开启</text>
+    <text wx:if="{{membershipTier !== 'normal'}}" class="hero-pill">{{memberTierLabel}}权益：已解锁3天/7天聚合视窗</text>
+  </view>
+
+  <view class="card">
+    <view class="scene-type-row">
+      <block wx:for="{{sceneTypeOptions}}" wx:key="value">
+        <view
+          class="scene-type-chip {{sceneType === item.value ? 'active' : ''}}"
+          data-value="{{item.value}}"
+          bindtap="onSceneTypeChange"
+        >
+          {{item.label}}
+        </view>
+      </block>
+    </view>
+    <view class="window-row">
+      <block wx:for="{{windowOptions}}" wx:key="value">
+        <view
+          class="window-chip {{windowMinutes === item.value ? 'active' : ''}}"
+          data-value="{{item.value}}"
+          bindtap="onWindowChange"
+        >
+          {{item.label}}
+        </view>
+      </block>
+    </view>
+    <text wx:if="{{membershipTier === 'normal'}}" class="subtitle">普通用户可查看近24小时，升级VIP/SVIP可解锁近3天/7天聚合</text>
+    <view class="search-row">
+      <input
+        class="search-input"
+        placeholder="搜索车次 / 航班 / 目的地"
+        placeholder-style="color:#98a2b3;font-size:24rpx;"
+        value="{{keyword}}"
+        bindinput="onKeywordInput"
+      />
+      <button class="icon-btn" size="mini" bindtap="onSearchTap">搜索</button>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="card state-card">
+    <text class="subtitle">场景聚合中...</text>
+  </view>
+
+  <view wx:if="{{error}}" class="card state-card">
+    <text class="state-icon">⚠️</text>
+    <text class="section-title">加载失败</text>
+    <text class="subtitle">{{error}}</text>
+  </view>
+
+  <view wx:if="{{!loading && !error && tracks.length === 0}}" class="card state-card">
+    <text class="state-icon">🧭</text>
+    <text class="section-title">暂无可聚合场景</text>
+    <text class="subtitle">发布更多同程信息后，这里会自动生成剧场</text>
+  </view>
+
+  <block wx:if="{{!loading && !error && tracks.length > 0}}">
+    <scroll-view scroll-x class="scene-list">
+      <view class="scene-list-inner">
+        <block wx:for="{{tracks}}" wx:key="sceneId">
+          <view
+            class="scene-pill {{activeSceneIndex === index ? 'active' : ''}}"
+            data-index="{{index}}"
+            bindtap="onSelectScene"
+          >
+            <text class="scene-pill-title">{{item.title}}</text>
+            <text class="scene-pill-meta">{{item.posts.length}} 条</text>
+          </view>
+        </block>
+      </view>
+    </scroll-view>
+
+    <block wx:for="{{tracks}}" wx:key="sceneId">
+      <view wx:if="{{activeSceneIndex === index}}" class="card stage-card">
+        <view class="row-between stage-head">
+          <view>
+            <view class="section-title">{{item.title}}</view>
+            <text class="subtitle">{{item.subtitle}}</text>
+          </view>
+          <text class="scene-index">{{index + 1}} / {{tracks.length}}</text>
+        </view>
+
+        <view wx:if="{{item.sceneType === 'transport'}}" class="transport-stage">
+          <view class="stage-cover-wrap">
+            <image class="stage-cover-image train-cover" src="{{item.coverImage}}" mode="aspectFit" />
+          </view>
+          <view class="train-track">
+            <view class="train-body">
+              <block wx:for="{{item.avatarWindows}}" wx:key="index" wx:for-item="windowAvatar">
+                <view class="train-window avatar-bob">
+                  <image class="window-avatar" src="{{windowAvatar.avatarUrl}}" mode="aspectFill" />
+                </view>
+              </block>
+            </view>
+          </view>
+          <view class="prompt-bubble {{item.stagePhase === 'post' ? 'visible' : 'hidden'}}">{{item.promptText}}</view>
+        </view>
+
+        <view wx:else class="scenic-stage">
+          <view class="scenic-illustration">
+            <image class="stage-cover-image scenic-cover" src="{{item.coverImage}}" mode="aspectFit" />
+          </view>
+          <view class="scenic-avatar-orbit">
+            <block wx:for="{{item.avatarWindows}}" wx:key="index" wx:for-item="orbitAvatar">
+              <image class="orbit-avatar avatar-bob" src="{{orbitAvatar.avatarUrl}}" mode="aspectFill" />
+            </block>
+          </view>
+          <view class="prompt-bubble {{item.stagePhase === 'post' ? 'visible' : 'hidden'}}">{{item.promptText}}</view>
+        </view>
+
+        <view wx:if="{{item.stagePhase === 'post' && item.currentPost}}" class="scene-post-card list-appear" id="scene-post-{{item.postAnimateToken}}">
+          <view class="post-user">
+            <image class="post-avatar avatar-bob" src="{{item.currentPost.avatarUrl}}" mode="aspectFill" />
+            <view>
+              <text class="post-name">{{item.currentPost.nickname}}</text>
+              <text class="post-time">{{item.currentPost.createdAt}}</text>
+            </view>
+          </view>
+          <view class="post-content">{{item.currentPost.content}}</view>
+          <view wx:if="{{item.currentPost.media.length > 0}}" class="post-media-row">
+            <block wx:for="{{item.currentPost.media}}" wx:key="*this" wx:for-item="mediaUrl" wx:for-index="mediaIndex">
+              <image
+                class="post-media"
+                src="{{mediaUrl}}"
+                mode="aspectFill"
+                data-sceneid="{{item.sceneId}}"
+                data-index="{{mediaIndex}}"
+                bindtap="previewCurrentMedia"
+              />
+            </block>
+          </view>
+        </view>
+
+        <button class="btn-primary continue-btn" data-sceneid="{{item.sceneId}}" bindtap="onContinueJourney">
+          继续前行
+        </button>
+      </view>
+    </block>
+  </block>
+</view>

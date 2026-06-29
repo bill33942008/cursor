@@ -1,0 +1,33 @@
+{
+  "name": "tongxing-server",
+  "version": "0.1.0",
+  "description": "Backend service for 同行/在路上 mini program MVP",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node src/index.js",
+    "start": "NODE_ENV=production node src/index.js",
+    "check": "node -e \"(async()=>{const db=require('./src/db');await db.initializeDatabase();db.checkConnection();console.log('database: ok');})().catch(err=>{console.error(err);process.exit(1);})\"",
+    "admin:create": "node scripts/create-admin.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "cos-nodejs-sdk-v5": "^2.14.8",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^2.0.2",
+    "pg": "^8.22.0",
+    "sql.js": "^1.13.0",
+    "uuid": "^11.1.0",
+    "ws": "^8.18.3",
+    "zod": "^3.25.76"
+  },
+  "optionalDependencies": {
+    "pg-native": "^3.8.0"
+  }
+}

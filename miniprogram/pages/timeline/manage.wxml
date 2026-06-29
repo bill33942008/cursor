@@ -1,0 +1,155 @@
+<view class="page-wrap">
+  <view class="card">
+    <view class="section-title">我的时间线</view>
+    <text class="subtitle">记录你在哪个时间去过哪些地方，形成公开旅程故事</text>
+  </view>
+
+  <view class="card">
+    <view class="row-between">
+      <view>
+        <text class="section-title tiny-title">允许他人查看我的时间线</text>
+        <text class="subtitle">关闭后，其他人只能看到你的基本信息</text>
+      </view>
+      <switch
+        color="#ff2442"
+        checked="{{timelineIsPublic}}"
+        disabled="{{savingVisibility}}"
+        bindchange="onTimelinePublicChange"
+      />
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="row-between">
+      <view class="section-title">{{editingEventId ? "编辑旅程记录" : "新增旅程记录"}}</view>
+      <button
+        wx:if="{{editingEventId}}"
+        class="btn-ghost mini-cancel"
+        size="mini"
+        hover-class="pressable-hover"
+        bindtap="cancelEdit"
+      >
+        取消编辑
+      </button>
+    </view>
+    <input class="input-box" placeholder="标题，例如：出发去北京" data-key="title" bindinput="onFormInput" value="{{form.title}}" />
+    <input class="input-box" placeholder="地点，例如：北京朝阳站" data-key="location" bindinput="onFormInput" value="{{form.location}}" />
+    <picker mode="date" value="{{form.occurredDate}}" bindchange="onDateChange">
+      <view class="picker-box">{{form.occurredDate ? ("发生日期：" + form.occurredDate) : "选择发生日期"}}</view>
+    </picker>
+    <textarea class="textarea-box" placeholder="补充描述（可选）" data-key="note" bindinput="onFormInput" value="{{form.note}}" />
+    <view class="media-wrap">
+      <view class="row-between media-head">
+        <text class="section-title tiny-title">图片附件</text>
+        <text class="muted">{{form.mediaAssets.length}} / 9</text>
+      </view>
+      <view class="media-grid">
+        <block wx:for="{{form.mediaAssets}}" wx:key="url">
+          <view class="draft-media-item">
+            <image class="draft-media" src="{{item.url}}" mode="aspectFill" data-index="{{index}}" bindtap="previewDraftMedia" />
+            <view wx:if="{{index === 0}}" class="draft-cover-tag">封面</view>
+            <view class="draft-media-order">
+              <text class="order-btn" data-index="{{index}}" bindtap="moveDraftMediaLeft">←</text>
+              <text class="order-btn" data-index="{{index}}" bindtap="moveDraftMediaRight">→</text>
+            </view>
+            <view class="draft-media-remove" data-index="{{index}}" bindtap="removeDraftMedia">×</view>
+          </view>
+        </block>
+        <view wx:if="{{form.mediaAssets.length < 9}}" class="media-add pressable" hover-class="pressable-hover" bindtap="chooseMedia">
+          <text class="media-add-plus">{{uploadingMedia ? "上传中..." : "+"}}</text>
+          <text class="media-add-label">添加图片</text>
+        </view>
+      </view>
+    </view>
+    <view class="row-between event-public">
+      <text class="subtitle">该条记录对外可见</text>
+      <switch color="#ff2442" checked="{{form.isPublic}}" bindchange="onEventPublicChange" />
+    </view>
+    <button
+      class="btn-primary save-btn"
+      hover-class="pressable-hover"
+      loading="{{submitting}}"
+      disabled="{{submitting}}"
+      bindtap="submitEvent"
+    >
+      {{editingEventId ? "保存修改" : "保存记录"}}
+    </button>
+  </view>
+
+  <view class="card">
+    <view class="row-between">
+      <view class="section-title">记录筛选</view>
+      <text class="muted">{{displayedEvents.length}} / {{events.length}}</text>
+    </view>
+    <view class="filter-row">
+      <block wx:for="{{filterOptions}}" wx:key="value">
+        <view
+          class="filter-chip {{filterType === item.value ? 'active' : ''}}"
+          data-value="{{item.value}}"
+          bindtap="onFilterChange"
+        >
+          {{item.label}}
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="card">
+    <view class="skeleton skeleton-line lg"></view>
+    <view class="skeleton skeleton-line"></view>
+    <view class="skeleton skeleton-line sm"></view>
+  </view>
+
+  <view wx:if="{{!loading && events.length === 0}}" class="card state-card">
+    <text class="state-icon">🧭</text>
+    <text class="section-title">还没有时间线记录</text>
+    <text class="subtitle">添加第一条记录，开始你的旅程故事</text>
+  </view>
+
+  <view wx:if="{{!loading && events.length > 0 && displayedEvents.length === 0}}" class="card state-card">
+    <text class="state-icon">🗂️</text>
+    <text class="section-title">当前筛选下暂无记录</text>
+    <text class="subtitle">试试切换全部/公开/私密筛选</text>
+  </view>
+
+  <view wx:if="{{!loading && displayedEvents.length > 0}}" class="timeline-list">
+    <block wx:for="{{displayedEvents}}" wx:key="id">
+      <view class="timeline-item list-appear">
+        <view class="timeline-dot"></view>
+        <view class="timeline-card">
+          <view class="row-between">
+            <text class="event-title">{{item.title}}</text>
+            <text class="chip">{{item.isPublic ? "公开" : "私密"}}</text>
+          </view>
+          <text class="subtitle">{{item.location}}</text>
+          <text class="muted">{{item.occurredAt}}</text>
+          <text wx:if="{{item.note}}" class="event-note">{{item.note}}</text>
+          <view wx:if="{{item.coverMedia}}" class="event-media-cover-wrap">
+            <image class="event-cover-media" src="{{item.coverMedia.url}}" mode="aspectFill" data-id="{{item.id}}" data-index="0" bindtap="previewEventMedia" />
+            <view wx:if="{{item.thumbMedia.length > 0}}" class="event-thumb-row">
+              <block wx:for="{{item.thumbMedia}}" wx:key="url" wx:for-item="thumb" wx:for-index="thumbIndex">
+                <view class="event-thumb-item">
+                  <image
+                    class="event-thumb-media"
+                    src="{{thumb.url}}"
+                    mode="aspectFill"
+                    data-id="{{item.id}}"
+                    data-index="{{thumbIndex + 1}}"
+                    bindtap="previewEventMedia"
+                  />
+                  <view wx:if="{{item.moreMediaCount > 0 && thumbIndex === item.thumbMedia.length - 1}}" class="more-mask">
+                    +{{item.moreMediaCount}}
+                  </view>
+                </view>
+              </block>
+            </view>
+          </view>
+          <view class="event-actions">
+            <button class="icon-btn mini-del" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="startEdit">编辑</button>
+            <button class="btn-ghost mini-del" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="removeEvent">删除</button>
+          </view>
+        </view>
+      </view>
+    </block>
+  </view>
+</view>

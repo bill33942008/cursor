@@ -1,0 +1,68 @@
+.profile-edit-page {
+  padding-top: 12rpx;
+}
+
+.avatar-edit-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.avatar-box {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #ff4b66 0%, #ff2442 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+}
+
+.avatar-fallback {
+  color: #fff;
+  font-size: 42rpx;
+  font-weight: 600;
+}
+
+.avatar-btn {
+  min-width: 180rpx;
+  height: 72rpx;
+}
+
+.policy-card .subtitle {
+  display: block;
+  margin-top: 8rpx;
+}
+
+.member-tier-row {
+  margin-top: 8rpx;
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 6rpx 12rpx;
+  border-radius: 999rpx;
+  background: #f8fafc;
+  border: 2rpx solid #e5e7eb;
+}
+
+.member-tier-icon {
+  width: 34rpx;
+  height: 34rpx;
+}
+
+.member-tier-label {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #344054;
+}
+
+.save-btn {
+  margin-top: 18rpx;
+  height: 84rpx;
+}

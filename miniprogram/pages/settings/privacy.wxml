@@ -1,0 +1,32 @@
+<view class="page-wrap">
+  <view class="card">
+    <view class="section-title">隐私设置</view>
+    <text class="subtitle">控制动态展示方式和互动权限</text>
+  </view>
+
+  <view class="card">
+    <view class="setting-row">
+      <view class="setting-main">
+        <text class="setting-title">默认匿名发布</text>
+        <text class="subtitle">新建动态时默认开启匿名选项</text>
+      </view>
+      <switch color="#ff2442" checked="{{settings.anonymousByDefault}}" data-key="anonymousByDefault" bindchange="onToggle" />
+    </view>
+
+    <view class="setting-row">
+      <view class="setting-main">
+        <text class="setting-title">允许附近推荐</text>
+        <text class="subtitle">在同路线推荐中展示你的公开内容</text>
+      </view>
+      <switch color="#ff2442" checked="{{settings.allowNearbyRecommend}}" data-key="allowNearbyRecommend" bindchange="onToggle" />
+    </view>
+
+    <view class="setting-row">
+      <view class="setting-main">
+        <text class="setting-title">允许被邀请进群</text>
+        <text class="subtitle">允许群主向你发送进群邀请</text>
+      </view>
+      <switch color="#ff2442" checked="{{settings.allowMessageInvite}}" data-key="allowMessageInvite" bindchange="onToggle" />
+    </view>
+  </view>
+</view>

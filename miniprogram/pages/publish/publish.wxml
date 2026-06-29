@@ -1,0 +1,111 @@
+<view class="page-wrap">
+  <view class="hero-card">
+    <view class="hero-title">发布路上动态</view>
+    <view class="hero-subtitle">记录旅程瞬间，给同路旅友一些参考</view>
+    <view class="hero-pill-row">
+      <text class="hero-pill">图文/视频</text>
+      <text class="hero-pill">行程状态</text>
+      <text class="hero-pill">匿名可选</text>
+    </view>
+  </view>
+
+  <view class="card form-card">
+    <view class="section-title">分享内容</view>
+    <textarea
+      class="textarea-box content-box"
+      placeholder="这一程发生了什么？有什么值得分享的交通信息？"
+      placeholder-style="color:#98a2b3;font-size:27rpx;"
+      value="{{content}}"
+      bindinput="onContentInput"
+      maxlength="1000"
+    />
+    <view class="content-footer">
+      <text class="subtitle">越具体越容易被同路人看到</text>
+      <text class="muted">{{contentCount}}/1000</text>
+    </view>
+
+    <view class="section-title">行程信息</view>
+    <picker mode="selector" range="{{transportOptions}}" range-key="label" value="{{transportIndex}}" bindchange="onTransportChange">
+      <view class="picker-box">交通工具：{{transportOptions[transportIndex].label}}</view>
+    </picker>
+    <picker mode="selector" range="{{phaseOptions}}" range-key="label" value="{{phaseIndex}}" bindchange="onPhaseChange">
+      <view class="picker-box">当前阶段：{{phaseOptions[phaseIndex].label}}</view>
+    </picker>
+
+    <input class="input-box" placeholder="车次/航班（可选）" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{routeCode}}" bindinput="onRouteCodeInput" />
+    <picker mode="region" value="{{originRegion}}" bindchange="onOriginRegionChange">
+      <view class="picker-box">{{originRegionText}}</view>
+    </picker>
+    <view class="destination-mode-wrap">
+      <text class="subtitle mode-label">目的地输入方式</text>
+      <view class="mode-options">
+        <block wx:for="{{destinationModeOptions}}" wx:key="value">
+          <view
+            class="mode-chip {{destinationModeIndex === index ? 'active' : ''}}"
+            data-index="{{index}}"
+            bindtap="onDestinationModeChange"
+          >
+            {{item.label}}
+          </view>
+        </block>
+      </view>
+    </view>
+    <block wx:if="{{destinationModeOptions[destinationModeIndex].value === 'region'}}">
+      <picker mode="region" value="{{destinationRegion}}" bindchange="onDestinationRegionChange">
+        <view class="picker-box">{{destinationRegionText}}</view>
+      </picker>
+    </block>
+    <block wx:else>
+      <input
+        class="input-box"
+        placeholder="输入景点/地点名称（如 西湖、兵马俑）"
+        placeholder-style="color:#98a2b3;font-size:27rpx;"
+        value="{{destinationSpotInput}}"
+        bindinput="onDestinationSpotInput"
+      />
+      <view class="suggestion-box" wx:if="{{destinationSpotSuggestions.length > 0}}">
+        <view class="subtitle suggestion-title">热门/匹配推荐（也可直接输入）</view>
+        <view class="suggestion-list">
+          <block wx:for="{{destinationSpotSuggestions}}" wx:key="*this">
+            <text class="suggestion-item" data-value="{{item}}" bindtap="onDestinationSuggestionTap">{{item}}</text>
+          </block>
+        </view>
+      </view>
+    </block>
+    <input class="input-box" placeholder="出发时间窗口（可选，如 今天 14:00-16:00）" placeholder-style="color:#98a2b3;font-size:27rpx;" value="{{departureWindow}}" bindinput="onDepartureWindowInput" />
+
+    <view class="row-between anonymous-row">
+      <view>
+        <text class="section-title anonymous-title">匿名发布</text>
+        <text class="subtitle">仅前台匿名，后台仍保存真实账号</text>
+      </view>
+      <switch color="#ff2442" checked="{{isAnonymous}}" bindchange="onAnonymousChange" />
+    </view>
+
+    <view class="media-header">
+      <text class="section-title media-title">媒体素材</text>
+      <button class="icon-btn" size="mini" hover-class="pressable-hover" bindtap="chooseMedia" loading="{{uploading}}">
+        {{uploading ? "上传中" : "添加媒体"}}
+      </button>
+    </view>
+
+    <view wx:if="{{mediaAssets.length === 0}}" class="media-empty">
+      <text class="subtitle">还没添加媒体，建议至少上传 1 张图提升浏览率</text>
+    </view>
+
+    <view class="media-grid" wx:if="{{mediaAssets.length > 0}}">
+      <block wx:for="{{mediaAssets}}" wx:key="id">
+        <view class="media-item">
+          <image wx:if="{{item.mediaKind === 'image'}}" class="media-thumb" src="{{item.displayUrl}}" mode="aspectFill" />
+          <video wx:else class="media-thumb" src="{{item.displayUrl}}" controls />
+          <view class="media-meta">
+            <text class="media-status">审核：{{item.moderationStatus}}</text>
+            <button class="icon-btn remove-btn" size="mini" hover-class="pressable-hover" data-id="{{item.id}}" bindtap="removeMedia">移除</button>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <button class="btn-primary submit-btn" hover-class="pressable-hover" bindtap="submit">立即发布</button>
+  </view>
+</view>

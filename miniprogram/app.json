@@ -1,0 +1,51 @@
+{
+  "pages": [
+    "pages/splash/index",
+    "pages/square/square",
+    "pages/publish/publish",
+    "pages/groups/groups",
+    "pages/profile/profile",
+    "pages/profile/edit",
+    "pages/chat/chat",
+    "pages/timeline/manage",
+    "pages/scene/vertical",
+    "pages/user/public",
+    "pages/settings/index",
+    "pages/settings/privacy",
+    "pages/settings/security"
+  ],
+  "window": {
+    "navigationBarTitleText": "同行",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "navigationStyle": "default",
+    "backgroundColor": "#f5f7fb"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#8a94a6",
+    "selectedColor": "#ff2442",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/square/square",
+        "text": "发现"
+      },
+      {
+        "pagePath": "pages/publish/publish",
+        "text": "发布"
+      },
+      {
+        "pagePath": "pages/groups/groups",
+        "text": "群组"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}
